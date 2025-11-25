@@ -1,76 +1,67 @@
 <nav class="bg-uii-blue text-white shadow-md sticky top-0 z-50">
-  <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+  <div class="container mx-auto px-4 py-3">
     
-    <!-- Logo -->
-    <a routerLink="/" class="flex items-center gap-2">
-      <img src="/assets/LogoUII.png" alt="Logo UII" class="w-10 h-auto object-contain">
-      <div class="text-xl font-bold tracking-tight">
-        Lost<span class="text-uii-gold">&</span>Found
+    <!-- 3 Column Grid Layout -->
+    <div class="flex items-center justify-between md:grid md:grid-cols-3">
+      
+      <!-- Left: Logo -->
+      <a routerLink="/" class="flex items-center gap-2">
+        <img src="/assets/LogoUII.png" alt="Logo UII" class="w-10 h-auto object-contain">
+        <div class="text-xl font-bold tracking-tight">
+          Lost<span class="text-uii-gold">&</span>Found
+        </div>
+      </a>
+      
+      <!-- Center: Desktop Menu -->
+      <div class="hidden md:flex justify-center space-x-8 items-center font-medium text-sm">
+        <a routerLink="/" routerLinkActive="text-uii-gold border-uii-gold" [routerLinkActiveOptions]="{exact: true}" 
+           class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
+          Beranda
+        </a>
+        <a routerLink="/search" routerLinkActive="text-uii-gold border-uii-gold" 
+           class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
+          Cari Barang
+        </a>
+        <a routerLink="/radar" routerLinkActive="text-uii-gold border-uii-gold" 
+           class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
+          Radar
+        </a>
+        <a routerLink="/profile" routerLinkActive="text-uii-gold border-uii-gold" 
+           class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
+          Akun
+        </a>
       </div>
-    </a>
-    
-    <!-- Desktop Menu -->
-    <div class="hidden md:flex space-x-8 items-center font-medium text-sm">
-      <a routerLink="/" routerLinkActive="text-uii-gold border-uii-gold" [routerLinkActiveOptions]="{exact: true}" 
-         class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
-        Beranda
-      </a>
-      <a routerLink="/search" routerLinkActive="text-uii-gold border-uii-gold" 
-         class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
-        Cari Barang
-      </a>
-      <a routerLink="/radar" routerLinkActive="text-uii-gold border-uii-gold" 
-         class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
-        Radar
-      </a>
-      <a routerLink="/profile" routerLinkActive="text-uii-gold border-uii-gold" 
-         class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
-        Akun
-      </a>
+
+      <!-- Right: Action Buttons -->
+      <div class="flex items-center justify-end gap-2 md:gap-3">
+        
+        <!-- QR Scanner Button -->
+        <button 
+          class="relative p-2 rounded-lg hover:bg-white/10 transition"
+          title="Scan QR">
+          <i class="ph ph-qr-code text-2xl"></i>
+        </button>
+
+        <!-- Notification Button -->
+        <button 
+          class="relative p-2 rounded-lg hover:bg-white/10 transition"
+          title="Notifikasi">
+          <i class="ph ph-bell text-2xl"></i>
+          <!-- Badge (jika ada notif) -->
+          <span class="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+            3
+          </span>
+        </button>
+
+        <!-- Lapor Barang Button (Desktop only) -->
+        <a routerLink="/post-item" 
+           class="hidden md:flex bg-uii-gold text-uii-blue px-4 py-2 rounded-lg font-semibold hover:bg-yellow-400 transition items-center gap-2 leading-none">
+          <i class="ph ph-plus-circle text-lg leading-none"></i>
+          <span class="leading-none mb-[3px]">Lapor Barang</span>
+        </a>
+
+      </div>
+
     </div>
-
-    <!-- Desktop Actions -->
-    <div class="hidden md:flex items-center gap-3">
-      <a routerLink="/post-item" 
-         class="bg-uii-gold text-uii-blue px-4 py-2 rounded-lg font-semibold hover:bg-yellow-400 transition flex items-center gap-2">
-        <i class="ph ph-plus-circle text-lg"></i>
-        Lapor Barang
-      </a>
-    </div>
-
-    <!-- Mobile Menu Button -->
-    <button (click)="toggleMenu()" class="md:hidden text-white focus:outline-none">
-      <svg *ngIf="!isMenuOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-      </svg>
-      <svg *ngIf="isMenuOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-
-  </div>
-
-  <!-- Mobile Menu Dropdown -->
-  <div *ngIf="isMenuOpen" class="bg-blue-900 px-4 py-2 md:hidden border-t border-blue-800">
-    <a routerLink="/" routerLinkActive="text-uii-gold" [routerLinkActiveOptions]="{exact: true}" 
-       (click)="toggleMenu()" class="block py-3 hover:text-uii-gold transition">
-      <i class="ph ph-house mr-2"></i>Beranda
-    </a>
-    <a routerLink="/search" routerLinkActive="text-uii-gold" 
-       (click)="toggleMenu()" class="block py-3 hover:text-uii-gold transition">
-      <i class="ph ph-magnifying-glass mr-2"></i>Cari Barang
-    </a>
-    <a routerLink="/radar" routerLinkActive="text-uii-gold" 
-       (click)="toggleMenu()" class="block py-3 hover:text-uii-gold transition">
-      <i class="ph ph-broadcast mr-2"></i>Radar
-    </a>
-    <a routerLink="/profile" routerLinkActive="text-uii-gold" 
-       (click)="toggleMenu()" class="block py-3 hover:text-uii-gold transition">
-      <i class="ph ph-user mr-2"></i>Akun
-    </a>
-    <a routerLink="/post-item" (click)="toggleMenu()" 
-       class="block py-3 mt-2 bg-uii-gold text-uii-blue text-center rounded-lg font-semibold hover:bg-yellow-400 transition">
-      <i class="ph ph-plus-circle mr-2"></i>Lapor Barang
-    </a>
   </div>
 </nav>

@@ -10,9 +10,15 @@ import { CommonModule } from '@angular/common';
   styleUrl: './navbar.component.css'
 })
 export class NavbarComponent {
-  isMenuOpen = false;
+  notificationCount = 3; // TODO: Ambil dari service nanti
 
-  toggleMenu() {
-    this.isMenuOpen = !this.isMenuOpen;
+  openQRScanner() {
+    // TODO: Implementasi QR Scanner
+    console.log('Open QR Scanner');
+  }
+
+  openNotifications() {
+    // TODO: Implementasi Notification panel
+    console.log('Open Notifications');
   }
 }

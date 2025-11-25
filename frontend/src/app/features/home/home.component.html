@@ -1,4 +1,102 @@
-<div class="container mx-auto px-4 py-8">
-  <h1 class="text-2xl font-bold text-gray-800">Beranda</h1>
-  <p class="text-gray-600 mt-2">Selamat datang Welcome</p>
+<div class="container mx-auto px-4 py-6 pb-24 md:pb-6">
+  
+  <!-- Search Bar -->
+  <div class="mb-6">
+    <app-search-bar 
+      [(value)]="searchQuery"
+      (search)="onSearchChange()"
+      placeholder="Cari barang hilang...">
+    </app-search-bar>
+  </div>
+
+  <!-- Category Filter -->
+  <div class="mb-6 -mx-4 px-4">
+    <app-category-filter
+      [categories]="categories"
+      [selectedCategory]="selectedCategory"
+      (categoryChange)="selectCategory($event)">
+    </app-category-filter>
+  </div>
+
+  <!-- Results Count & Items Per Page (Desktop only) -->
+  <div class="hidden md:flex justify-between items-center mb-4">
+    <p class="text-gray-600 dark:text-gray-400 text-sm">
+      Menampilkan <span class="font-semibold text-gray-800 dark:text-white">{{ itemRangeStart }}-{{ itemRangeEnd }}</span> 
+      dari <span class="font-semibold text-gray-800 dark:text-white">{{ filteredItems.length }}</span> barang
+    </p>
+    
+    <!-- Items per page -->
+    <div class="flex items-center gap-2">
+      <span class="text-gray-500 dark:text-gray-400 text-sm">Tampilkan:</span>
+      <select 
+        [(ngModel)]="itemsPerPage" 
+        (ngModelChange)="changeItemsPerPage($event)"
+        class="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-uii-blue dark:focus:ring-uii-gold">
+        @for (option of itemsPerPageOptions; track option) {
+          <option [value]="option">{{ option }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- Items Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    @for (item of paginatedItems; track item.id) {
+      <app-item-card [item]="item"></app-item-card>
+    }
+  </div>
+
+  <!-- Empty State -->
+  @if (filteredItems.length === 0) {
+    <app-empty-state 
+      icon="ph-magnifying-glass"
+      title="Tidak ada barang ditemukan"
+      message="Coba ubah kata kunci atau filter pencarian">
+    </app-empty-state>
+  }
+
+  <!-- Pagination -->
+  @if (totalPages > 1) {
+    <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+      
+      <!-- Pagination Controls -->
+      <div class="flex items-center gap-1">
+        <!-- Previous Button -->
+        <button 
+          (click)="prevPage()"
+          [disabled]="currentPage === 1"
+          [class]="currentPage === 1 ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
+          class="p-2 rounded-lg transition">
+          <i class="ph ph-caret-left text-xl"></i>
+        </button>
+
+        <!-- Page Numbers -->
+        @for (page of pageNumbers; track $index) {
+          @if (page === -1) {
+            <span class="px-2 text-gray-400 dark:text-gray-600">...</span>
+          } @else {
+            <button 
+              (click)="goToPage(page)"
+              [class]="currentPage === page 
+                ? 'bg-uii-blue dark:bg-uii-gold text-white dark:text-uii-blue' 
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
+              class="w-10 h-10 rounded-lg font-medium transition">
+              {{ page }}
+            </button>
+          }
+        }
+
+        <!-- Next Button -->
+        <button 
+          (click)="nextPage()"
+          [disabled]="currentPage === totalPages"
+          [class]="currentPage === totalPages ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
+          class="p-2 rounded-lg transition">
+          <i class="ph ph-caret-right text-xl"></i>
+        </button>
+      </div>
+
+    </div>
+  }
+
 </div>

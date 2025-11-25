@@ -1,0 +1,13 @@
+<div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+  @for (category of categories; track category.id) {
+    <button 
+      (click)="selectCategory(category.id)"
+      [class]="selectedCategory === category.id 
+        ? 'bg-uii-blue dark:bg-uii-gold text-white dark:text-uii-blue shadow-md' 
+        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-uii-blue dark:hover:border-uii-gold'"
+      class="flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all">
+      <i [class]="'ph ' + category.icon"></i>
+      {{ category.label }}
+    </button>
+  }
+</div>

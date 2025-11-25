@@ -1,0 +1,38 @@
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-md dark:hover:shadow-gray-900/50 transition-shadow group cursor-pointer">
+  
+  <!-- Image -->
+  <div class="relative h-40 overflow-hidden">
+    <img 
+      [src]="item.imageUrl" 
+      [alt]="item.title"
+      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+    >
+    <!-- Status Badge -->
+    <div class="absolute top-2 left-2">
+      <app-status-badge [status]="item.status"></app-status-badge>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="p-4">
+    <h3 class="font-semibold text-gray-800 dark:text-white mb-1 truncate">{{ item.title }}</h3>
+    <p class="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 mb-3">{{ item.description }}</p>
+    
+    <!-- Meta Info -->
+    <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-400 dark:text-gray-500">
+      <span class="flex items-center gap-1">
+        <i class="ph ph-calendar"></i>
+        {{ item.date }}
+      </span>
+      <span class="flex items-center gap-1">
+        <i class="ph ph-clock"></i>
+        {{ item.time }}
+      </span>
+      <span class="flex items-center gap-1">
+        <i class="ph ph-map-pin"></i>
+        {{ item.location }}
+      </span>
+    </div>
+  </div>
+
+</div>

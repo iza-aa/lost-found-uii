@@ -4,6 +4,7 @@ import { RouterOutlet } from '@angular/router';
 import { NavbarComponent } from '../navbar/navbar.component';
 import { FooterComponent } from '../footer/footer.component';
 import { BottomNavComponent } from '../bottom-nav/bottom-nav.component';
+import { ThemeToggleComponent } from '../../shared/components';
 
 @Component({
   selector: 'app-main-layout',
@@ -12,7 +13,8 @@ import { BottomNavComponent } from '../bottom-nav/bottom-nav.component';
     RouterOutlet, 
     NavbarComponent, 
     FooterComponent, 
-    BottomNavComponent
+    BottomNavComponent,
+    ThemeToggleComponent
   ],
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.css'
