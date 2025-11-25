@@ -1,0 +1,30 @@
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] px-6 py-2 flex justify-between items-center z-50 md:hidden pb-safe">
+  
+  <a routerLink="/" routerLinkActive="text-uii-blue" [routerLinkActiveOptions]="{exact: true}" class="flex flex-col items-center text-gray-400 hover:text-uii-blue transition group w-1/5">
+    <i class="ph ph-house text-2xl mb-1 group-hover:-translate-y-1 transition-transform"></i>
+    <span class="text-[10px] font-medium">Beranda</span>
+  </a>
+
+  <a routerLink="/search" routerLinkActive="text-uii-blue" class="flex flex-col items-center text-gray-400 hover:text-uii-blue transition group w-1/5">
+    <i class="ph ph-magnifying-glass text-2xl mb-1 group-hover:-translate-y-1 transition-transform"></i>
+    <span class="text-[10px] font-medium">Cari</span>
+  </a>
+
+  <div class="w-1/5 flex justify-center relative">
+    <a routerLink="/post-item" class="absolute -top-8 bg-uii-blue text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg border-4 border-gray-50 hover:bg-blue-800 hover:scale-110 transition-transform">
+      <i class="ph ph-plus text-2xl font-bold"></i>
+    </a>
+    <span class="text-[10px] font-medium text-gray-400 mt-8">Lapor</span>
+  </div>
+
+  <a routerLink="/radar" routerLinkActive="text-uii-blue" class="flex flex-col items-center text-gray-400 hover:text-uii-blue transition group w-1/5">
+    <i class="ph ph-broadcast text-2xl mb-1 group-hover:-translate-y-1 transition-transform"></i>
+    <span class="text-[10px] font-medium">Radar</span>
+  </a>
+
+  <a routerLink="/profile" routerLinkActive="text-uii-blue" class="flex flex-col items-center text-gray-400 hover:text-uii-blue transition group w-1/5">
+    <i class="ph ph-user text-2xl mb-1 group-hover:-translate-y-1 transition-transform"></i>
+    <span class="text-[10px] font-medium">Akun</span>
+  </a>
+
+</nav>

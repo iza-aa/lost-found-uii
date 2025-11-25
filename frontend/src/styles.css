@@ -1,1 +1,8 @@
-/* You can add global styles to this file, and also import other style files */
+@import "@phosphor-icons/web/regular"; /* Style Regular (Garis Tipis) */
+@import "@phosphor-icons/web/fill";    /* Style Fill (Isi Penuh - opsional) */
+@import "@phosphor-icons/web/bold";    /* Style Bold (Tebal - opsional) */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+

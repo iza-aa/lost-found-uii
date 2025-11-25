@@ -1,0 +1,76 @@
+<nav class="bg-uii-blue text-white shadow-md sticky top-0 z-50">
+  <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+    
+    <!-- Logo -->
+    <a routerLink="/" class="flex items-center gap-2">
+      <img src="/assets/LogoUII.png" alt="Logo UII" class="w-10 h-auto object-contain">
+      <div class="text-xl font-bold tracking-tight">
+        Lost<span class="text-uii-gold">&</span>Found
+      </div>
+    </a>
+    
+    <!-- Desktop Menu -->
+    <div class="hidden md:flex space-x-8 items-center font-medium text-sm">
+      <a routerLink="/" routerLinkActive="text-uii-gold border-uii-gold" [routerLinkActiveOptions]="{exact: true}" 
+         class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
+        Beranda
+      </a>
+      <a routerLink="/search" routerLinkActive="text-uii-gold border-uii-gold" 
+         class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
+        Cari Barang
+      </a>
+      <a routerLink="/radar" routerLinkActive="text-uii-gold border-uii-gold" 
+         class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
+        Radar
+      </a>
+      <a routerLink="/profile" routerLinkActive="text-uii-gold border-uii-gold" 
+         class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
+        Akun
+      </a>
+    </div>
+
+    <!-- Desktop Actions -->
+    <div class="hidden md:flex items-center gap-3">
+      <a routerLink="/post-item" 
+         class="bg-uii-gold text-uii-blue px-4 py-2 rounded-lg font-semibold hover:bg-yellow-400 transition flex items-center gap-2">
+        <i class="ph ph-plus-circle text-lg"></i>
+        Lapor Barang
+      </a>
+    </div>
+
+    <!-- Mobile Menu Button -->
+    <button (click)="toggleMenu()" class="md:hidden text-white focus:outline-none">
+      <svg *ngIf="!isMenuOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+      </svg>
+      <svg *ngIf="isMenuOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+  </div>
+
+  <!-- Mobile Menu Dropdown -->
+  <div *ngIf="isMenuOpen" class="bg-blue-900 px-4 py-2 md:hidden border-t border-blue-800">
+    <a routerLink="/" routerLinkActive="text-uii-gold" [routerLinkActiveOptions]="{exact: true}" 
+       (click)="toggleMenu()" class="block py-3 hover:text-uii-gold transition">
+      <i class="ph ph-house mr-2"></i>Beranda
+    </a>
+    <a routerLink="/search" routerLinkActive="text-uii-gold" 
+       (click)="toggleMenu()" class="block py-3 hover:text-uii-gold transition">
+      <i class="ph ph-magnifying-glass mr-2"></i>Cari Barang
+    </a>
+    <a routerLink="/radar" routerLinkActive="text-uii-gold" 
+       (click)="toggleMenu()" class="block py-3 hover:text-uii-gold transition">
+      <i class="ph ph-broadcast mr-2"></i>Radar
+    </a>
+    <a routerLink="/profile" routerLinkActive="text-uii-gold" 
+       (click)="toggleMenu()" class="block py-3 hover:text-uii-gold transition">
+      <i class="ph ph-user mr-2"></i>Akun
+    </a>
+    <a routerLink="/post-item" (click)="toggleMenu()" 
+       class="block py-3 mt-2 bg-uii-gold text-uii-blue text-center rounded-lg font-semibold hover:bg-yellow-400 transition">
+      <i class="ph ph-plus-circle mr-2"></i>Lapor Barang
+    </a>
+  </div>
+</nav>
