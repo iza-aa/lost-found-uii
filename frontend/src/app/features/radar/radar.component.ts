@@ -1,12 +1,217 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy, PLATFORM_ID, Inject, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Router } from '@angular/router';
+import type * as LeafletTypes from 'leaflet';
+import { Item } from '../../core/models';
+import { MOCK_ITEMS } from '../../core/mocks';
+import { CubeLoaderComponent } from '../../shared/components/cube-loader/cube-loader.component';
+
+type LeafletModule = typeof LeafletTypes;
+let L: LeafletModule;
 
 @Component({
   selector: 'app-radar',
   standalone: true,
-  imports: [],
+  imports: [CommonModule, CubeLoaderComponent],
   templateUrl: './radar.component.html',
   styleUrl: './radar.component.css'
 })
-export class RadarComponent {
+export class RadarComponent implements OnInit, OnDestroy {
+  private isBrowser: boolean;
+  private map: LeafletTypes.Map | null = null;
 
+  isLoading = signal(true);
+  items = signal<Item[]>([]);
+  selectedFilter = signal<'all' | 'lost' | 'found'>('all');
+  
+  // Stats
+  lostCount = signal(0);
+  foundCount = signal(0);
+
+  // UII Campus center coordinates
+  private readonly UII_CENTER: [number, number] = [-7.6872, 110.4098];
+
+  constructor(
+    @Inject(PLATFORM_ID) platformId: Object,
+    private router: Router
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
+
+  ngOnInit(): void {
+    this.loadItems();
+  }
+
+  ngOnDestroy(): void {
+    if (this.map) {
+      this.map.remove();
+      this.map = null;
+    }
+  }
+
+  private loadItems(): void {
+    // Get items with coordinates only
+    const itemsWithLocation = MOCK_ITEMS.filter(item => 
+      typeof item.location === 'object' && 'lat' in item.location
+    );
+    
+    this.items.set(itemsWithLocation);
+    this.lostCount.set(itemsWithLocation.filter(i => i.status === 'lost').length);
+    this.foundCount.set(itemsWithLocation.filter(i => i.status === 'found').length);
+
+    if (this.isBrowser) {
+      setTimeout(() => this.initMap(), 100);
+    }
+  }
+
+  private async initMap(): Promise<void> {
+    if (!this.isBrowser || this.map) return;
+
+    const mapElement = document.getElementById('radar-map');
+    if (!mapElement) return;
+
+    L = await import('leaflet');
+
+    this.map = L.map('radar-map', {
+      zoomControl: false
+    }).setView(this.UII_CENTER, 16);
+
+    // Add zoom control to bottom right
+    L.control.zoom({ position: 'bottomright' }).addTo(this.map);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(this.map);
+
+    // Add markers
+    this.addMarkers();
+
+    this.isLoading.set(false);
+  }
+
+  private addMarkers(): void {
+    if (!this.map) return;
+
+    const filteredItems = this.getFilteredItems();
+
+    filteredItems.forEach(item => {
+      if (typeof item.location === 'string') return;
+
+      const isLost = item.status === 'lost';
+      const color = isLost ? '#EF4444' : '#22C55E'; // Red for lost, Green for found
+      const icon = isLost ? 'ph-question' : 'ph-check';
+
+      const customIcon = L.divIcon({
+        className: 'custom-radar-marker',
+        html: `
+          <div class="radar-marker ${isLost ? 'lost' : 'found'}">
+            <i class="ph ${icon}"></i>
+          </div>
+        `,
+        iconSize: [36, 36],
+        iconAnchor: [18, 36],
+        popupAnchor: [0, -36]
+      });
+
+      const marker = L.marker([item.location.lat, item.location.lng], { icon: customIcon })
+        .addTo(this.map!);
+
+      // Create popup content
+      const popupContent = `
+        <div class="radar-popup">
+          <div class="popup-image">
+            ${item.imageUrl 
+              ? `<img src="${item.imageUrl}" alt="${item.title}">` 
+              : `<div class="no-image"><i class="ph ph-image"></i></div>`
+            }
+            <span class="popup-status ${item.status}">${isLost ? 'Hilang' : 'Ditemukan'}</span>
+          </div>
+          <div class="popup-content">
+            <h4>${item.title}</h4>
+            <p class="location"><i class="ph ph-map-pin"></i> ${item.location.name}</p>
+            <p class="date"><i class="ph ph-calendar"></i> ${item.date}</p>
+          </div>
+        </div>
+      `;
+
+      marker.bindPopup(popupContent, {
+        maxWidth: 280,
+        className: 'radar-popup-container'
+      });
+
+      // Navigate to detail on popup click
+      marker.on('popupopen', () => {
+        const popupEl = document.querySelector('.radar-popup');
+        if (popupEl) {
+          popupEl.addEventListener('click', () => {
+            this.router.navigate(['/item', item.id], { 
+              queryParams: { from: 'radar' } 
+            });
+          });
+        }
+      });
+    });
+  }
+
+  private getFilteredItems(): Item[] {
+    const filter = this.selectedFilter();
+    const allItems = this.items();
+    
+    if (filter === 'all') return allItems;
+    return allItems.filter(item => item.status === filter);
+  }
+
+  setFilter(filter: 'all' | 'lost' | 'found'): void {
+    this.selectedFilter.set(filter);
+    this.refreshMarkers();
+  }
+
+  private refreshMarkers(): void {
+    if (!this.map) return;
+
+    // Clear existing markers
+    this.map.eachLayer(layer => {
+      if (layer instanceof L.Marker) {
+        this.map!.removeLayer(layer);
+      }
+    });
+
+    // Add new markers
+    this.addMarkers();
+  }
+
+  centerMap(): void {
+    if (this.map) {
+      this.map.setView(this.UII_CENTER, 16);
+    }
+  }
+
+  locateMe(): void {
+    if (!this.map || !this.isBrowser) return;
+
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          this.map?.setView([latitude, longitude], 17);
+          
+          // Add user location marker
+          const userIcon = L.divIcon({
+            className: 'user-location-marker',
+            html: `<div class="user-marker"><div class="pulse"></div></div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          });
+
+          L.marker([latitude, longitude], { icon: userIcon })
+            .addTo(this.map!)
+            .bindPopup('Lokasi Anda');
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          alert('Tidak dapat mengakses lokasi Anda');
+        }
+      );
+    }
+  }
 }

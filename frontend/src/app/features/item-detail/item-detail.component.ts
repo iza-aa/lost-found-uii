@@ -29,6 +29,8 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
   notFound = signal(false);
   showContactModal = signal(false);
   currentUser = this.authService.currentUser;
+  
+  private fromPage: string | null = null;
 
   constructor(
     @Inject(PLATFORM_ID) platformId: Object,
@@ -40,6 +42,9 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Check where user came from
+    this.fromPage = this.route.snapshot.queryParamMap.get('from');
+    
     const itemId = this.route.snapshot.paramMap.get('id');
     if (itemId) {
       this.loadItem(itemId);
@@ -213,7 +218,16 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/']);
+    // Navigate back based on where user came from
+    if (this.fromPage === 'radar') {
+      this.router.navigate(['/radar']);
+    } else if (this.fromPage === 'search') {
+      this.router.navigate(['/search']);
+    } else if (this.fromPage === 'profile') {
+      this.router.navigate(['/profile']);
+    } else {
+      this.router.navigate(['/']);
+    }
   }
 
   shareItem(): void {
