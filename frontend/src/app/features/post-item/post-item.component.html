@@ -1,4 +1,265 @@
-<div class="container mx-auto px-4 py-8">
-  <h1 class="text-2xl font-bold text-gray-800">Lapor Barang</h1>
-  <p class="text-gray-600 mt-2">Laporkan barang hilang atau ditemukan</p>
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-4">
+  <div class="max-w-lg mx-auto">
+    
+    <!-- Success State -->
+    @if (isSuccess()) {
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center">
+        <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+          <i class="ph-fill ph-check-circle text-green-500 text-5xl"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Berhasil!</h2>
+        <p class="text-gray-500 dark:text-gray-400 mb-8">
+          Laporan kamu sudah dibuat.<br>
+          Semoga barangnya segera ketemu ya! 🙏
+        </p>
+        <div class="space-y-3">
+          <button 
+            (click)="goToHome()"
+            class="w-full py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition flex items-center justify-center gap-2">
+            <i class="ph ph-house"></i>
+            Kembali ke Beranda
+          </button>
+          <button 
+            (click)="createAnother()"
+            class="w-full py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center justify-center gap-2">
+            <i class="ph ph-plus"></i>
+            Buat Laporan Lagi
+          </button>
+        </div>
+      </div>
+    } @else {
+      <!-- Progress Bar -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between mb-2">
+          @for (step of [1,2,3,4,5]; track step) {
+            <button 
+              (click)="goToStep(step)"
+              [class]="step <= currentStep() 
+                ? 'w-10 h-10 rounded-full bg-uii-blue text-white font-semibold flex items-center justify-center transition' 
+                : 'w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 font-semibold flex items-center justify-center'"
+              [disabled]="step > currentStep()">
+              {{ step }}
+            </button>
+            @if (step < 5) {
+              <div [class]="step < currentStep() 
+                ? 'flex-1 h-1 bg-uii-blue mx-2' 
+                : 'flex-1 h-1 bg-gray-200 dark:bg-gray-700 mx-2'"></div>
+            }
+          }
+        </div>
+        <p class="text-center text-sm text-gray-500 dark:text-gray-400">
+          Langkah {{ currentStep() }} dari {{ totalSteps }}
+        </p>
+      </div>
+
+      <!-- Step Content Card -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+        <!-- Step Header -->
+        <div class="text-center mb-6">
+          <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ getStepTitle() }}</h2>
+          <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">{{ getStepSubtitle() }}</p>
+        </div>
+
+        <!-- Step 1: Status -->
+        @if (currentStep() === 1) {
+          <div class="grid grid-cols-2 gap-4">
+            <button 
+              (click)="selectStatus('lost')"
+              [class]="formData.status === 'lost' 
+                ? 'p-6 rounded-2xl border-2 border-red-500 bg-red-50 dark:bg-red-900/20 transition-all' 
+                : 'p-6 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-red-300 transition-all'">
+              <div class="text-5xl mb-3">😢</div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">KEHILANGAN</h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Saya kehilangan barang</p>
+            </button>
+            <button 
+              (click)="selectStatus('found')"
+              [class]="formData.status === 'found' 
+                ? 'p-6 rounded-2xl border-2 border-green-500 bg-green-50 dark:bg-green-900/20 transition-all' 
+                : 'p-6 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-green-300 transition-all'">
+              <div class="text-5xl mb-3">🎉</div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">MENEMUKAN</h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Saya menemukan barang</p>
+            </button>
+          </div>
+        }
+
+        <!-- Step 2: Image Upload -->
+        @if (currentStep() === 2) {
+          <div class="space-y-4">
+            @if (formData.imagePreview) {
+              <div class="relative">
+                <img [src]="formData.imagePreview" alt="Preview" class="w-full h-64 object-cover rounded-xl">
+                <button 
+                  (click)="removeImage()"
+                  class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition">
+                  <i class="ph ph-x"></i>
+                </button>
+              </div>
+            } @else {
+              <label class="block w-full h-64 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-uii-blue transition flex flex-col items-center justify-center">
+                <i class="ph ph-camera text-5xl text-gray-400 mb-3"></i>
+                <span class="text-gray-500 dark:text-gray-400 font-medium">Klik untuk upload foto</span>
+                <span class="text-gray-400 text-sm mt-1">JPG, PNG (max 5MB)</span>
+                <input type="file" accept="image/*" (change)="onImageSelect($event)" class="hidden">
+              </label>
+            }
+            <p class="text-center text-sm text-gray-400">
+              <i class="ph ph-info"></i> Foto bersifat opsional tapi sangat membantu
+            </p>
+          </div>
+        }
+
+        <!-- Step 3: Title & Description -->
+        @if (currentStep() === 3) {
+          <div class="space-y-5">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Nama Barang <span class="text-red-500">*</span>
+              </label>
+              <input 
+                type="text" 
+                [(ngModel)]="formData.title"
+                placeholder="Contoh: Dompet kulit warna coklat"
+                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition"
+              >
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Ciri-ciri / Deskripsi <span class="text-red-500">*</span>
+              </label>
+              <textarea 
+                [(ngModel)]="formData.description"
+                rows="4"
+                placeholder="Contoh: Berisi KTP, SIM, dan kartu ATM BCA. Ada gantungan kunci berbentuk kucing."
+                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition resize-none"
+              ></textarea>
+              <p class="text-xs text-gray-400 mt-1">Minimal 10 karakter</p>
+            </div>
+            <!-- Date & Time -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Tanggal
+                </label>
+                <input 
+                  type="date" 
+                  [(ngModel)]="formData.date"
+                  class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition"
+                >
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Waktu
+                </label>
+                <input 
+                  type="time" 
+                  [(ngModel)]="formData.time"
+                  class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition"
+                >
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Step 4: Category -->
+        @if (currentStep() === 4) {
+          <div class="grid grid-cols-3 gap-3">
+            @for (category of categories; track category.id) {
+              <button 
+                (click)="selectCategory(category.id)"
+                [class]="formData.category === category.id 
+                  ? 'p-4 rounded-xl border-2 border-uii-blue bg-blue-50 dark:bg-blue-900/20 transition-all' 
+                  : 'p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 transition-all'">
+                <i [class]="'ph ' + category.icon + ' text-2xl ' + (formData.category === category.id ? 'text-uii-blue' : 'text-gray-500')"></i>
+                <p [class]="'text-xs mt-2 font-medium ' + (formData.category === category.id ? 'text-uii-blue' : 'text-gray-600 dark:text-gray-400')">
+                  {{ category.label }}
+                </p>
+              </button>
+            }
+          </div>
+        }
+
+        <!-- Step 5: Map -->
+        @if (currentStep() === 5) {
+          <div class="space-y-4">
+            <!-- Location Dropdown -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Atau pilih lokasi:
+              </label>
+              <select 
+                (change)="selectLocationFromDropdown($event)"
+                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition">
+                <option value="">-- Pilih Lokasi --</option>
+                @for (loc of locations; track loc.id) {
+                  <option [value]="loc.id">{{ loc.name }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- Map Container -->
+            <div id="map" class="w-full h-64 rounded-xl border border-gray-200 dark:border-gray-700 z-0"></div>
+            
+            <!-- Selected Location -->
+            @if (formData.location) {
+              <div class="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                <i class="ph-fill ph-map-pin text-green-500 text-xl"></i>
+                <div>
+                  <p class="font-medium text-green-700 dark:text-green-400">{{ formData.location.name }}</p>
+                  @if (formData.location.description) {
+                    <p class="text-xs text-green-600 dark:text-green-500">{{ formData.location.description }}</p>
+                  }
+                </div>
+              </div>
+            } @else {
+              <p class="text-center text-sm text-gray-400">
+                <i class="ph ph-hand-tap"></i> Klik pada peta atau pilih dari dropdown
+              </p>
+            }
+          </div>
+        }
+
+        <!-- Navigation Buttons -->
+        <div class="flex gap-3 mt-8">
+          @if (currentStep() > 1) {
+            <button 
+              (click)="prevStep()"
+              class="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center justify-center gap-2">
+              <i class="ph ph-arrow-left"></i>
+              Kembali
+            </button>
+          }
+          
+          @if (currentStep() < totalSteps) {
+            <button 
+              (click)="nextStep()"
+              [disabled]="!canProceed()"
+              class="flex-1 py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+              @if (currentStep() === 2 && !formData.imageUrl) {
+                Lewati
+              } @else {
+                Lanjut
+              }
+              <i class="ph ph-arrow-right"></i>
+            </button>
+          } @else {
+            <button 
+              (click)="submitForm()"
+              [disabled]="!canProceed() || isSubmitting()"
+              class="flex-1 py-3 px-4 bg-uii-gold text-uii-blue font-semibold rounded-xl hover:bg-yellow-400 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+              @if (isSubmitting()) {
+                <i class="ph ph-spinner animate-spin text-xl"></i>
+                Mengirim...
+              } @else {
+                <i class="ph ph-paper-plane-tilt"></i>
+                Kirim Laporan
+              }
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+  </div>
 </div>

@@ -25,12 +25,18 @@ export class HomeComponent {
   items: Item[] = MOCK_ITEMS;
   categories: Category[] = MOCK_CATEGORIES;
 
+  // Helper to get location string
+  private getLocationString(location: string | { lat: number; lng: number; name: string }): string {
+    return typeof location === 'string' ? location : location.name;
+  }
+
   // Filtered items (sebelum pagination)
   get filteredItems(): Item[] {
     return this.items.filter(item => {
+      const locationStr = this.getLocationString(item.location);
       const matchesSearch = item.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
                            item.description.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                           item.location.toLowerCase().includes(this.searchQuery.toLowerCase());
+                           locationStr.toLowerCase().includes(this.searchQuery.toLowerCase());
       
       const matchesCategory = this.selectedCategory === 'all' || item.category === this.selectedCategory;
       

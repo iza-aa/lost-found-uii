@@ -4,3 +4,4 @@ export * from './empty-state/empty-state.component';
 export * from './theme-toggle/theme-toggle.component';
 export * from './search-bar/search-bar.component';
 export * from './category-filter/category-filter.component';
+export * from './user-badge/user-badge.component';

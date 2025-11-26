@@ -26,10 +26,12 @@
            class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
           Radar
         </a>
-        <a routerLink="/profile" routerLinkActive="text-uii-gold border-uii-gold" 
-           class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
-          Akun
-        </a>
+        @if (isAuthenticated()) {
+          <a routerLink="/profile" routerLinkActive="text-uii-gold border-uii-gold" 
+             class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
+            Akun
+          </a>
+        }
       </div>
 
       <!-- Right: Action Buttons -->
@@ -37,28 +39,111 @@
         
         <!-- QR Scanner Button -->
         <button 
+          (click)="openQRScanner()"
           class="relative p-2 rounded-lg hover:bg-white/10 transition"
           title="Scan QR">
           <i class="ph ph-qr-code text-2xl"></i>
         </button>
 
-        <!-- Notification Button -->
-        <button 
-          class="relative p-2 rounded-lg hover:bg-white/10 transition"
-          title="Notifikasi">
-          <i class="ph ph-bell text-2xl"></i>
-          <!-- Badge (jika ada notif) -->
-          <span class="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-            3
-          </span>
-        </button>
+        <!-- Notification Button (only if authenticated) -->
+        @if (isAuthenticated()) {
+          <button 
+            (click)="openNotifications()"
+            class="relative p-2 rounded-lg hover:bg-white/10 transition"
+            title="Notifikasi">
+            <i class="ph ph-bell text-2xl"></i>
+            @if (notificationCount > 0) {
+              <span class="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                {{ notificationCount }}
+              </span>
+            }
+          </button>
+        }
 
-        <!-- Lapor Barang Button (Desktop only) -->
-        <a routerLink="/post-item" 
-           class="hidden md:flex bg-uii-gold text-uii-blue px-4 py-2 rounded-lg font-semibold hover:bg-yellow-400 transition items-center gap-2 leading-none">
-          <i class="ph ph-plus-circle text-lg leading-none"></i>
-          <span class="leading-none mb-[3px]">Lapor Barang</span>
-        </a>
+        <!-- User Menu / Login Button -->
+        @if (isAuthenticated()) {
+          <!-- User Avatar with Dropdown -->
+          <div class="relative">
+            <button 
+              (click)="toggleUserMenu()"
+              class="flex items-center gap-2 p-1 rounded-lg hover:bg-white/10 transition">
+              <img 
+                [src]="currentUser()?.avatar || 'https://i.pravatar.cc/150'" 
+                [alt]="currentUser()?.name"
+                class="w-8 h-8 rounded-full object-cover border-2 border-white/30"
+              >
+              <i class="ph ph-caret-down text-sm hidden md:block"></i>
+            </button>
+
+            <!-- Dropdown Menu -->
+            @if (showUserMenu) {
+              <div 
+                class="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-lg py-2 z-50"
+                (mouseleave)="closeUserMenu()">
+                <!-- User Info -->
+                <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                  <p class="font-medium text-gray-900 dark:text-white">{{ currentUser()?.name }}</p>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">{{ currentUser()?.email }}</p>
+                  <!-- Badge -->
+                  <div class="mt-2">
+                    @switch (currentUser()?.badge) {
+                      @case ('gold') {
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs rounded-full">
+                          <i class="ph-fill ph-seal-check"></i> Staff UII
+                        </span>
+                      }
+                      @case ('blue') {
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded-full">
+                          <i class="ph-fill ph-student"></i> Mahasiswa UII
+                        </span>
+                      }
+                      @default {
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-full">
+                          <i class="ph ph-user"></i> Umum
+                        </span>
+                      }
+                    }
+                  </div>
+                </div>
+                
+                <!-- Menu Items -->
+                <a routerLink="/profile" 
+                   (click)="closeUserMenu()"
+                   class="flex items-center gap-3 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <i class="ph ph-user-circle text-lg"></i>
+                  <span>Profil Saya</span>
+                </a>
+                <a routerLink="/post-item" 
+                   (click)="closeUserMenu()"
+                   class="flex items-center gap-3 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <i class="ph ph-file-text text-lg"></i>
+                  <span>Laporan Saya</span>
+                </a>
+                <hr class="my-2 border-gray-100 dark:border-gray-700">
+                <button 
+                  (click)="logout()"
+                  class="flex items-center gap-3 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 w-full">
+                  <i class="ph ph-sign-out text-lg"></i>
+                  <span>Keluar</span>
+                </button>
+              </div>
+            }
+          </div>
+
+          <!-- Lapor Barang Button (Desktop only) -->
+          <a routerLink="/post-item" 
+             class="hidden md:flex bg-uii-gold text-uii-blue px-4 py-2 rounded-lg font-semibold hover:bg-yellow-400 transition items-center gap-2 leading-none">
+            <i class="ph ph-plus-circle text-lg leading-none"></i>
+            <span class="leading-none mb-[3px]">Lapor</span>
+          </a>
+        } @else {
+          <!-- Login Button -->
+          <a routerLink="/login" 
+             class="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg font-medium transition">
+            <i class="ph ph-sign-in text-lg"></i>
+            <span class="hidden sm:inline">Masuk</span>
+          </a>
+        }
 
       </div>
 

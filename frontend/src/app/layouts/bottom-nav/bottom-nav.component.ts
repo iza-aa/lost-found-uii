@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router'; // Wajib
-import { CommonModule } from '@angular/common'; // Wajib
+import { Component, inject } from '@angular/core';
+import { RouterModule } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-bottom-nav',
@@ -9,4 +10,9 @@ import { CommonModule } from '@angular/common'; // Wajib
   templateUrl: './bottom-nav.component.html',
   styleUrl: './bottom-nav.component.css'
 })
-export class BottomNavComponent {}
+export class BottomNavComponent {
+  private authService = inject(AuthService);
+  
+  isAuthenticated = this.authService.isAuthenticated;
+  currentUser = this.authService.currentUser;
+}

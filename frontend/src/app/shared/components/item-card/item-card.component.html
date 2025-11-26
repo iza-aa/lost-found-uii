@@ -1,9 +1,11 @@
-<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-md dark:hover:shadow-gray-900/50 transition-shadow group cursor-pointer">
+<div 
+  (click)="onCardClick()"
+  class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-md dark:hover:shadow-gray-900/50 transition-shadow group cursor-pointer">
   
   <!-- Image -->
   <div class="relative h-40 overflow-hidden">
     <img 
-      [src]="item.imageUrl" 
+      [src]="item.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image'" 
       [alt]="item.title"
       class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
     >
@@ -18,19 +20,27 @@
     <h3 class="font-semibold text-gray-800 dark:text-white mb-1 truncate">{{ item.title }}</h3>
     <p class="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 mb-3">{{ item.description }}</p>
     
+    <!-- Reporter Badge -->
+    <div class="flex items-center gap-2 mb-3">
+      <app-user-badge [badge]="item.reporterBadge" size="sm"></app-user-badge>
+      <span class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ item.reporterName }}</span>
+    </div>
+    
     <!-- Meta Info -->
     <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-400 dark:text-gray-500">
       <span class="flex items-center gap-1">
         <i class="ph ph-calendar"></i>
         {{ item.date }}
       </span>
-      <span class="flex items-center gap-1">
-        <i class="ph ph-clock"></i>
-        {{ item.time }}
-      </span>
+      @if (item.time) {
+        <span class="flex items-center gap-1">
+          <i class="ph ph-clock"></i>
+          {{ item.time }}
+        </span>
+      }
       <span class="flex items-center gap-1">
         <i class="ph ph-map-pin"></i>
-        {{ item.location }}
+        {{ getLocationDisplay() }}
       </span>
     </div>
   </div>

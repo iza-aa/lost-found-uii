@@ -4,11 +4,25 @@ import { SearchComponent } from './features/search/search.component';
 import { PostItemComponent } from './features/post-item/post-item.component';
 import { RadarComponent } from './features/radar/radar.component';
 import { ProfileComponent } from './features/profile/profile.component';
+import { authGuard, guestGuard } from './core/guards';
 
 export const routes: Routes = [
+  // Public routes
   { path: '', component: HomeComponent },
-  { path: 'search', component: SearchComponent },
-  { path: 'post-item', component: PostItemComponent },
-  { path: 'radar', component: RadarComponent },
-  { path: 'profile', component: ProfileComponent },
+  
+  // Auth routes (hanya untuk guest)
+  { 
+    path: 'login', 
+    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent),
+    canActivate: [guestGuard]
+  },
+  
+  // Protected routes (harus login)
+  { path: 'search', component: SearchComponent, canActivate: [authGuard] },
+  { path: 'post-item', component: PostItemComponent, canActivate: [authGuard] },
+  { path: 'radar', component: RadarComponent, canActivate: [authGuard] },
+  { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
+  
+  // Wildcard - redirect ke home
+  { path: '**', redirectTo: '' }
 ];

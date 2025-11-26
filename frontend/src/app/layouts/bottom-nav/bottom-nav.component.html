@@ -22,9 +22,21 @@
     <span class="text-[10px] font-medium">Radar</span>
   </a>
 
-  <a routerLink="/profile" routerLinkActive="text-uii-blue dark:text-uii-gold" class="flex flex-col items-center text-gray-400 dark:text-gray-500 hover:text-uii-blue dark:hover:text-uii-gold transition group w-1/5">
-    <i class="ph ph-user text-2xl mb-1 group-hover:-translate-y-1 transition-transform"></i>
-    <span class="text-[10px] font-medium">Akun</span>
-  </a>
+  <!-- Profile / Login -->
+  @if (isAuthenticated()) {
+    <a routerLink="/profile" routerLinkActive="text-uii-blue dark:text-uii-gold" class="flex flex-col items-center text-gray-400 dark:text-gray-500 hover:text-uii-blue dark:hover:text-uii-gold transition group w-1/5">
+      <img 
+        [src]="currentUser()?.avatar || 'https://i.pravatar.cc/150'" 
+        [alt]="currentUser()?.name"
+        class="w-6 h-6 rounded-full object-cover mb-1 group-hover:-translate-y-1 transition-transform border border-gray-300 dark:border-gray-600"
+      >
+      <span class="text-[10px] font-medium">Akun</span>
+    </a>
+  } @else {
+    <a routerLink="/login" class="flex flex-col items-center text-gray-400 dark:text-gray-500 hover:text-uii-blue dark:hover:text-uii-gold transition group w-1/5">
+      <i class="ph ph-sign-in text-2xl mb-1 group-hover:-translate-y-1 transition-transform"></i>
+      <span class="text-[10px] font-medium">Masuk</span>
+    </a>
+  }
 
 </nav>

@@ -1,6 +1,6 @@
 import { Item, Category } from '../models/item.model';
 
-// Dummy items data
+// Dummy items data dengan badge system
 export const MOCK_ITEMS: Item[] = [
   {
     id: '1',
@@ -12,8 +12,10 @@ export const MOCK_ITEMS: Item[] = [
     date: '05 Sep',
     time: '07:55 PM',
     location: 'College Ground',
-    contactName: 'Ahmad Fauzi',
-    contactPhone: '081234567890',
+    reporterId: '1',
+    reporterName: 'Ahmad Fauzi',
+    reporterBadge: 'blue',
+    reporterPhone: '081234567890',
     createdAt: new Date('2024-09-05')
   },
   {
@@ -26,8 +28,10 @@ export const MOCK_ITEMS: Item[] = [
     date: '10 Sep',
     time: '12:30 PM',
     location: 'Kantin FTI',
-    contactName: 'Budi Santoso',
-    contactPhone: '081298765432',
+    reporterId: '2',
+    reporterName: 'Dr. Budi Santoso',
+    reporterBadge: 'gold',
+    reporterPhone: '081298765432',
     createdAt: new Date('2024-09-10')
   },
   {
@@ -40,8 +44,10 @@ export const MOCK_ITEMS: Item[] = [
     date: '12 Sep',
     time: '03:00 PM',
     location: 'Parkiran Rektorat',
-    contactName: 'Siti Aminah',
-    contactPhone: '082112345678',
+    reporterId: '3',
+    reporterName: 'Siti Aminah',
+    reporterBadge: 'blue',
+    reporterPhone: '082112345678',
     createdAt: new Date('2024-09-12')
   },
   {
@@ -54,8 +60,10 @@ export const MOCK_ITEMS: Item[] = [
     date: '14 Sep',
     time: '08:15 AM',
     location: 'Masjid Ulil Albab',
-    contactName: 'Rizky Pratama',
-    contactPhone: '085678901234',
+    reporterId: '4',
+    reporterName: 'Rizky Pratama',
+    reporterBadge: 'blue',
+    reporterPhone: '085678901234',
     createdAt: new Date('2024-09-14')
   },
   {
@@ -68,8 +76,10 @@ export const MOCK_ITEMS: Item[] = [
     date: '15 Sep',
     time: '04:45 PM',
     location: 'Lab Komputer FTI',
-    contactName: 'Dimas Aditya',
-    contactPhone: '087654321098',
+    reporterId: '6',
+    reporterName: 'John Doe',
+    reporterBadge: 'gray',
+    reporterPhone: '087654321098',
     createdAt: new Date('2024-09-15')
   },
   {
@@ -82,8 +92,10 @@ export const MOCK_ITEMS: Item[] = [
     date: '16 Sep',
     time: '10:00 AM',
     location: 'Gedung Kuliah Umum',
-    contactName: 'Rina Wulandari',
-    contactPhone: '089012345678',
+    reporterId: '5',
+    reporterName: 'Rina Wulandari',
+    reporterBadge: 'gold',
+    reporterPhone: '089012345678',
     createdAt: new Date('2024-09-16')
   },
   {
@@ -96,8 +108,10 @@ export const MOCK_ITEMS: Item[] = [
     date: '18 Sep',
     time: '02:30 PM',
     location: 'Perpustakaan Pusat',
-    contactName: 'Andi Wijaya',
-    contactPhone: '081345678901',
+    reporterId: '1',
+    reporterName: 'Ahmad Fauzi',
+    reporterBadge: 'blue',
+    reporterPhone: '081345678901',
     createdAt: new Date('2024-09-18')
   },
   {
@@ -110,40 +124,44 @@ export const MOCK_ITEMS: Item[] = [
     date: '20 Sep',
     time: '11:20 AM',
     location: 'Toilet FTI Lt. 2',
-    contactName: 'Maya Sari',
-    contactPhone: '082234567890',
+    reporterId: '3',
+    reporterName: 'Siti Aminah',
+    reporterBadge: 'blue',
+    reporterPhone: '082234567890',
     createdAt: new Date('2024-09-20')
   },
   {
-  id: '9',
-  title: 'Payung Hitam',
-  description: 'Ditemukan payung hitam di dekat parkiran sepeda FTI. Belum ada yang mengaku.',
-  category: 'others',
-  status: 'found',
-  imageUrl: 'https://images.unsplash.com/photo-1592928307985-2f8d5f3c7eaf?w=400',
-  date: '21 Sep',
-  time: '08:45 AM',
-  location: 'Parkiran Sepeda FTI',
-  contactName: 'Rizky Ahmad',
-  contactPhone: '081234567891',
-  createdAt: new Date('2024-09-21')
-},
-{
-  id: '10',
-  title: 'Dompet Cokelat',
-  description: 'Dompet cokelat berisi beberapa kartu mahasiswa ditemukan di kantin FTI.',
-  category: 'others',
-  status: 'found',
-  imageUrl: 'https://images.unsplash.com/photo-1600180758895-f8f0f31b8c5b?w=400',
-  date: '22 Sep',
-  time: '01:30 PM',
-  location: 'Kantin FTI Lt. 1',
-  contactName: 'Nina Putri',
-  contactPhone: '082345678912',
-  createdAt: new Date('2024-09-22')
-},
-
-  
+    id: '9',
+    title: 'Payung Hitam',
+    description: 'Ditemukan payung hitam di dekat parkiran sepeda FTI. Belum ada yang mengaku.',
+    category: 'others',
+    status: 'found',
+    imageUrl: 'https://images.unsplash.com/photo-1592928307985-2f8d5f3c7eaf?w=400',
+    date: '21 Sep',
+    time: '08:45 AM',
+    location: 'Parkiran Sepeda FTI',
+    reporterId: '4',
+    reporterName: 'Rizky Pratama',
+    reporterBadge: 'blue',
+    reporterPhone: '081234567891',
+    createdAt: new Date('2024-09-21')
+  },
+  {
+    id: '10',
+    title: 'Dompet Cokelat',
+    description: 'Dompet cokelat berisi beberapa kartu mahasiswa ditemukan di kantin FTI.',
+    category: 'wallet',
+    status: 'found',
+    imageUrl: 'https://images.unsplash.com/photo-1600180758895-f8f0f31b8c5b?w=400',
+    date: '22 Sep',
+    time: '01:30 PM',
+    location: 'Kantin FTI Lt. 1',
+    reporterId: '2',
+    reporterName: 'Dr. Budi Santoso',
+    reporterBadge: 'gold',
+    reporterPhone: '082345678912',
+    createdAt: new Date('2024-09-22')
+  }
 ];
 
 // Categories untuk filter

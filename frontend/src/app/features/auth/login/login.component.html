@@ -1,0 +1,183 @@
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+  <div class="w-full max-w-md">
+    <!-- Logo & Header -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-uii-blue rounded-2xl mb-4">
+        <i class="ph-fill ph-magnifying-glass text-white text-3xl"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Lost & Found UII</h1>
+      <p class="text-gray-500 dark:text-gray-400 mt-2">Masuk untuk melaporkan atau mencari barang</p>
+    </div>
+
+    <!-- Login Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8">
+      <!-- SSO Header -->
+      <div class="flex items-center gap-3 pb-6 border-b border-gray-200 dark:border-gray-700">
+        <img 
+          src="/assets/LogoUII.png" 
+          alt="Logo UII" 
+          class="w-12 h-12 object-contain"
+        >
+        <div>
+          <h2 class="font-semibold text-gray-900 dark:text-white">SSO Universitas Islam Indonesia</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Single Sign-On</p>
+        </div>
+      </div>
+
+      <!-- Login Form -->
+      <form (ngSubmit)="onSubmit()" class="mt-6 space-y-5">
+        <!-- Email -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Email UII
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="ph ph-envelope text-gray-400 text-lg"></i>
+            </div>
+            <input
+              type="email"
+              [(ngModel)]="email"
+              name="email"
+              placeholder="nama&#64;students.uii.ac.id"
+              class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl
+                     bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                     placeholder-gray-400 dark:placeholder-gray-500
+                     focus:ring-2 focus:ring-uii-blue focus:border-transparent
+                     transition-all"
+              [class.border-red-500]="errorMessage && !email"
+            >
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Password
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="ph ph-lock text-gray-400 text-lg"></i>
+            </div>
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              [(ngModel)]="password"
+              name="password"
+              placeholder="Masukkan password"
+              class="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-xl
+                     bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                     placeholder-gray-400 dark:placeholder-gray-500
+                     focus:ring-2 focus:ring-uii-blue focus:border-transparent
+                     transition-all"
+              [class.border-red-500]="errorMessage && !password"
+            >
+            <button
+              type="button"
+              (click)="togglePasswordVisibility()"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center"
+            >
+              <i [class]="showPassword ? 'ph ph-eye-slash' : 'ph ph-eye'" class="text-gray-400 text-lg hover:text-gray-600"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        @if (errorMessage) {
+          <div class="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <i class="ph ph-warning-circle text-red-500 text-lg"></i>
+            <p class="text-sm text-red-600 dark:text-red-400">{{ errorMessage }}</p>
+          </div>
+        }
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          [disabled]="isLoading"
+          class="w-full py-3 px-4 bg-uii-blue hover:bg-uii-blue/90 text-white font-medium rounded-xl
+                 transition-all duration-200 flex items-center justify-center gap-2
+                 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          @if (isLoading) {
+            <i class="ph ph-spinner animate-spin text-xl"></i>
+            <span>Memproses...</span>
+          } @else {
+            <i class="ph ph-sign-in text-xl"></i>
+            <span>Masuk</span>
+          }
+        </button>
+      </form>
+
+      <!-- Demo Login Section -->
+      <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <p class="text-sm text-center text-gray-500 dark:text-gray-400 mb-4">
+          Demo: Pilih jenis akun untuk login cepat
+        </p>
+        <div class="grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            (click)="quickLogin('student')"
+            class="flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 dark:border-gray-700
+                   hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+          >
+            <i class="ph-fill ph-student text-blue-500 text-xl"></i>
+            <span class="text-xs text-gray-600 dark:text-gray-400">Mahasiswa</span>
+          </button>
+          <button
+            type="button"
+            (click)="quickLogin('staff')"
+            class="flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 dark:border-gray-700
+                   hover:border-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-all"
+          >
+            <i class="ph-fill ph-seal-check text-yellow-500 text-xl"></i>
+            <span class="text-xs text-gray-600 dark:text-gray-400">Staff</span>
+          </button>
+          <button
+            type="button"
+            (click)="quickLogin('public')"
+            class="flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 dark:border-gray-700
+                   hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+          >
+            <i class="ph ph-user text-gray-500 text-xl"></i>
+            <span class="text-xs text-gray-600 dark:text-gray-400">Umum</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Badge Info -->
+      <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+        <p class="text-xs text-gray-500 dark:text-gray-400 text-center mb-3">Badge kepercayaan berdasarkan email:</p>
+        <div class="space-y-2 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full">
+              <i class="ph-fill ph-seal-check"></i> Staff UII
+            </span>
+            <span class="text-gray-500 dark:text-gray-400">&#64;uii.ac.id</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full">
+              <i class="ph-fill ph-student"></i> Mahasiswa UII
+            </span>
+            <span class="text-gray-500 dark:text-gray-400">&#64;students.uii.ac.id</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full">
+              <i class="ph ph-user"></i> Umum
+            </span>
+            <span class="text-gray-500 dark:text-gray-400">Email lainnya</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Back to Home -->
+    <div class="text-center mt-6">
+      <a 
+        routerLink="/" 
+        class="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-uii-blue dark:hover:text-uii-gold transition-colors"
+      >
+        <i class="ph ph-arrow-left"></i>
+        <span>Kembali ke Beranda</span>
+      </a>
+    </div>
+  </div>
+</div>
