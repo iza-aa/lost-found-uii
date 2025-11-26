@@ -6,3 +6,5 @@ export * from './search-bar/search-bar.component';
 export * from './category-filter/category-filter.component';
 export * from './user-badge/user-badge.component';
 export * from './cube-loader/cube-loader.component';
+export * from './leaflet-map/leaflet-map.component';
+export * from './confirm-modal/confirm-modal.component';

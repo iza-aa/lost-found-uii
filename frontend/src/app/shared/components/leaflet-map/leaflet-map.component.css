@@ -1,0 +1,161 @@
+/* Leaflet Map Component Styles */
+
+/* Container */
+:host {
+  display: block;
+}
+
+/* Leaflet overrides */
+:host ::ng-deep .leaflet-container {
+  font-family: inherit;
+  border-radius: 0.75rem;
+  z-index: 0;
+}
+
+:host ::ng-deep .leaflet-pane {
+  z-index: 0;
+}
+
+:host ::ng-deep .leaflet-top,
+:host ::ng-deep .leaflet-bottom {
+  z-index: 1;
+}
+
+/* Zoom Control */
+:host ::ng-deep .leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+:host ::ng-deep .leaflet-control-zoom a {
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  color: #374151 !important;
+  background: white !important;
+  border: none !important;
+}
+
+:host ::ng-deep .leaflet-control-zoom a:hover {
+  background: #f3f4f6 !important;
+}
+
+/* Dark mode zoom control */
+.dark :host ::ng-deep .leaflet-control-zoom a {
+  background: #1f2937 !important;
+  color: #d1d5db !important;
+}
+
+.dark :host ::ng-deep .leaflet-control-zoom a:hover {
+  background: #374151 !important;
+}
+
+/* Marker Styles */
+:host ::ng-deep .marker-pin {
+  width: 36px;
+  height: 36px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+:host ::ng-deep .marker-pin:hover {
+  transform: rotate(-45deg) scale(1.1);
+}
+
+:host ::ng-deep .marker-pin i {
+  transform: rotate(45deg);
+  color: white;
+  font-size: 16px;
+}
+
+:host ::ng-deep .marker-pin.default {
+  background: linear-gradient(135deg, #FDBF0F 0%, #E6A32F 100%);
+}
+
+:host ::ng-deep .marker-pin.default i {
+  color: #003479;
+}
+
+:host ::ng-deep .marker-pin.lost {
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+}
+
+:host ::ng-deep .marker-pin.found {
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+}
+
+:host ::ng-deep .marker-pin.selected {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #FDBF0F 0%, #E6A32F 100%);
+}
+
+:host ::ng-deep .marker-pin.selected i {
+  color: #003479;
+  font-size: 18px;
+}
+
+/* User Location Marker */
+:host ::ng-deep .user-location {
+  width: 20px;
+  height: 20px;
+  background: #3B82F6;
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+  position: relative;
+}
+
+:host ::ng-deep .user-location .pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 50%;
+  animation: pulse 2s ease-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+/* Custom Popup */
+:host ::ng-deep .custom-popup .leaflet-popup-content-wrapper {
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+:host ::ng-deep .custom-popup .leaflet-popup-content {
+  margin: 12px;
+}
+
+:host ::ng-deep .custom-popup .leaflet-popup-tip {
+  background: white;
+}
+
+.dark :host ::ng-deep .custom-popup .leaflet-popup-content-wrapper {
+  background: #1f2937;
+}
+
+.dark :host ::ng-deep .custom-popup .leaflet-popup-tip {
+  background: #1f2937;
+}

@@ -4,15 +4,14 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { Item, User } from '../../core/models';
 import { MOCK_ITEMS } from '../../core/mocks';
-import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
-import { UserBadgeComponent } from '../../shared/components/user-badge/user-badge.component';
+import { StatusBadgeComponent, UserBadgeComponent, ConfirmModalComponent } from '../../shared/components';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, RouterModule, StatusBadgeComponent, UserBadgeComponent],
+  imports: [CommonModule, RouterModule, StatusBadgeComponent, UserBadgeComponent, ConfirmModalComponent],
   templateUrl: './profile.component.html',
-  styleUrl: './profile.component.css'
+  styleUrls: ['./profile.component.css']
 })
 export class ProfileComponent implements OnInit {
   currentUser = this.authService.currentUser;

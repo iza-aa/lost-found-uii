@@ -149,8 +149,8 @@
       </div>
 
       <!-- Right Column: Laporan Saya -->
-      <div class="lg:col-span-2 mt-6 lg:mt-0">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div class="lg:col-span-2 mt-6 lg:mt-0 ">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden md:h-[655px]">
           <!-- Header -->
           <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <h2 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -192,7 +192,7 @@
           </div>
 
           <!-- Items List -->
-          <div class="divide-y divide-gray-100 dark:divide-gray-700">
+          <div class="divide-y divide-gray-100 dark:divide-gray-700 md:h-[calc(655px-120px)] md:overflow-y-auto scrollbar-hide">
             @for (item of filteredItems(); track item.id) {
               <button 
                 (click)="navigateToItem(item)"
@@ -232,7 +232,7 @@
                 </div>
               </button>
             } @empty {
-              <div class="px-6 py-12 text-center">
+              <div class="px-6 py-12 text-center md:h-[calc(655px-120px)] md:flex md:flex-col md:items-center md:justify-center">
                 <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
                   <i class="ph ph-file-dashed text-3xl text-gray-400"></i>
                 </div>
@@ -262,39 +262,17 @@
   </div>
 
   <!-- Logout Confirmation Modal -->
-  @if (showLogoutModal()) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <!-- Backdrop -->
-      <div 
-        class="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        (click)="closeLogoutModal()">
-      </div>
-      
-      <!-- Modal -->
-      <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-sm animate-scale-up">
-        <div class="text-center">
-          <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="ph ph-sign-out text-3xl text-red-500"></i>
-          </div>
-          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Keluar dari Akun?</h3>
-          <p class="text-gray-500 dark:text-gray-400 mb-6">Kamu perlu login kembali untuk mengakses fitur lengkap.</p>
-          
-          <div class="flex gap-3">
-            <button 
-              (click)="closeLogoutModal()"
-              class="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-              Batal
-            </button>
-            <button 
-              (click)="confirmLogout()"
-              class="flex-1 py-3 px-4 bg-red-500 text-white font-medium rounded-xl hover:bg-red-600 transition">
-              Keluar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  }
+  <app-confirm-modal
+    [isOpen]="showLogoutModal()"
+    type="danger"
+    title="Keluar dari Akun?"
+    message="Kamu perlu login kembali untuk mengakses fitur lengkap."
+    confirmText="Keluar"
+    cancelText="Batal"
+    icon="ph ph-sign-out"
+    (confirm)="confirmLogout()"
+    (cancel)="closeLogoutModal()"
+  ></app-confirm-modal>
 
   <!-- Edit Profile Modal (Placeholder) -->
   @if (showEditProfileModal()) {

@@ -1,0 +1,61 @@
+@if (isOpen) {
+  <!-- Backdrop -->
+  <div 
+    class="fixed inset-0 bg-black/50 z-[2000] flex items-center justify-center p-4"
+    (click)="onBackdropClick()"
+  >
+    <!-- Modal -->
+    <div 
+      class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-xl animate-modal"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Content -->
+      <div class="p-6 text-center">
+        <!-- Icon -->
+        <div class="flex justify-center mb-4">
+          <div 
+            class="w-16 h-16 rounded-full flex items-center justify-center"
+            [ngClass]="getIconBgClass()"
+          >
+            <i 
+              [class]="getIconClass()" 
+              class="text-3xl"
+              [ngClass]="getIconColorClass()"
+            ></i>
+          </div>
+        </div>
+
+        <!-- Title -->
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          {{ title }}
+        </h3>
+
+        <!-- Message -->
+        <p class="text-gray-600 dark:text-gray-400 text-sm">
+          {{ message }}
+        </p>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex border-t border-gray-200 dark:border-gray-700">
+        @if (showCancel) {
+          <button
+            (click)="onCancel()"
+            class="flex-1 py-3 text-gray-700 dark:text-gray-300 font-medium 
+                   hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
+                   border-r border-gray-200 dark:border-gray-700"
+          >
+            {{ cancelText }}
+          </button>
+        }
+        <button
+          (click)="onConfirm()"
+          class="flex-1 py-3 font-medium transition-colors"
+          [ngClass]="getConfirmBtnClass()"
+        >
+          {{ confirmText }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
