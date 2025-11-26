@@ -18,113 +18,106 @@ export const MOCK_LOCATIONS: CampusLocation[] = [
   {
     id: 'fti',
     name: 'Gedung FTI (Fakultas Teknologi Industri)',
-    lat: -7.6872,
-    lng: 110.4098,
+    lat: -7.686369,
+    lng: 110.410806,
     description: 'Gedung Fakultas Teknologi Industri'
   },
   {
     id: 'fh',
     name: 'Gedung Fakultas Hukum',
-    lat: -7.6880,
-    lng: 110.4085,
+    lat: -7.689302,
+    lng: 110.412969,
     description: 'Gedung Fakultas Hukum'
-  },
-  {
-    id: 'fe',
-    name: 'Gedung Fakultas Ekonomi',
-    lat: -7.6878,
-    lng: 110.4102,
-    description: 'Gedung Fakultas Ekonomi dan Bisnis'
   },
   {
     id: 'fiai',
     name: 'Gedung FIAI',
-    lat: -7.6868,
-    lng: 110.4088,
+    lat: -7.688265,
+    lng: 110.414749,
     description: 'Fakultas Ilmu Agama Islam'
   },
   {
     id: 'fpsb',
     name: 'Gedung FPSB',
-    lat: -7.6885,
-    lng: 110.4092,
+    lat: -7.687150,
+    lng: 110.414422,
     description: 'Fakultas Psikologi dan Ilmu Sosial Budaya'
   },
   {
     id: 'perpus',
-    name: 'Perpustakaan Pusat',
-    lat: -7.6870,
-    lng: 110.4090,
+    name: 'Perpustakaan UII',
+    lat: -7.688298,
+    lng: 110.415142,
     description: 'Perpustakaan Pusat UII'
   },
   {
     id: 'masjid',
     name: 'Masjid Ulil Albab',
-    lat: -7.6865,
-    lng: 110.4095,
+    lat: -7.687475,
+    lng: 110.415268,
     description: 'Masjid Kampus UII'
   },
   {
     id: 'rektorat',
     name: 'Gedung Rektorat',
-    lat: -7.6882,
-    lng: 110.4078,
+    lat: -7.687939,
+    lng: 110.413624,
     description: 'Gedung Rektorat UII'
   },
   {
     id: 'gku',
     name: 'Gedung Kuliah Umum (GKU)',
-    lat: -7.6875,
-    lng: 110.4085,
+    lat: -7.688357,
+    lng: 110.413558,
     description: 'Gedung Kuliah Umum'
   },
   {
     id: 'auditorium',
     name: 'Auditorium KH. Abdurrahman Wahid',
-    lat: -7.6888,
-    lng: 110.4100,
+    lat: -7.687475,
+    lng: 110.415268,
     description: 'Auditorium Kampus'
   },
   {
     id: 'kantin',
-    name: 'Kantin Pusat',
-    lat: -7.6873,
-    lng: 110.4082,
-    description: 'Kantin Pusat Kampus'
+    name: 'Kantin FTI',
+    lat: -7.687475,
+    lng: 110.411443,
+    description: 'Kantin FTI'
   },
   {
     id: 'parkir-motor',
-    name: 'Parkiran Motor',
-    lat: -7.6890,
-    lng: 110.4095,
+    name: 'Parkiran Motor FTI',
+    lat: -7.686937,
+    lng: 110.411773,
     description: 'Area Parkir Motor'
   },
   {
     id: 'parkir-mobil',
-    name: 'Parkiran Mobil',
-    lat: -7.6892,
-    lng: 110.4088,
+    name: 'Parkiran Mobil FTI',
+    lat: -7.686968,
+    lng: 110.410962,
     description: 'Area Parkir Mobil'
   },
   {
     id: 'sport-center',
-    name: 'Sport Center',
-    lat: -7.6860,
-    lng: 110.4080,
+    name: 'GOR UII',
+    lat: -7.686763,
+    lng: 110.409404,
     description: 'Gedung Olahraga'
   },
   {
     id: 'asrama',
     name: 'Asrama Mahasiswa',
-    lat: -7.6855,
-    lng: 110.4075,
+    lat: -7.690400,
+    lng: 110.413203,
     description: 'Asrama Mahasiswa UII'
   },
   {
     id: 'lainnya',
     name: 'Lokasi Lainnya',
-    lat: -7.6875,
-    lng: 110.4095,
+    lat: -7.687528,
+    lng: 110.412678,
     description: 'Lokasi lain di sekitar kampus'
   }
 ];

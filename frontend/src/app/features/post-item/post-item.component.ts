@@ -3,8 +3,8 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import type * as LeafletTypes from 'leaflet';
-import { ItemCategory, ItemStatus } from '../../core/models';
-import { MOCK_CATEGORIES, MOCK_LOCATIONS, UII_CENTER, CampusLocation } from '../../core/mocks';
+import { Item, ItemCategory, ItemStatus } from '../../core/models';
+import { MOCK_CATEGORIES, MOCK_LOCATIONS, MOCK_ITEMS, UII_CENTER, CampusLocation } from '../../core/mocks';
 import { AuthService } from '../../core/services/auth.service';
 
 // Leaflet types only - actual import is dynamic
@@ -25,9 +25,14 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Steps
   currentStep = signal(1);
-  totalSteps = 5;
+  totalSteps = 6;
   isSubmitting = signal(false);
   isSuccess = signal(false);
+  isCheckingSuggestions = signal(false);
+
+  // Suggestions
+  similarItems = signal<Item[]>([]);
+  selectedSuggestion = signal<Item | null>(null);
 
   // Form Data
   formData = {
@@ -62,9 +67,16 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {}
 
   ngOnDestroy(): void {
+    this.destroyMap();
+  }
+
+  private destroyMap(): void {
     if (this.map) {
       this.map.remove();
       this.map = null;
+    }
+    if (this.marker) {
+      this.marker = null;
     }
   }
 
@@ -72,10 +84,20 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   nextStep(): void {
     if (this.canProceed()) {
       if (this.currentStep() < this.totalSteps) {
+        // Destroy map before leaving step 5
+        if (this.currentStep() === 5) {
+          this.destroyMap();
+        }
+        
         this.currentStep.update(v => v + 1);
         
         if (this.currentStep() === 5 && this.isBrowser) {
           setTimeout(() => this.initMap(), 100);
+        }
+        
+        // Step 6: Check for similar items
+        if (this.currentStep() === 6) {
+          this.checkSimilarItems();
         }
       }
     }
@@ -83,14 +105,30 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
 
   prevStep(): void {
     if (this.currentStep() > 1) {
+      // Destroy map before leaving step 5
+      if (this.currentStep() === 5) {
+        this.destroyMap();
+      }
+      
       this.currentStep.update(v => v - 1);
+      
+      // Re-init map when going back to step 5
+      if (this.currentStep() === 5 && this.isBrowser) {
+        setTimeout(() => this.initMap(), 100);
+      }
     }
   }
 
   goToStep(step: number): void {
     if (step <= this.currentStep() && step >= 1) {
+      // Destroy map if leaving step 5
+      if (this.currentStep() === 5 && step !== 5) {
+        this.destroyMap();
+      }
+      
       this.currentStep.set(step);
       
+      // Init map when going to step 5
       if (step === 5 && this.isBrowser) {
         setTimeout(() => this.initMap(), 100);
       }
@@ -110,6 +148,8 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
         return this.formData.category !== '';
       case 5:
         return this.formData.location !== null;
+      case 6:
+        return true; // Can always proceed from suggestions
       default:
         return false;
     }
@@ -194,15 +234,40 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Click on map
     this.map.on('click', (e: LeafletTypes.LeafletMouseEvent) => {
+      // DEBUG: Log coordinates for easy copying
+      console.log(`📍 Koordinat: { lat: ${e.latlng.lat}, lng: ${e.latlng.lng} }`);
+      
       const customLocation: CampusLocation = {
         id: 'custom',
         name: 'Lokasi Dipilih',
         lat: e.latlng.lat,
         lng: e.latlng.lng,
-        description: `Koordinat: ${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`
+        description: `Koordinat: ${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`
       };
       this.selectLocation(customLocation);
     });
+
+    // Restore marker if location was already selected
+    if (this.formData.location) {
+      this.restoreMarker(this.formData.location);
+    }
+  }
+
+  private restoreMarker(location: CampusLocation): void {
+    if (!this.map || !L) return;
+
+    const customIcon = L.divIcon({
+      className: 'custom-marker',
+      html: `<div style="width:32px;height:32px;background:#FDBF0F;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
+               <i class="ph-fill ph-map-pin" style="color:#003479;font-size:16px;"></i>
+             </div>`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 32]
+    });
+
+    this.marker = L.marker([location.lat, location.lng], { icon: customIcon }).addTo(this.map);
+    this.marker.bindPopup(`<b>${location.name}</b>`);
+    this.map.setView([location.lat, location.lng], 17);
   }
 
   selectLocation(location: CampusLocation): void {
@@ -235,6 +300,63 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     if (location) {
       this.selectLocation(location);
     }
+  }
+
+  // Step 6: Suggestions
+  checkSimilarItems(): void {
+    this.isCheckingSuggestions.set(true);
+    this.selectedSuggestion.set(null);
+
+    // Simulate API call delay
+    setTimeout(() => {
+      const similar = this.findSimilarItems();
+      this.similarItems.set(similar);
+      this.isCheckingSuggestions.set(false);
+    }, 1000);
+  }
+
+  private findSimilarItems(): Item[] {
+    const { title, description, category, status } = this.formData;
+    const searchTerms = `${title} ${description}`.toLowerCase().split(/\s+/);
+    
+    // Get opposite status (if user lost something, show found items and vice versa)
+    const targetStatus = status === 'lost' ? 'found' : 'lost';
+    
+    return MOCK_ITEMS
+      .filter(item => {
+        // Filter by opposite status
+        if (item.status !== targetStatus) return false;
+        
+        // Filter by same category (higher priority)
+        const sameCategory = item.category === category;
+        
+        // Check for keyword matches in title and description
+        const itemText = `${item.title} ${item.description}`.toLowerCase();
+        const matchScore = searchTerms.filter(term => 
+          term.length > 2 && itemText.includes(term)
+        ).length;
+        
+        // Return if same category OR has keyword matches
+        return sameCategory || matchScore >= 2;
+      })
+      .slice(0, 5); // Limit to 5 suggestions
+  }
+
+  selectSuggestion(item: Item): void {
+    this.selectedSuggestion.set(item);
+  }
+
+  confirmSuggestion(): void {
+    // Navigate to the item detail (would be implemented later)
+    const item = this.selectedSuggestion();
+    if (item) {
+      this.router.navigate(['/item', item.id]);
+    }
+  }
+
+  skipSuggestions(): void {
+    // Continue to submit the form
+    this.submitForm();
   }
 
   // Submit
@@ -305,6 +427,8 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     };
     this.currentStep.set(1);
     this.isSuccess.set(false);
+    this.similarItems.set([]);
+    this.selectedSuggestion.set(null);
     
     if (this.marker && this.map) {
       this.map.removeLayer(this.marker);
@@ -318,7 +442,8 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       'Kamu punya bukti foto?',
       'Masukkan nama dan ciri-ciri barang',
       'Pilih kategori barang',
-      'Pilih lokasi kejadian'
+      'Pilih lokasi kejadian',
+      'Apakah ini barang kamu?'
     ];
     return titles[this.currentStep() - 1] || '';
   }
@@ -329,7 +454,8 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       'Foto membantu barang lebih mudah dikenali (opsional)',
       'Berikan detail agar mudah ditemukan',
       'Kategori membantu pencarian lebih cepat',
-      'Tandai di peta tempat barang hilang/ditemukan'
+      'Tandai di peta tempat barang hilang/ditemukan',
+      'Kami menemukan barang serupa, cek dulu sebelum lapor'
     ];
     return subtitles[this.currentStep() - 1] || '';
   }

@@ -33,14 +33,17 @@
             "prerender": true,
             "ssr": {
               "entry": "server.ts"
-            }
+            },
+            "allowedCommonJsDependencies": [
+              "leaflet"
+            ]
           },
           "configurations": {
             "production": {
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kb",
+                  "maximumWarning": "700kb",
                   "maximumError": "1mb"
                 },
                 {

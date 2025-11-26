@@ -31,19 +31,19 @@
       <!-- Progress Bar -->
       <div class="mb-8">
         <div class="flex items-center justify-between mb-2">
-          @for (step of [1,2,3,4,5]; track step) {
+          @for (step of [1,2,3,4,5,6]; track step) {
             <button 
               (click)="goToStep(step)"
               [class]="step <= currentStep() 
-                ? 'w-10 h-10 rounded-full bg-uii-blue text-white font-semibold flex items-center justify-center transition' 
-                : 'w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 font-semibold flex items-center justify-center'"
+                ? 'w-8 h-8 rounded-full bg-uii-blue text-white text-sm font-semibold flex items-center justify-center transition' 
+                : 'w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 text-sm font-semibold flex items-center justify-center'"
               [disabled]="step > currentStep()">
               {{ step }}
             </button>
-            @if (step < 5) {
+            @if (step < 6) {
               <div [class]="step < currentStep() 
-                ? 'flex-1 h-1 bg-uii-blue mx-2' 
-                : 'flex-1 h-1 bg-gray-200 dark:bg-gray-700 mx-2'"></div>
+                ? 'flex-1 h-1 bg-uii-blue mx-1' 
+                : 'flex-1 h-1 bg-gray-200 dark:bg-gray-700 mx-1'"></div>
             }
           }
         </div>
@@ -220,6 +220,87 @@
           </div>
         }
 
+        <!-- Step 6: Suggestions -->
+        @if (currentStep() === 6) {
+          <div class="space-y-4">
+            @if (isCheckingSuggestions()) {
+              <!-- Loading State -->
+              <div class="text-center py-8">
+                <i class="ph ph-spinner animate-spin text-4xl text-uii-blue mb-3"></i>
+                <p class="text-gray-500 dark:text-gray-400">Mencari barang serupa...</p>
+              </div>
+            } @else if (similarItems().length > 0) {
+              <!-- Similar Items Found -->
+              <div class="space-y-3">
+                @for (item of similarItems(); track item.id) {
+                  <button 
+                    (click)="selectSuggestion(item)"
+                    [class]="selectedSuggestion()?.id === item.id 
+                      ? 'w-full p-4 rounded-xl border-2 border-uii-blue bg-blue-50 dark:bg-blue-900/20 transition-all text-left' 
+                      : 'w-full p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 transition-all text-left'">
+                    <div class="flex gap-4">
+                      @if (item.imageUrl) {
+                        <img [src]="item.imageUrl" [alt]="item.title" class="w-20 h-20 rounded-lg object-cover flex-shrink-0">
+                      } @else {
+                        <div class="w-20 h-20 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                          <i class="ph ph-image text-2xl text-gray-400"></i>
+                        </div>
+                      }
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                          <span [class]="item.status === 'found' 
+                            ? 'px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                            : 'px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'">
+                            {{ item.status === 'found' ? 'Ditemukan' : 'Hilang' }}
+                          </span>
+                          <span class="text-xs text-gray-400">{{ item.date }}</span>
+                        </div>
+                        <h4 class="font-semibold text-gray-900 dark:text-white truncate">{{ item.title }}</h4>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{{ item.description }}</p>
+                        <p class="text-xs text-gray-400 mt-1">
+                          <i class="ph ph-map-pin"></i> {{ item.location }}
+                        </p>
+                      </div>
+                      @if (selectedSuggestion()?.id === item.id) {
+                        <div class="flex-shrink-0">
+                          <i class="ph-fill ph-check-circle text-uii-blue text-2xl"></i>
+                        </div>
+                      }
+                    </div>
+                  </button>
+                }
+              </div>
+
+              <!-- Selected Suggestion Actions -->
+              @if (selectedSuggestion()) {
+                <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                  <p class="text-sm text-blue-700 dark:text-blue-400 mb-3">
+                    <i class="ph ph-info"></i> Jika ini barang kamu, klik tombol di bawah untuk melihat detail dan menghubungi pelapor.
+                  </p>
+                  <button 
+                    (click)="confirmSuggestion()"
+                    class="w-full py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition flex items-center justify-center gap-2">
+                    <i class="ph ph-eye"></i>
+                    Lihat Detail Barang Ini
+                  </button>
+                </div>
+              }
+            } @else {
+              <!-- No Similar Items -->
+              <div class="text-center py-8">
+                <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i class="ph ph-magnifying-glass text-3xl text-gray-400"></i>
+                </div>
+                <h4 class="font-semibold text-gray-900 dark:text-white mb-1">Tidak ada barang serupa</h4>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  Kami tidak menemukan barang yang cocok.<br>
+                  Silakan lanjut buat laporan baru.
+                </p>
+              </div>
+            }
+          </div>
+        }
+
         <!-- Navigation Buttons -->
         <div class="flex gap-3 mt-8">
           @if (currentStep() > 1) {
@@ -238,22 +319,29 @@
               class="flex-1 py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
               @if (currentStep() === 2 && !formData.imageUrl) {
                 Lewati
+              } @else if (currentStep() === 5) {
+                Cek Barang Serupa
               } @else {
                 Lanjut
               }
               <i class="ph ph-arrow-right"></i>
             </button>
           } @else {
+            <!-- Step 6: Final Submit -->
             <button 
-              (click)="submitForm()"
-              [disabled]="!canProceed() || isSubmitting()"
+              (click)="skipSuggestions()"
+              [disabled]="isSubmitting() || isCheckingSuggestions()"
               class="flex-1 py-3 px-4 bg-uii-gold text-uii-blue font-semibold rounded-xl hover:bg-yellow-400 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
               @if (isSubmitting()) {
                 <i class="ph ph-spinner animate-spin text-xl"></i>
                 Mengirim...
               } @else {
                 <i class="ph ph-paper-plane-tilt"></i>
-                Kirim Laporan
+                @if (similarItems().length > 0) {
+                  Bukan, Buat Laporan Baru
+                } @else {
+                  Kirim Laporan
+                }
               }
             </button>
           }

@@ -60,10 +60,10 @@
           </button>
         }
 
-        <!-- User Menu / Login Button -->
+        <!-- User Menu / Login Button (Desktop Only) -->
         @if (isAuthenticated()) {
-          <!-- User Avatar with Dropdown -->
-          <div class="relative">
+          <!-- User Avatar with Dropdown - Hidden on Mobile -->
+          <div class="relative hidden md:block">
             <button 
               (click)="toggleUserMenu()"
               class="flex items-center gap-2 p-1 rounded-lg hover:bg-white/10 transition">
@@ -72,7 +72,7 @@
                 [alt]="currentUser()?.name"
                 class="w-8 h-8 rounded-full object-cover border-2 border-white/30"
               >
-              <i class="ph ph-caret-down text-sm hidden md:block"></i>
+              <i class="ph ph-caret-down text-sm"></i>
             </button>
 
             <!-- Dropdown Menu -->

@@ -1,0 +1,307 @@
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="flex items-start justify-center min-h-screen pt-48">
+      <div class="text-center">
+        <app-cube-loader></app-cube-loader>
+        <p class="text-gray-500 dark:text-gray-400 mt-6">Memuat detail...</p>
+      </div>
+    </div>
+  }
+
+  <!-- Not Found State -->
+  @if (notFound()) {
+    <div class="flex items-center justify-center min-h-screen px-4">
+      <div class="text-center">
+        <div class="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+          <i class="ph ph-magnifying-glass text-5xl text-gray-400"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Barang Tidak Ditemukan</h2>
+        <p class="text-gray-500 dark:text-gray-400 mb-6">Laporan ini mungkin sudah dihapus atau tidak ada.</p>
+        <button 
+          (click)="goBack()"
+          class="px-6 py-3 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition">
+          Kembali ke Beranda
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Item Detail -->
+  @if (item(); as item) {
+    <!-- Desktop Layout Container -->
+    <div class="lg:max-w-6xl lg:mx-auto lg:px-8 lg:py-8">
+      
+      <!-- Back Button - Desktop -->
+      <button 
+        (click)="goBack()"
+        class="hidden lg:flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-uii-blue dark:hover:text-uii-blue transition mb-6 group">
+        <i class="ph ph-arrow-left text-xl group-hover:-translate-x-1 transition-transform"></i>
+        <span>Kembali</span>
+      </button>
+
+      <!-- Mobile Header with Image -->
+      <div class="relative lg:hidden">
+        <!-- Mobile Back & Share Buttons -->
+        <button 
+          (click)="goBack()"
+          class="absolute top-4 left-4 z-10 w-10 h-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg hover:bg-white dark:hover:bg-gray-800 transition">
+          <i class="ph ph-arrow-left text-xl text-gray-700 dark:text-gray-300"></i>
+        </button>
+        <button 
+          (click)="shareItem()"
+          class="absolute top-4 right-4 z-10 w-10 h-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg hover:bg-white dark:hover:bg-gray-800 transition">
+          <i class="ph ph-share-network text-xl text-gray-700 dark:text-gray-300"></i>
+        </button>
+
+        <!-- Image -->
+        @if (item.imageUrl) {
+          <img [src]="item.imageUrl" [alt]="item.title" class="w-full h-72 object-cover">
+        } @else {
+          <div class="w-full h-72 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+            <i [class]="'ph ' + getCategoryIcon() + ' text-7xl text-gray-400 dark:text-gray-600'"></i>
+          </div>
+        }
+
+        <!-- Status Badge - Mobile Overlay -->
+        <div class="absolute bottom-4 left-4">
+          <app-status-badge [status]="item.status" size="lg"></app-status-badge>
+        </div>
+      </div>
+
+      <!-- Desktop: Image & Map Side by Side -->
+      <div class="hidden lg:grid lg:grid-cols-2 lg:gap-6 lg:mb-6">
+        <!-- Left: Image -->
+        <div class="rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 relative group">
+          @if (item.imageUrl) {
+            <img 
+              [src]="item.imageUrl" 
+              [alt]="item.title" 
+              class="w-full h-[370px] object-cover group-hover:scale-105 transition-transform duration-500">
+          } @else {
+            <div class="w-full h-[358px] bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+              <i [class]="'ph ' + getCategoryIcon() + ' text-8xl text-gray-400 dark:text-gray-600'"></i>
+            </div>
+          }
+          <!-- Status Badge Overlay -->
+          <div class="absolute top-4 left-4">
+            <app-status-badge [status]="item.status" size="lg"></app-status-badge>
+          </div>
+          <!-- Share Button -->
+          <button 
+            (click)="shareItem()"
+            class="absolute top-4 right-4 w-10 h-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg hover:bg-white dark:hover:bg-gray-800 transition opacity-0 group-hover:opacity-100">
+            <i class="ph ph-share-network text-xl text-gray-700 dark:text-gray-300"></i>
+          </button>
+        </div>
+
+        <!-- Right: Map & Location Cards -->
+        <div class="flex flex-col gap-4">
+          <!-- Map Card -->
+          @if (hasMapLocation()) {
+            <div class="rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 relative z-0">
+              <div id="detail-map" class="w-full h-64 relative z-0"></div>
+            </div>
+          }
+
+          <!-- Location Card -->
+          <div class="rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 hover:shadow-2xl transition-shadow">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 rounded-full bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/30 dark:to-red-800/30 flex items-center justify-center shrink-0">
+                <i class="ph-fill ph-map-pin text-2xl text-red-500"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="font-bold text-lg text-gray-900 dark:text-white truncate">{{ getLocationName() }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Kampus UII Yogyakarta</p>
+              </div>
+              @if (hasMapLocation()) {
+                <a 
+                  [href]="'https://www.google.com/maps?q=' + getMapCoordinates()"
+                  target="_blank"
+                  class="w-10 h-10 rounded-full bg-uii-blue/10 flex items-center justify-center hover:bg-uii-blue hover:text-white text-uii-blue transition-all shrink-0">
+                  <i class="ph ph-arrow-square-out text-lg"></i>
+                </a>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Section -->
+      <div class="px-4 py-6 -mt-4 bg-white dark:bg-gray-800 rounded-t-3xl relative lg:mt-0 lg:rounded-2xl lg:shadow-xl lg:border lg:border-gray-200 lg:dark:border-gray-700 lg:p-8">
+        
+        <!-- Title & Category -->
+        <div class="mb-4 lg:mb-6">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-full flex items-center gap-1">
+              <i [class]="'ph ' + getCategoryIcon()"></i>
+              {{ getCategoryLabel() }}
+            </span>
+          </div>
+          <h1 class="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">{{ item.title }}</h1>
+        </div>
+
+        <!-- Date, Time, Location Info -->
+        <div class="flex flex-wrap gap-4 mb-6 text-sm text-gray-500 dark:text-gray-400">
+          <div class="flex items-center gap-1">
+            <i class="ph ph-calendar"></i>
+            <span>{{ item.date }}</span>
+          </div>
+          @if (item.time) {
+            <div class="flex items-center gap-1">
+              <i class="ph ph-clock"></i>
+              <span>{{ item.time }}</span>
+            </div>
+          }
+          <div class="flex items-center gap-1 lg:hidden">
+            <i class="ph ph-map-pin"></i>
+            <span>{{ getLocationName() }}</span>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-6">
+          <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 lg:text-base">Deskripsi</h3>
+          <p class="text-gray-600 dark:text-gray-400 leading-relaxed lg:text-lg">{{ item.description }}</p>
+        </div>
+
+        <!-- Mobile Map (if has coordinates) -->
+        @if (hasMapLocation()) {
+          <div class="mb-6 lg:hidden">
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Lokasi di Peta</h3>
+            <div id="detail-map-mobile" class="w-full h-48 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"></div>
+          </div>
+        }
+
+        <!-- Divider -->
+        <hr class="border-gray-200 dark:border-gray-700 my-6">
+
+        <!-- Reporter Info -->
+        <div class="mb-6">
+          <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 lg:text-base">Dilaporkan oleh</h3>
+          <div class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <div class="w-12 h-12 lg:w-14 lg:h-14 bg-uii-blue/10 rounded-full flex items-center justify-center">
+              <i class="ph-fill ph-user text-2xl lg:text-3xl text-uii-blue"></i>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-gray-900 dark:text-white lg:text-lg">{{ item.reporterName }}</span>
+                <app-user-badge [badge]="item.reporterBadge" size="sm"></app-user-badge>
+              </div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                @if (isOwnItem()) {
+                  Ini laporan kamu
+                } @else {
+                  Pelapor
+                }
+              </p>
+            </div>
+            @if (!isOwnItem()) {
+              <i class="ph ph-caret-right text-gray-400 hidden lg:block"></i>
+            }
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        @if (!isOwnItem()) {
+          <div class="space-y-3 lg:space-y-0 lg:flex lg:gap-4">
+            <button 
+              (click)="whatsappReporter()"
+              class="hidden lg:flex flex-1 py-4 px-6 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 hover:shadow-lg hover:-translate-y-0.5 transition-all items-center justify-center gap-2">
+              <i class="ph-fill ph-whatsapp-logo text-xl"></i>
+              WhatsApp
+            </button>
+            <button 
+              (click)="openContact()"
+              class="w-full lg:flex-1 py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 hover:shadow-lg lg:hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+              <i class="ph ph-chat-circle-dots text-xl lg:hidden"></i>
+              <i class="ph-fill ph-phone text-xl hidden lg:block"></i>
+              <span class="lg:hidden">Hubungi Pelapor</span>
+              <span class="hidden lg:inline">Telepon</span>
+            </button>
+          </div>
+          <p class="text-center text-xs text-gray-400 mt-3">
+            Hubungi pelapor untuk mengklaim atau memberikan informasi
+          </p>
+        } @else {
+          <div class="p-4 lg:p-6 bg-uii-gold/10 border border-uii-gold/30 rounded-xl">
+            <div class="flex items-center gap-3">
+              <i class="ph ph-info text-xl lg:text-2xl text-uii-gold"></i>
+              <div>
+                <p class="font-medium text-gray-900 dark:text-white lg:text-lg">Ini laporan kamu</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Kamu bisa mengedit atau menghapus laporan ini</p>
+              </div>
+            </div>
+            <div class="hidden lg:flex gap-3 mt-4">
+              <button class="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center justify-center gap-2">
+                <i class="ph ph-pencil"></i>
+                Edit Laporan
+              </button>
+              <button class="flex-1 py-3 px-4 border border-red-300 text-red-600 font-medium rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition flex items-center justify-center gap-2">
+                <i class="ph ph-trash"></i>
+                Hapus
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Contact Modal -->
+  @if (showContactModal()) {
+    <div class="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
+      <!-- Backdrop -->
+      <div 
+        class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        (click)="closeContact()"></div>
+      
+      <!-- Modal Content -->
+      <div class="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-t-3xl lg:rounded-2xl p-6 pb-8 animate-slide-up">
+        <!-- Handle - Mobile only -->
+        <div class="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-6 lg:hidden"></div>
+        
+        <!-- Close button - Desktop -->
+        <button 
+          (click)="closeContact()"
+          class="hidden lg:flex absolute top-4 right-4 w-8 h-8 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+          <i class="ph ph-x text-xl"></i>
+        </button>
+        
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">Hubungi Pelapor</h3>
+        <p class="text-gray-500 dark:text-gray-400 text-center mb-6">Pilih cara untuk menghubungi {{ item()?.reporterName }}</p>
+
+        <div class="space-y-3">
+          <!-- WhatsApp -->
+          <button 
+            (click)="whatsappReporter()"
+            class="w-full py-4 px-6 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition flex items-center justify-center gap-3">
+            <i class="ph-fill ph-whatsapp-logo text-2xl"></i>
+            Chat via WhatsApp
+          </button>
+
+          <!-- Call -->
+          <button 
+            (click)="callReporter()"
+            class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 transition flex items-center justify-center gap-3">
+            <i class="ph-fill ph-phone text-2xl"></i>
+            Telepon Langsung
+          </button>
+
+          <!-- Cancel -->
+          <button 
+            (click)="closeContact()"
+            class="w-full py-4 px-6 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+            Batal
+          </button>
+        </div>
+
+        <!-- Privacy Note -->
+        <p class="text-xs text-gray-400 text-center mt-4">
+          <i class="ph ph-shield-check"></i>
+          Nomor telepon dilindungi dan hanya ditampilkan kepada pengguna terverifikasi
+        </p>
+      </div>
+    </div>
+  }
+</div>

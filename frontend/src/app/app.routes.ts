@@ -23,6 +23,13 @@ export const routes: Routes = [
   { path: 'radar', component: RadarComponent, canActivate: [authGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
   
+  // Item detail (protected)
+  { 
+    path: 'item/:id', 
+    loadComponent: () => import('./features/item-detail/item-detail.component').then(m => m.ItemDetailComponent),
+    canActivate: [authGuard]
+  },
+  
   // Wildcard - redirect ke home
   { path: '**', redirectTo: '' }
 ];

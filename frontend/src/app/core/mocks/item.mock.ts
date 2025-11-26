@@ -11,7 +11,11 @@ export const MOCK_ITEMS: Item[] = [
     imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400',
     date: '05 Sep',
     time: '07:55 PM',
-    location: 'College Ground',
+    location: {
+      name: 'Gedung FTI',
+      lat: -7.6872,
+      lng: 110.4098
+    },
     reporterId: '1',
     reporterName: 'Ahmad Fauzi',
     reporterBadge: 'blue',
@@ -27,7 +31,11 @@ export const MOCK_ITEMS: Item[] = [
     imageUrl: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=400',
     date: '10 Sep',
     time: '12:30 PM',
-    location: 'Kantin FTI',
+    location: {
+      name: 'Kantin FTI',
+      lat: -7.6873,
+      lng: 110.4082
+    },
     reporterId: '2',
     reporterName: 'Dr. Budi Santoso',
     reporterBadge: 'gold',
@@ -43,7 +51,11 @@ export const MOCK_ITEMS: Item[] = [
     imageUrl: 'https://images.unsplash.com/photo-1632661674596-df8be59a8056?w=400',
     date: '12 Sep',
     time: '03:00 PM',
-    location: 'Parkiran Rektorat',
+    location: {
+      name: 'Parkiran Rektorat',
+      lat: -7.6882,
+      lng: 110.4078
+    },
     reporterId: '3',
     reporterName: 'Siti Aminah',
     reporterBadge: 'blue',
