@@ -166,4 +166,48 @@ export class AuthService {
       this.saveUserToStorage(updated);
     }
   }
+
+  /**
+   * Register new user
+   */
+  register(data: {
+    name: string;
+    email: string;
+    phone?: string;
+    password: string;
+    role: 'student' | 'staff' | 'public';
+    badge: 'gold' | 'blue' | 'gray';
+    faculty?: string;
+    studentId?: string;
+    employeeId?: string;
+  }): { success: boolean; message?: string } {
+    // Check if email already exists
+    const existingUser = getMockUserByEmail(data.email);
+    if (existingUser) {
+      return { success: false, message: 'Email sudah terdaftar. Silakan login.' };
+    }
+
+    // Create new user
+    const newUser: User = {
+      id: `user_${Date.now()}`,
+      name: data.name,
+      email: data.email.toLowerCase(),
+      phone: data.phone,
+      role: data.role,
+      badge: data.badge,
+      faculty: data.faculty,
+      studentId: data.studentId,
+      employeeId: data.employeeId,
+      avatar: `https://i.pravatar.cc/150?u=${data.email}`
+    };
+
+    // Add to mock users
+    addMockUser(newUser);
+
+    // Auto login after register
+    this.currentUserSignal.set(newUser);
+    this.saveUserToStorage(newUser);
+
+    return { success: true };
+  }
 }

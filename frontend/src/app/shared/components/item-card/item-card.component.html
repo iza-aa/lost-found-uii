@@ -10,14 +10,35 @@
       class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
     >
     <!-- Status Badge -->
-    <div class="absolute top-2 left-2">
+    <div class="absolute top-2 left-2 flex items-center gap-1">
       <app-status-badge [status]="item.status"></app-status-badge>
+      @if (item.isScannedByQr) {
+        <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-500 text-white">
+          <i class="ph ph-qr-code"></i> QR
+        </span>
+      }
     </div>
   </div>
 
   <!-- Content -->
   <div class="p-4">
-    <h3 class="font-semibold text-gray-800 dark:text-white mb-1 truncate">{{ item.title }}</h3>
+    <!-- Title with Badges -->
+    <div class="flex items-center justify-between gap-2 mb-1">
+      <h3 class="font-semibold text-gray-800 dark:text-white truncate">{{ item.title }}</h3>
+      <div class="flex items-center gap-1 flex-shrink-0">
+        @if (item.reward) {
+          <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-uii-gold/20 text-uii-gold">
+            <i class="ph ph-gift"></i>
+          </span>
+        }
+        @if (item.reportStatus && item.reportStatus !== 'active') {
+          <span [class]="'px-2 py-0.5 text-xs font-semibold rounded-full ' + 
+            (item.reportStatus === 'claimed' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400')">
+            {{ item.reportStatus === 'claimed' ? 'Diklaim' : 'Selesai' }}
+          </span>
+        }
+      </div>
+    </div>
     <p class="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 mb-3">{{ item.description }}</p>
     
     <!-- Reporter Badge -->

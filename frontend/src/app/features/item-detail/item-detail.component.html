@@ -207,6 +207,25 @@
         @if (item.status === 'found') {
           <!-- Found Item Additional Info -->
           <div class="mb-6 space-y-3">
+            <!-- Report Status Badge -->
+            @if (item.reportStatus && item.reportStatus !== 'active') {
+              <div [class]="'flex items-center gap-3 p-3 border rounded-xl ' + 
+                (item.reportStatus === 'claimed' ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800' : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800')">
+                <div [class]="'w-10 h-10 rounded-full flex items-center justify-center ' + 
+                  (item.reportStatus === 'claimed' ? 'bg-purple-100 dark:bg-purple-900/50' : 'bg-green-100 dark:bg-green-900/50')">
+                  <i [class]="'ph-fill text-xl ' + (item.reportStatus === 'claimed' ? 'ph-check-circle text-purple-600' : 'ph-seal-check text-green-600')"></i>
+                </div>
+                <div>
+                  <p [class]="'font-medium ' + (item.reportStatus === 'claimed' ? 'text-purple-700 dark:text-purple-400' : 'text-green-700 dark:text-green-400')">
+                    {{ getReportStatusLabel() }}
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ item.reportStatus === 'claimed' ? 'Barang sudah diklaim oleh pemilik' : 'Laporan telah diselesaikan' }}
+                  </p>
+                </div>
+              </div>
+            }
+
             <!-- Storage Location -->
             @if (item.storageLocation) {
               <div class="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
@@ -236,15 +255,15 @@
               </div>
             }
 
-            <!-- Willing to Deliver -->
-            @if (item.willingToDeliver) {
+            <!-- Willing to COD -->
+            @if (item.willingToCod) {
               <div class="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
                 <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
-                  <i class="ph-fill ph-car text-xl text-green-600"></i>
+                  <i class="ph-fill ph-handshake text-xl text-green-600"></i>
                 </div>
                 <div>
-                  <p class="font-medium text-green-700 dark:text-green-400">Bersedia Mengantarkan 🚗</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">Penemu bisa mengantar barang ke lokasi Anda</p>
+                  <p class="font-medium text-green-700 dark:text-green-400">Bersedia COD 🤝</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Penemu bersedia bertemu di lokasi sesuai kesepakatan</p>
                 </div>
               </div>
             }
@@ -290,43 +309,151 @@
 
         <!-- Action Buttons -->
         @if (!isOwnItem()) {
-          <div class="space-y-3 lg:space-y-0 lg:flex lg:gap-4">
-            <button 
-              (click)="whatsappReporter()"
-              class="hidden lg:flex flex-1 py-4 px-6 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 hover:shadow-lg hover:-translate-y-0.5 transition-all items-center justify-center gap-2">
-              <i class="ph-fill ph-whatsapp-logo text-xl"></i>
-              WhatsApp
-            </button>
-            <button 
-              (click)="openContact()"
-              class="w-full lg:flex-1 py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 hover:shadow-lg lg:hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
-              <i class="ph ph-chat-circle-dots text-xl lg:hidden"></i>
-              <i class="ph-fill ph-phone text-xl hidden lg:block"></i>
-              <span class="lg:hidden">Hubungi Pelapor</span>
-              <span class="hidden lg:inline">Telepon</span>
-            </button>
-          </div>
-          <p class="text-center text-xs text-gray-400 mt-3">
-            Hubungi pelapor untuk mengklaim atau memberikan informasi
-          </p>
+          <!-- For Found Items: Show Verification Button (not direct contact) -->
+          @if (item.status === 'found' && item.reportStatus === 'active') {
+            <div class="space-y-3">
+              <!-- QR-Scanned Items: Different verification flow -->
+              @if (item.isScannedByQr) {
+                <button 
+                  (click)="verifyQrOwnership()"
+                  [disabled]="isCheckingQrOwnership()"
+                  class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                  @if (isCheckingQrOwnership()) {
+                    <i class="ph ph-spinner animate-spin text-xl"></i>
+                    Memverifikasi QR...
+                  } @else {
+                    <i class="ph ph-qr-code text-xl"></i>
+                    Verifikasi Kepemilikan via QR
+                  }
+                </button>
+                <div class="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                  <i class="ph ph-info text-blue-500"></i>
+                  <p class="text-xs text-blue-700 dark:text-blue-400">
+                    Barang ini dilaporkan via QR Scan. Sistem akan memverifikasi apakah QR Anda cocok dengan pemilik.
+                  </p>
+                </div>
+              } @else {
+                <!-- Normal verification for non-QR items -->
+                <button 
+                  (click)="openVerificationModal()"
+                  class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                  <i class="ph ph-identification-badge text-xl"></i>
+                  Verifikasi Bukti Kepemilikan
+                </button>
+              }
+              <p class="text-center text-xs text-gray-400">
+                <i class="ph ph-shield-check"></i>
+                No. WhatsApp penemu tidak ditampilkan demi keamanan
+              </p>
+            </div>
+          } @else if (item.status === 'found' && item.reportStatus !== 'active') {
+            <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-xl text-center">
+              <p class="text-gray-500 dark:text-gray-400">Barang ini sudah diklaim</p>
+            </div>
+          }
+          
+          <!-- For Lost Items: Show WhatsApp if exposed, or Alternative Contact -->
+          @if (item.status === 'lost' && item.reportStatus === 'active') {
+            <div class="space-y-3">
+              @if (item.exposePhone) {
+                <button 
+                  (click)="whatsappReporter()"
+                  class="w-full py-4 px-6 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                  <i class="ph-fill ph-whatsapp-logo text-xl"></i>
+                  Hubungi via WhatsApp
+                </button>
+              } @else if (hasAlternativeContact()) {
+                <!-- Show Alternative Contacts -->
+                <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                  <p class="text-sm font-medium text-blue-700 dark:text-blue-400 mb-3">
+                    <i class="ph ph-address-book"></i> Kontak Alternatif
+                  </p>
+                  <div class="flex flex-wrap gap-2">
+                    @if (item.alternativeContact?.instagram; as ig) {
+                      <a [href]="'https://instagram.com/' + ig" target="_blank"
+                        class="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm rounded-lg flex items-center gap-2 hover:opacity-90 transition">
+                        <i class="ph-fill ph-instagram-logo"></i>
+                        &#64;{{ ig }}
+                      </a>
+                    }
+                    @if (item.alternativeContact?.telegram; as tg) {
+                      <a [href]="'https://t.me/' + tg" target="_blank"
+                        class="px-3 py-2 bg-blue-500 text-white text-sm rounded-lg flex items-center gap-2 hover:opacity-90 transition">
+                        <i class="ph-fill ph-telegram-logo"></i>
+                        &#64;{{ tg }}
+                      </a>
+                    }
+                    @if (item.alternativeContact?.line; as lineId) {
+                      <span class="px-3 py-2 bg-green-500 text-white text-sm rounded-lg flex items-center gap-2">
+                        <i class="ph ph-chat-circle-text"></i>
+                        LINE: {{ lineId }}
+                      </span>
+                    }
+                    @if (item.alternativeContact?.other; as otherContact) {
+                      <span class="px-3 py-2 bg-gray-500 text-white text-sm rounded-lg flex items-center gap-2">
+                        <i class="ph ph-link"></i>
+                        {{ otherContact }}
+                      </span>
+                    }
+                  </div>
+                </div>
+              } @else {
+                <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-xl text-center">
+                  <p class="text-gray-500 dark:text-gray-400">Pemilik tidak menyediakan kontak publik</p>
+                </div>
+              }
+              
+              <!-- COD info if available -->
+              @if (item.willingToCod) {
+                <div class="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                  <p class="text-sm text-green-700 dark:text-green-400">
+                    <i class="ph ph-shield-check"></i> Pemilik bersedia COD di kampus dengan pengawasan satpam
+                  </p>
+                </div>
+              }
+            </div>
+          } @else if (item.status === 'lost' && item.reportStatus !== 'active') {
+            <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-xl text-center">
+              <p class="text-gray-500 dark:text-gray-400">Barang ini sudah ditemukan</p>
+            </div>
+          }
         } @else {
+          <!-- Owner Actions -->
           <div class="p-4 lg:p-6 bg-uii-gold/10 border border-uii-gold/30 rounded-xl">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 mb-4">
               <i class="ph ph-info text-xl lg:text-2xl text-uii-gold"></i>
               <div>
                 <p class="font-medium text-gray-900 dark:text-white lg:text-lg">Ini laporan kamu</p>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Kamu bisa mengedit atau menghapus laporan ini</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Kelola laporanmu di sini</p>
               </div>
             </div>
-            <div class="hidden lg:flex gap-3 mt-4">
-              <button class="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center justify-center gap-2">
-                <i class="ph ph-pencil"></i>
-                Edit Laporan
+            
+            <div class="grid grid-cols-3 gap-2 lg:gap-3">
+              <button 
+                (click)="editItem()"
+                class="py-3 px-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition flex flex-col items-center justify-center gap-1">
+                <i class="ph ph-pencil text-xl"></i>
+                <span class="text-xs">Edit</span>
               </button>
-              <button class="flex-1 py-3 px-4 border border-red-300 text-red-600 font-medium rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition flex items-center justify-center gap-2">
-                <i class="ph ph-trash"></i>
-                Hapus
+              <button 
+                (click)="openDeleteConfirm()"
+                class="py-3 px-3 border border-red-300 text-red-600 font-medium rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition flex flex-col items-center justify-center gap-1">
+                <i class="ph ph-trash text-xl"></i>
+                <span class="text-xs">Hapus</span>
               </button>
+              @if (item.reportStatus === 'active') {
+                <button 
+                  (click)="openCompleteConfirm()"
+                  class="py-3 px-3 bg-green-500 text-white font-medium rounded-xl hover:bg-green-600 transition flex flex-col items-center justify-center gap-1">
+                  <i class="ph ph-check-circle text-xl"></i>
+                  <span class="text-xs">{{ item.status === 'found' ? 'Diklaim' : 'Selesai' }}</span>
+                </button>
+              } @else {
+                <div class="py-3 px-3 bg-gray-100 dark:bg-gray-700 text-gray-500 font-medium rounded-xl flex flex-col items-center justify-center gap-1">
+                  <i class="ph ph-check-circle text-xl"></i>
+                  <span class="text-xs">{{ getReportStatusLabel() }}</span>
+                </div>
+              }
             </div>
           </div>
         }
@@ -334,59 +461,313 @@
     </div>
   }
 
-  <!-- Contact Modal -->
-  @if (showContactModal()) {
+  <!-- Verification Modal (for Found items) -->
+  @if (showVerificationModal()) {
     <div class="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
       <!-- Backdrop -->
       <div 
         class="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        (click)="closeContact()"></div>
+        (click)="closeVerificationModal()"></div>
       
       <!-- Modal Content -->
-      <div class="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-t-3xl lg:rounded-2xl p-6 pb-8 animate-slide-up">
+      <div class="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-t-3xl lg:rounded-2xl p-6 pb-8 max-h-[90vh] overflow-y-auto animate-slide-up">
         <!-- Handle - Mobile only -->
         <div class="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-6 lg:hidden"></div>
         
         <!-- Close button - Desktop -->
         <button 
-          (click)="closeContact()"
+          (click)="closeVerificationModal()"
           class="hidden lg:flex absolute top-4 right-4 w-8 h-8 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
           <i class="ph ph-x text-xl"></i>
         </button>
-        
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">Hubungi Pelapor</h3>
-        <p class="text-gray-500 dark:text-gray-400 text-center mb-6">Pilih cara untuk menghubungi {{ item()?.reporterName }}</p>
 
-        <div class="space-y-3">
-          <!-- WhatsApp -->
-          <button 
-            (click)="whatsappReporter()"
-            class="w-full py-4 px-6 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition flex items-center justify-center gap-3">
-            <i class="ph-fill ph-whatsapp-logo text-2xl"></i>
-            Chat via WhatsApp
-          </button>
+        @if (!verificationSuccess()) {
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">
+            <i class="ph ph-identification-badge text-uii-blue"></i> Verifikasi Kepemilikan
+          </h3>
+          <p class="text-gray-500 dark:text-gray-400 text-center mb-6 text-sm">
+            Buktikan bahwa barang ini milikmu. Data akan dikirim ke penemu via WhatsApp Bot.
+          </p>
 
-          <!-- Call -->
-          <button 
-            (click)="callReporter()"
-            class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 transition flex items-center justify-center gap-3">
-            <i class="ph-fill ph-phone text-2xl"></i>
-            Telepon Langsung
-          </button>
+          <div class="space-y-4">
+            <!-- Auto-filled User Info -->
+            <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+              <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Data Pemohon (otomatis)</p>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-uii-blue/10 rounded-full flex items-center justify-center">
+                  <i class="ph-fill ph-user text-uii-blue"></i>
+                </div>
+                <div>
+                  <p class="font-medium text-gray-900 dark:text-white">{{ currentUser()?.name }}</p>
+                  <p class="text-xs text-gray-500">{{ currentUser()?.phone }}</p>
+                </div>
+              </div>
+            </div>
 
-          <!-- Cancel -->
+            <!-- Description (Required) -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Ciri-ciri Barang <span class="text-red-500">*</span>
+              </label>
+              <textarea
+                [(ngModel)]="verificationForm.description"
+                rows="4"
+                placeholder="Jelaskan ciri-ciri spesifik barangmu yang tidak terlihat di foto. Contoh: ada goresan di pojok kanan, isi dompet ada KTP dan SIM..."
+                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent resize-none"></textarea>
+              <p class="text-xs text-gray-500 mt-1">Minimal 10 karakter</p>
+            </div>
+
+            <!-- Photo (Optional) -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Foto Bukti <span class="text-gray-400">(opsional)</span>
+              </label>
+              @if (!verificationForm.photoPreview) {
+                <label class="block w-full p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-uii-blue transition text-center">
+                  <i class="ph ph-camera text-3xl text-gray-400 mb-2"></i>
+                  <p class="text-sm text-gray-500">Upload foto bukti kepemilikan</p>
+                  <input type="file" accept="image/*" class="hidden" (change)="onVerificationPhotoSelect($event)">
+                </label>
+              } @else {
+                <div class="relative">
+                  <img [src]="verificationForm.photoPreview" class="w-full h-32 object-cover rounded-xl">
+                  <button 
+                    (click)="removeVerificationPhoto()"
+                    class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600">
+                    <i class="ph ph-x"></i>
+                  </button>
+                </div>
+              }
+            </div>
+
+            <!-- Additional Contact (Optional) -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Kontak Tambahan <span class="text-gray-400">(opsional)</span>
+              </label>
+              <input 
+                type="text"
+                [(ngModel)]="verificationForm.additionalContact"
+                placeholder="Instagram, Line, Email, dll"
+                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+            </div>
+
+            <!-- Info Box -->
+            <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+              <p class="text-xs text-blue-700 dark:text-blue-400">
+                <i class="ph ph-info"></i> Data verifikasi akan dikirim ke penemu melalui WhatsApp Bot. 
+                No. WhatsApp penemu tidak akan ditampilkan kepada Anda.
+              </p>
+            </div>
+
+            <!-- Submit Button -->
+            <button 
+              (click)="submitVerification()"
+              [disabled]="!canSubmitVerification() || isSubmittingVerification()"
+              class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              @if (isSubmittingVerification()) {
+                <i class="ph ph-spinner animate-spin"></i>
+                Mengirim...
+              } @else {
+                <i class="ph ph-paper-plane-tilt"></i>
+                Kirim Verifikasi
+              }
+            </button>
+
+            <button 
+              (click)="closeVerificationModal()"
+              class="w-full py-3 px-6 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+              Batal
+            </button>
+          </div>
+        } @else {
+          <!-- Success State -->
+          <div class="text-center py-6">
+            <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i class="ph-fill ph-check-circle text-5xl text-green-500"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Verifikasi Terkirim!</h3>
+            <p class="text-gray-500 dark:text-gray-400 mb-6">
+              Data verifikasi sudah dikirim ke penemu melalui WhatsApp Bot. 
+              Penemu akan menghubungi kamu jika bukti cocok.
+            </p>
+            <button 
+              (click)="closeVerificationModal()"
+              class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 transition">
+              Tutup
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Delete Confirmation Modal -->
+  @if (showDeleteConfirm()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeDeleteConfirm()"></div>
+      <div class="relative bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="ph ph-trash text-3xl text-red-500"></i>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Hapus Laporan?</h3>
+          <p class="text-gray-500 dark:text-gray-400 mb-6">Laporan akan dihapus permanen dan tidak bisa dikembalikan.</p>
+          <div class="flex gap-3">
+            <button 
+              (click)="closeDeleteConfirm()"
+              class="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+              Batal
+            </button>
+            <button 
+              (click)="confirmDelete()"
+              class="flex-1 py-3 px-4 bg-red-500 text-white font-medium rounded-xl hover:bg-red-600 transition">
+              Hapus
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Complete Confirmation Modal -->
+  @if (showCompleteConfirm()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeCompleteConfirm()"></div>
+      <div class="relative bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="ph ph-check-circle text-3xl text-green-500"></i>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            {{ item()?.status === 'found' ? 'Tandai Diklaim?' : 'Tandai Selesai?' }}
+          </h3>
+          <p class="text-gray-500 dark:text-gray-400 mb-6">
+            @if (item()?.status === 'found') {
+              Barang sudah diserahkan ke pemiliknya? Laporan akan ditandai sebagai "Diklaim".
+            } @else {
+              Barangmu sudah ditemukan? Laporan akan ditandai sebagai "Selesai".
+            }
+          </p>
+          <div class="flex gap-3">
+            <button 
+              (click)="closeCompleteConfirm()"
+              class="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+              Batal
+            </button>
+            <button 
+              (click)="confirmComplete()"
+              class="flex-1 py-3 px-4 bg-green-500 text-white font-medium rounded-xl hover:bg-green-600 transition">
+              {{ item()?.status === 'found' ? 'Diklaim' : 'Selesai' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- QR Verification Modal -->
+  @if (showQrVerificationModal()) {
+    <div class="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeQrVerificationModal()"></div>
+      <div class="relative bg-white dark:bg-gray-800 rounded-t-3xl lg:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
+        <!-- Header -->
+        <div class="sticky top-0 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white">Verifikasi QR Berhasil</h2>
           <button 
-            (click)="closeContact()"
-            class="w-full py-4 px-6 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-            Batal
+            (click)="closeQrVerificationModal()"
+            class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+            <i class="ph ph-x text-xl text-gray-500"></i>
           </button>
         </div>
 
-        <!-- Privacy Note -->
-        <p class="text-xs text-gray-400 text-center mt-4">
-          <i class="ph ph-shield-check"></i>
-          Nomor telepon dilindungi dan hanya ditampilkan kepada pengguna terverifikasi
-        </p>
+        <div class="p-6 space-y-4">
+          @if (!verificationSuccess()) {
+            <!-- Success QR Verification -->
+            <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-center">
+              <div class="w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="ph-fill ph-seal-check text-3xl text-green-500"></i>
+              </div>
+              <h3 class="font-bold text-green-800 dark:text-green-400 mb-1">QR Terverifikasi!</h3>
+              <p class="text-sm text-green-700 dark:text-green-400">
+                Sistem telah memverifikasi bahwa Anda adalah pemilik barang berdasarkan QR Code.
+              </p>
+            </div>
+
+            <!-- User Info Display -->
+            <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Data yang akan dikirim ke penemu:</p>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <i class="ph ph-user text-gray-400"></i>
+                  <span class="text-gray-900 dark:text-white font-medium">{{ currentUser()?.name }}</span>
+                </div>
+                @if (currentUser()?.studentId) {
+                  <div class="flex items-center gap-2">
+                    <i class="ph ph-identification-card text-gray-400"></i>
+                    <span class="text-gray-600 dark:text-gray-400">NIM: {{ currentUser()?.studentId }}</span>
+                  </div>
+                }
+                @if (currentUser()?.employeeId) {
+                  <div class="flex items-center gap-2">
+                    <i class="ph ph-identification-badge text-gray-400"></i>
+                    <span class="text-gray-600 dark:text-gray-400">NIP: {{ currentUser()?.employeeId }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Additional Contact -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <i class="ph ph-address-book"></i> Kontak Tambahan (Opsional)
+              </label>
+              <input 
+                type="text"
+                [(ngModel)]="verificationForm.additionalContact"
+                placeholder="Instagram, Line, Email, dll"
+                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+            </div>
+
+            <!-- Info Box -->
+            <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+              <p class="text-xs text-blue-700 dark:text-blue-400">
+                <i class="ph ph-info"></i> Pesan ke penemu: 
+                <br><strong>"{{ currentUser()?.studentId ? 'NIM ' + currentUser()?.studentId : 'NIP ' + currentUser()?.employeeId }} {{ currentUser()?.name }} adalah pemilik barang (terverifikasi QR). Kontak: {{ verificationForm.additionalContact || currentUser()?.phone }}"</strong>
+              </p>
+            </div>
+
+            <!-- Submit Button -->
+            <button 
+              (click)="submitQrVerification()"
+              [disabled]="isSubmittingVerification()"
+              class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              @if (isSubmittingVerification()) {
+                <i class="ph ph-spinner animate-spin"></i>
+                Mengirim...
+              } @else {
+                <i class="ph ph-paper-plane-tilt"></i>
+                Kirim ke Penemu
+              }
+            </button>
+          } @else {
+            <!-- Success State -->
+            <div class="text-center py-6">
+              <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="ph-fill ph-check-circle text-5xl text-green-500"></i>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Verifikasi Terkirim!</h3>
+              <p class="text-gray-500 dark:text-gray-400 mb-6">
+                Penemu akan segera menghubungi Anda untuk menyerahkan barang.
+              </p>
+              <button 
+                (click)="closeQrVerificationModal()"
+                class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 transition">
+                Tutup
+              </button>
+            </div>
+          }
+        </div>
       </div>
     </div>
   }

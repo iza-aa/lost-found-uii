@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { User } from '../../core/models';
 import { MOCK_USERS } from '../../core/mocks';
 import { UserBadgeComponent } from '../../shared/components';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-public-profile',
@@ -17,11 +18,13 @@ export class PublicProfileComponent implements OnInit {
   isLoading = signal(true);
   notFound = signal(false);
   private isBrowser: boolean;
+  private rawUserParam: string = '';
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    @Inject(PLATFORM_ID) platformId: Object
+    @Inject(PLATFORM_ID) platformId: Object,
+    private authService: AuthService
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
@@ -30,6 +33,7 @@ export class PublicProfileComponent implements OnInit {
     const userParam = this.route.snapshot.paramMap.get('userId');
     
     if (userParam) {
+      this.rawUserParam = userParam;
       this.loadUser(userParam);
     } else {
       this.notFound.set(true);
@@ -88,6 +92,28 @@ export class PublicProfileComponent implements OnInit {
       
       this.isLoading.set(false);
     }, 500);
+  }
+
+  // Check if current user is the owner of this QR
+  isOwnQr(): boolean {
+    const currentUser = this.authService.currentUser();
+    const qrUser = this.user();
+    if (!currentUser || !qrUser) return false;
+    return currentUser.id === qrUser.id || currentUser.phone === qrUser.phone;
+  }
+
+  // Navigate to post-item with QR data
+  reportFoundItem(): void {
+    const qrUser = this.user();
+    if (!qrUser) return;
+
+    // Navigate to post-item with QR data
+    this.router.navigate(['/post-item'], {
+      queryParams: {
+        qr: 'true',
+        qrData: this.rawUserParam
+      }
+    });
   }
 
   getBadgeLabel(): string {

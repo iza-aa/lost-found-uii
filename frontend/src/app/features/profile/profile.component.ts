@@ -18,7 +18,7 @@ export class ProfileComponent implements OnInit {
   
   // User's items
   userItems = signal<Item[]>([]);
-  selectedTab = signal<'all' | 'lost' | 'found' | 'claimed'>('all');
+  selectedTab = signal<'all' | 'lost' | 'found' | 'completed'>('all');
   
   // Filtered items based on selected tab
   filteredItems = computed(() => {
@@ -26,7 +26,7 @@ export class ProfileComponent implements OnInit {
     const tab = this.selectedTab();
     
     if (tab === 'all') return items;
-    if (tab === 'claimed') return items.filter(i => i.status === 'claimed');
+    if (tab === 'completed') return items.filter(i => i.reportStatus === 'claimed' || i.reportStatus === 'resolved');
     return items.filter(i => i.status === tab);
   });
 
@@ -74,14 +74,14 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  setTab(tab: 'all' | 'lost' | 'found' | 'claimed'): void {
+  setTab(tab: 'all' | 'lost' | 'found' | 'completed'): void {
     this.selectedTab.set(tab);
   }
 
-  getTabCount(tab: 'all' | 'lost' | 'found' | 'claimed'): number {
+  getTabCount(tab: 'all' | 'lost' | 'found' | 'completed'): number {
     const items = this.userItems();
     if (tab === 'all') return items.length;
-    if (tab === 'claimed') return items.filter(i => i.status === 'claimed').length;
+    if (tab === 'completed') return items.filter(i => i.reportStatus === 'claimed' || i.reportStatus === 'resolved').length;
     return items.filter(i => i.status === tab).length;
   }
 

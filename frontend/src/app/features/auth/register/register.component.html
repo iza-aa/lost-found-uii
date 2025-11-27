@@ -1,0 +1,491 @@
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+  <div class="w-full max-w-md">
+    
+    <!-- Success State -->
+    @if (isSuccess()) {
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center">
+        <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+          <i class="ph-fill ph-check-circle text-green-500 text-5xl"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Registrasi Berhasil!</h2>
+        <p class="text-gray-500 dark:text-gray-400 mb-6">
+          Akun kamu sudah dibuat. Selamat datang di Lost & Found UII! 🎉
+        </p>
+        
+        <!-- User Summary -->
+        <div class="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 mb-6 text-left">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 rounded-full bg-uii-blue/20 flex items-center justify-center">
+              <i class="ph-fill ph-user text-uii-blue text-xl"></i>
+            </div>
+            <div>
+              <p class="font-semibold text-gray-900 dark:text-white">{{ formData.name }}</p>
+              <p class="text-sm text-gray-500">{{ formData.email || formData.phone }}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500">Badge:</span>
+            @if (getSelectedBadge() === 'gold') {
+              <span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">⭐ Staff UII</span>
+            } @else if (getSelectedBadge() === 'blue') {
+              <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">🎓 Mahasiswa UII</span>
+            } @else {
+              <span class="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">👤 Umum</span>
+            }
+          </div>
+        </div>
+        
+        <button 
+          (click)="goToHome()"
+          class="w-full py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition flex items-center justify-center gap-2">
+          <i class="ph ph-house"></i>
+          Mulai Jelajahi
+        </button>
+      </div>
+    } @else {
+
+      <!-- Logo & Header -->
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-14 h-14 bg-uii-blue rounded-2xl mb-3">
+          <i class="ph-fill ph-user-plus text-white text-2xl"></i>
+        </div>
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Buat Akun Baru</h1>
+        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Daftar untuk mulai lapor barang hilang/ditemukan</p>
+      </div>
+
+      <!-- Progress Steps -->
+      <div class="flex items-center justify-center gap-2 mb-6">
+        @for (step of [1,2,3]; track step) {
+          <div [class]="step <= currentStep() 
+            ? 'w-10 h-1.5 rounded-full bg-uii-blue transition-all' 
+            : 'w-10 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 transition-all'">
+          </div>
+        }
+      </div>
+
+      <!-- Register Card -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+        
+        <!-- Step Header -->
+        <div class="text-center mb-6">
+          <p class="text-sm text-uii-blue font-medium mb-1">Langkah {{ currentStep() }} dari {{ totalSteps }}</p>
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white">{{ getStepTitle() }}</h2>
+          <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">{{ getStepSubtitle() }}</p>
+        </div>
+
+        <!-- Step 1: Select Role -->
+        @if (currentStep() === 1) {
+          <div class="space-y-3">
+            @for (role of roleOptions; track role.value) {
+              <button
+                type="button"
+                (click)="selectRole(role.value)"
+                [class]="selectedRole === role.value 
+                  ? 'w-full p-4 rounded-xl border-2 transition-all text-left flex items-center gap-4 ' +
+                    (role.color === 'blue' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : '') +
+                    (role.color === 'yellow' ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' : '') +
+                    (role.color === 'gray' ? 'border-gray-500 bg-gray-50 dark:bg-gray-700' : '')
+                  : 'w-full p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 transition-all text-left flex items-center gap-4'">
+                <div [class]="'w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ' +
+                  (selectedRole === role.value 
+                    ? (role.color === 'blue' ? 'bg-blue-100 dark:bg-blue-900/50' : '') +
+                      (role.color === 'yellow' ? 'bg-yellow-100 dark:bg-yellow-900/50' : '') +
+                      (role.color === 'gray' ? 'bg-gray-200 dark:bg-gray-600' : '')
+                    : 'bg-gray-100 dark:bg-gray-700')">
+                  <i [class]="'ph-fill text-2xl ' + role.icon + ' ' +
+                    (role.color === 'blue' ? 'text-blue-500' : '') +
+                    (role.color === 'yellow' ? 'text-yellow-500' : '') +
+                    (role.color === 'gray' ? 'text-gray-500' : '')"></i>
+                </div>
+                <div class="flex-1">
+                  <p class="font-semibold text-gray-900 dark:text-white">{{ role.label }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ role.description }}</p>
+                </div>
+                @if (selectedRole === role.value) {
+                  <i [class]="'ph-fill ph-check-circle text-xl ' +
+                    (role.color === 'blue' ? 'text-blue-500' : '') +
+                    (role.color === 'yellow' ? 'text-yellow-500' : '') +
+                    (role.color === 'gray' ? 'text-gray-500' : '')"></i>
+                }
+              </button>
+            }
+          </div>
+
+          <!-- Badge Info -->
+          <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+            <p class="text-xs text-gray-500 dark:text-gray-400 text-center">
+              <i class="ph ph-info"></i>
+              Badge kepercayaan ditentukan dari jenis akun yang dipilih
+            </p>
+          </div>
+        }
+
+        <!-- Step 2: Personal Info -->
+        @if (currentStep() === 2) {
+          <div class="space-y-4">
+            <!-- Name -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Nama Lengkap <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <i class="ph ph-user text-gray-400"></i>
+                </div>
+                <input
+                  type="text"
+                  [(ngModel)]="formData.name"
+                  placeholder="Masukkan nama lengkap"
+                  class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl
+                         bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                         placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+              </div>
+            </div>
+
+            <!-- Student/Staff specific fields -->
+            @if (selectedRole === 'student' || selectedRole === 'staff') {
+              <!-- Email UII -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Email UII <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="ph ph-envelope text-gray-400"></i>
+                  </div>
+                  <input
+                    type="email"
+                    [(ngModel)]="formData.email"
+                    (input)="onEmailChange()"
+                    [placeholder]="getEmailPlaceholder()"
+                    class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                           placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+                </div>
+                <p class="text-xs text-gray-500 mt-1">
+                  <i class="ph ph-info"></i>
+                  Wajib menggunakan email {{ getEmailDomain() }}
+                </p>
+              </div>
+
+              <!-- NIM / NIP (auto-filled from email) -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {{ selectedRole === 'student' ? 'NIM' : 'NIP/NIK' }} <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="ph ph-identification-card text-gray-400"></i>
+                  </div>
+                  <input
+                    type="text"
+                    [value]="selectedRole === 'student' ? formData.studentId : formData.employeeId"
+                    [placeholder]="selectedRole === 'student' ? 'Otomatis dari email' : 'Otomatis dari email'"
+                    readonly
+                    class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white cursor-not-allowed">
+                </div>
+                @if (selectedRole === 'student' && formData.studentId) {
+                  <p class="text-xs text-green-500 mt-1">
+                    <i class="ph-fill ph-check-circle"></i> NIM terisi otomatis dari email
+                  </p>
+                } @else if (selectedRole === 'staff' && formData.employeeId) {
+                  <p class="text-xs text-green-500 mt-1">
+                    <i class="ph-fill ph-check-circle"></i> NIP terisi otomatis dari email
+                  </p>
+                } @else {
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <i class="ph ph-info"></i> Isi email terlebih dahulu
+                  </p>
+                }
+              </div>
+
+              <!-- Faculty -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Fakultas <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="ph ph-buildings text-gray-400"></i>
+                  </div>
+                  <select
+                    [(ngModel)]="formData.faculty"
+                    class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                           focus:ring-2 focus:ring-uii-blue focus:border-transparent appearance-none">
+                    <option value="">Pilih Fakultas</option>
+                    @for (faculty of facultyOptions; track faculty) {
+                      <option [value]="faculty">{{ faculty }}</option>
+                    }
+                  </select>
+                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <i class="ph ph-caret-down text-gray-400"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Phone Number -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  No. Telepon / WhatsApp <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="ph ph-phone text-gray-400"></i>
+                  </div>
+                  <input
+                    type="tel"
+                    [(ngModel)]="formData.phone"
+                    placeholder="Contoh: 081234567890"
+                    class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400
+                           focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Digunakan untuk konfirmasi & notifikasi penting
+                </p>
+              </div>
+            }
+
+            <!-- Public user fields -->
+            @if (selectedRole === 'public') {
+              <!-- Register Method Toggle -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Daftar dengan
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    (click)="registerMethod = 'email'"
+                    [class]="registerMethod === 'email' 
+                      ? 'p-3 rounded-xl border-2 border-uii-blue bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center gap-2'
+                      : 'p-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center gap-2'">
+                    <i [class]="'ph ph-envelope ' + (registerMethod === 'email' ? 'text-uii-blue' : 'text-gray-400')"></i>
+                    <span [class]="registerMethod === 'email' ? 'text-uii-blue font-medium' : 'text-gray-600 dark:text-gray-400'">Email</span>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="registerMethod = 'whatsapp'"
+                    [class]="registerMethod === 'whatsapp' 
+                      ? 'p-3 rounded-xl border-2 border-green-500 bg-green-50 dark:bg-green-900/20 flex items-center justify-center gap-2'
+                      : 'p-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center gap-2'">
+                    <i [class]="'ph-fill ph-whatsapp-logo ' + (registerMethod === 'whatsapp' ? 'text-green-500' : 'text-gray-400')"></i>
+                    <span [class]="registerMethod === 'whatsapp' ? 'text-green-600 font-medium' : 'text-gray-600 dark:text-gray-400'">WhatsApp</span>
+                  </button>
+                </div>
+              </div>
+
+              @if (registerMethod === 'email') {
+                <!-- Email Input -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Email <span class="text-red-500">*</span>
+                  </label>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <i class="ph ph-envelope text-gray-400"></i>
+                    </div>
+                    <input
+                      type="email"
+                      [(ngModel)]="formData.email"
+                      placeholder="email@gmail.com"
+                      class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl
+                             bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                             placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+                  </div>
+                  <p class="text-xs text-gray-500 mt-1">
+                    <i class="ph ph-info"></i>
+                    Gunakan email selain &#64;uii.ac.id atau &#64;students.uii.ac.id
+                  </p>
+                </div>
+              } @else {
+                <!-- WhatsApp Input -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Nomor WhatsApp <span class="text-red-500">*</span>
+                  </label>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <i class="ph-fill ph-whatsapp-logo text-green-500"></i>
+                    </div>
+                    <input
+                      type="tel"
+                      [(ngModel)]="formData.phone"
+                      placeholder="08123456789"
+                      class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl
+                             bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                             placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+                  </div>
+                  <p class="text-xs text-gray-500 mt-1">
+                    <i class="ph ph-info"></i>
+                    Nomor ini akan digunakan untuk login dan kontak
+                  </p>
+                </div>
+              }
+            }
+          </div>
+        }
+
+        <!-- Step 3: Password & Phone -->
+        @if (currentStep() === 3) {
+          <div class="space-y-4">
+            <!-- Password -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Password <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <i class="ph ph-lock text-gray-400"></i>
+                </div>
+                <input
+                  [type]="showPassword ? 'text' : 'password'"
+                  [(ngModel)]="formData.password"
+                  placeholder="Minimal 6 karakter"
+                  class="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-xl
+                         bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                         placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+                <button
+                  type="button"
+                  (click)="togglePassword('password')"
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <i [class]="showPassword ? 'ph ph-eye-slash text-gray-400' : 'ph ph-eye text-gray-400'"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Confirm Password -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Konfirmasi Password <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <i class="ph ph-lock-key text-gray-400"></i>
+                </div>
+                <input
+                  [type]="showConfirmPassword ? 'text' : 'password'"
+                  [(ngModel)]="formData.confirmPassword"
+                  placeholder="Ulangi password"
+                  class="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-xl
+                         bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                         placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+                <button
+                  type="button"
+                  (click)="togglePassword('confirm')"
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <i [class]="showConfirmPassword ? 'ph ph-eye-slash text-gray-400' : 'ph ph-eye text-gray-400'"></i>
+                </button>
+              </div>
+              @if (formData.confirmPassword && formData.password !== formData.confirmPassword) {
+                <p class="text-xs text-red-500 mt-1">
+                  <i class="ph ph-warning"></i> Password tidak cocok
+                </p>
+              }
+              @if (formData.confirmPassword && formData.password === formData.confirmPassword && formData.password.length >= 6) {
+                <p class="text-xs text-green-500 mt-1">
+                  <i class="ph-fill ph-check-circle"></i> Password cocok
+                </p>
+              }
+            </div>
+
+            <!-- Phone (for public user with email registration only) -->
+            @if (selectedRole === 'public' && registerMethod === 'email') {
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Nomor HP/WhatsApp <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="ph ph-phone text-gray-400"></i>
+                  </div>
+                  <input
+                    type="tel"
+                    [(ngModel)]="formData.phone"
+                    placeholder="08123456789"
+                    class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                           placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+                </div>
+                <p class="text-xs text-gray-500 mt-1">
+                  <i class="ph ph-info"></i>
+                  Nomor ini akan ditampilkan agar orang bisa menghubungi kamu
+                </p>
+              </div>
+            }
+
+            <!-- Summary -->
+            <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ringkasan Akun:</p>
+              <div class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                <p><i class="ph ph-user"></i> {{ formData.name }}</p>
+                <p><i class="ph ph-envelope"></i> {{ formData.email || '-' }}</p>
+                <p><i class="ph ph-phone"></i> {{ formData.phone || '-' }}</p>
+                @if (selectedRole === 'student') {
+                  <p><i class="ph ph-identification-card"></i> NIM: {{ formData.studentId }}</p>
+                }
+                @if (selectedRole === 'staff') {
+                  <p><i class="ph ph-identification-card"></i> NIP: {{ formData.employeeId }}</p>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Error Message -->
+        @if (errorMessage) {
+          <div class="mt-4 flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <i class="ph ph-warning-circle text-red-500 text-lg"></i>
+            <p class="text-sm text-red-600 dark:text-red-400">{{ errorMessage }}</p>
+          </div>
+        }
+
+        <!-- Navigation Buttons -->
+        <div class="flex gap-3 mt-6">
+          @if (currentStep() > 1) {
+            <button
+              type="button"
+              (click)="prevStep()"
+              class="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center justify-center gap-2">
+              <i class="ph ph-arrow-left"></i>
+              Kembali
+            </button>
+          }
+          
+          @if (currentStep() < totalSteps) {
+            <button
+              type="button"
+              (click)="nextStep()"
+              [disabled]="!canProceed()"
+              class="flex-1 py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+              Lanjut
+              <i class="ph ph-arrow-right"></i>
+            </button>
+          } @else {
+            <button
+              type="button"
+              (click)="onSubmit()"
+              [disabled]="!canProceed() || isLoading()"
+              class="flex-1 py-3 px-4 bg-uii-gold text-uii-blue font-semibold rounded-xl hover:bg-yellow-400 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+              @if (isLoading()) {
+                <i class="ph ph-spinner animate-spin text-xl"></i>
+                Mendaftar...
+              } @else {
+                <i class="ph ph-user-plus"></i>
+                Daftar Sekarang
+              }
+            </button>
+          }
+        </div>
+
+        <!-- Login Link -->
+        <p class="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
+          Sudah punya akun?
+          <a routerLink="/login" class="text-uii-blue hover:underline font-medium">Masuk di sini</a>
+        </p>
+      </div>
+
+    }
+  </div>
+</div>

@@ -191,11 +191,11 @@
               Ditemukan ({{ getTabCount('found') }})
             </button>
             <button 
-              (click)="setTab('claimed')"
-              [class]="selectedTab() === 'claimed' 
-                ? 'px-4 py-2 rounded-lg text-sm font-medium bg-blue-500 text-white whitespace-nowrap' 
+              (click)="setTab('completed')"
+              [class]="selectedTab() === 'completed' 
+                ? 'px-4 py-2 rounded-lg text-sm font-medium bg-purple-500 text-white whitespace-nowrap' 
                 : 'px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-nowrap'">
-              Diklaim ({{ getTabCount('claimed') }})
+              Selesai ({{ getTabCount('completed') }})
             </button>
           </div>
 

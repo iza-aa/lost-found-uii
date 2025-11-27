@@ -16,7 +16,6 @@ export class StatusBadgeComponent {
     switch (this.status) {
       case 'lost': return 'Hilang';
       case 'found': return 'Ditemukan';
-      case 'claimed': return 'Diklaim';
       default: return this.status;
     }
   }
@@ -25,7 +24,6 @@ export class StatusBadgeComponent {
     switch (this.status) {
       case 'lost': return 'bg-red-100 text-red-700';
       case 'found': return 'bg-green-100 text-green-700';
-      case 'claimed': return 'bg-gray-100 text-gray-600';
       default: return 'bg-gray-100 text-gray-600';
     }
   }

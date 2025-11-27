@@ -1,8 +1,9 @@
 import { Component, OnInit, OnDestroy, PLATFORM_ID, Inject, signal } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import type * as LeafletTypes from 'leaflet';
-import { Item } from '../../core/models';
+import { Item, ReportStatus } from '../../core/models';
 import { MOCK_ITEMS } from '../../core/mocks';
 import { UserBadgeComponent } from '../../shared/components/user-badge/user-badge.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
@@ -15,7 +16,7 @@ let L: LeafletModule;
 @Component({
   selector: 'app-item-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, UserBadgeComponent, StatusBadgeComponent, CubeLoaderComponent],
+  imports: [CommonModule, RouterModule, FormsModule, UserBadgeComponent, StatusBadgeComponent, CubeLoaderComponent],
   templateUrl: './item-detail.component.html',
   styleUrl: './item-detail.component.css'
 })
@@ -29,6 +30,26 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
   notFound = signal(false);
   showContactModal = signal(false);
   currentUser = this.authService.currentUser;
+  
+  // Verification form for found items (when someone claims it's theirs)
+  showVerificationModal = signal(false);
+  verificationForm = {
+    description: '',      // Required: ciri-ciri barang (not required for QR verification)
+    photoUrl: '',         // Optional: foto bukti (not needed for QR verification)
+    photoPreview: '',
+    additionalContact: '' // Optional: IG, email, dll
+  };
+  isSubmittingVerification = signal(false);
+  verificationSuccess = signal(false);
+  
+  // QR Verification
+  isCheckingQrOwnership = signal(false);
+  isQrOwnerVerified = signal(false);
+  showQrVerificationModal = signal(false);
+  
+  // Owner actions
+  showDeleteConfirm = signal(false);
+  showCompleteConfirm = signal(false);
   
   private fromPage: string | null = null;
 
@@ -245,5 +266,248 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
       navigator.clipboard.writeText(window.location.href);
       alert('Link berhasil disalin!');
     }
+  }
+
+  // =====================
+  // VERIFICATION METHODS (for Found items)
+  // =====================
+  openVerificationModal(): void {
+    this.showVerificationModal.set(true);
+  }
+
+  closeVerificationModal(): void {
+    this.showVerificationModal.set(false);
+    this.resetVerificationForm();
+  }
+
+  resetVerificationForm(): void {
+    this.verificationForm = {
+      description: '',
+      photoUrl: '',
+      photoPreview: '',
+      additionalContact: ''
+    };
+    this.verificationSuccess.set(false);
+  }
+
+  onVerificationPhotoSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.verificationForm.photoPreview = e.target?.result as string;
+        this.verificationForm.photoUrl = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  removeVerificationPhoto(): void {
+    this.verificationForm.photoUrl = '';
+    this.verificationForm.photoPreview = '';
+  }
+
+  canSubmitVerification(): boolean {
+    // For QR-scanned items, no description needed since ownership is verified by QR
+    const item = this.item();
+    if (item?.isScannedByQr && this.isQrOwnerVerified()) {
+      return true; // Can submit with just additional contact
+    }
+    return this.verificationForm.description.trim().length >= 10;
+  }
+
+  submitVerification(): void {
+    if (!this.canSubmitVerification()) return;
+
+    this.isSubmittingVerification.set(true);
+
+    // Simulate API call - in real app this would send to backend
+    // Backend would then use Meta WhatsApp API to send message to finder
+    setTimeout(() => {
+      const user = this.currentUser();
+      const item = this.item();
+      const isQrVerified = item?.isScannedByQr && this.isQrOwnerVerified();
+
+      console.log('Verification submitted:', {
+        itemId: item?.id,
+        claimerId: user?.id,
+        claimerName: user?.name,
+        claimerPhone: user?.phone,
+        isQrVerified: isQrVerified,
+        description: isQrVerified ? '(QR Verified Owner)' : this.verificationForm.description,
+        photoUrl: this.verificationForm.photoUrl,
+        additionalContact: this.verificationForm.additionalContact
+      });
+
+      // In real implementation:
+      // - Backend receives this data
+      // - Backend sends WhatsApp message to the finder (item.reporterPhone)
+      // - For QR verified: Message format is different
+      //   "NIM xxx nama yyy adalah pemilik barang (berdasarkan QR sudah diverifikasi sistem) kontak: zzz"
+      // - For non-QR: 
+      //   "NIM xxx nama yyy mengaku sebagai pemilik dan mengirim bukti..."
+      // - Finder's phone number is never exposed to the claimer
+
+      this.isSubmittingVerification.set(false);
+      this.verificationSuccess.set(true);
+    }, 1500);
+  }
+
+  // =====================
+  // QR VERIFICATION METHODS
+  // =====================
+  
+  // Check if current user is the QR owner for this item
+  verifyQrOwnership(): void {
+    this.isCheckingQrOwnership.set(true);
+    
+    // Simulate checking if current user matches the QR owner
+    setTimeout(() => {
+      const user = this.currentUser();
+      const item = this.item();
+      
+      if (user && item?.isScannedByQr) {
+        // Check if user ID or phone matches the scanned QR owner
+        const isOwner = user.id === item.scannedQrOwnerId || 
+                        user.phone === item.scannedQrOwnerPhone;
+        
+        this.isQrOwnerVerified.set(isOwner);
+        
+        if (isOwner) {
+          // User is verified as owner, show simplified verification modal
+          this.showQrVerificationModal.set(true);
+        } else {
+          // User is not the owner based on QR
+          alert('QR tidak cocok dengan akun Anda. Hubungi admin jika ini adalah barang Anda.');
+        }
+      }
+      
+      this.isCheckingQrOwnership.set(false);
+    }, 1500);
+  }
+
+  closeQrVerificationModal(): void {
+    this.showQrVerificationModal.set(false);
+  }
+
+  submitQrVerification(): void {
+    this.isSubmittingVerification.set(true);
+    
+    setTimeout(() => {
+      const user = this.currentUser();
+      const item = this.item();
+      
+      console.log('QR Verification submitted:', {
+        itemId: item?.id,
+        ownerId: user?.id,
+        ownerName: user?.name,
+        ownerPhone: user?.phone,
+        ownerStudentId: user?.studentId,
+        ownerEmployeeId: user?.employeeId,
+        isQrVerified: true,
+        additionalContact: this.verificationForm.additionalContact
+      });
+
+      // Message to finder:
+      // "NIM xxx nama yyy adalah pemilik barang (berdasarkan QR sudah diverifikasi sistem)"
+      // "Kontak yang bisa dihubungi: zzz"
+      
+      this.isSubmittingVerification.set(false);
+      this.verificationSuccess.set(true);
+      this.showQrVerificationModal.set(false);
+    }, 1500);
+  }
+
+  // =====================
+  // OWNER ACTION METHODS
+  // =====================
+  
+  // Edit item
+  editItem(): void {
+    const item = this.item();
+    if (item) {
+      this.router.navigate(['/post'], { queryParams: { edit: item.id } });
+    }
+  }
+
+  // Delete item
+  openDeleteConfirm(): void {
+    this.showDeleteConfirm.set(true);
+  }
+
+  closeDeleteConfirm(): void {
+    this.showDeleteConfirm.set(false);
+  }
+
+  confirmDelete(): void {
+    const item = this.item();
+    if (!item) return;
+
+    // Simulate API call
+    console.log('Deleting item:', item.id);
+    
+    // In real implementation, call API to delete
+    // Then navigate back to home
+    this.router.navigate(['/']);
+  }
+
+  // Complete/Resolve item
+  openCompleteConfirm(): void {
+    this.showCompleteConfirm.set(true);
+  }
+
+  closeCompleteConfirm(): void {
+    this.showCompleteConfirm.set(false);
+  }
+
+  confirmComplete(): void {
+    const item = this.item();
+    if (!item) return;
+
+    // Simulate API call
+    const newStatus: ReportStatus = item.status === 'found' ? 'claimed' : 'resolved';
+    console.log('Completing item:', item.id, 'New status:', newStatus);
+    
+    // Update item status
+    this.item.update(current => current ? { ...current, reportStatus: newStatus } : null);
+    this.showCompleteConfirm.set(false);
+  }
+
+  // Get report status label
+  getReportStatusLabel(): string {
+    const item = this.item();
+    if (!item) return '';
+    
+    switch (item.reportStatus) {
+      case 'claimed':
+        return 'Diklaim';
+      case 'resolved':
+        return 'Selesai';
+      default:
+        return 'Aktif';
+    }
+  }
+
+  getReportStatusColor(): string {
+    const item = this.item();
+    if (!item) return 'gray';
+    
+    switch (item.reportStatus) {
+      case 'claimed':
+        return 'purple';
+      case 'resolved':
+        return 'green';
+      default:
+        return 'blue';
+    }
+  }
+
+  // Check if item has alternative contact
+  hasAlternativeContact(): boolean {
+    const item = this.item();
+    if (!item?.alternativeContact) return false;
+    const alt = item.alternativeContact;
+    return !!(alt.instagram || alt.telegram || alt.line || alt.other);
   }
 }

@@ -88,27 +88,45 @@
         <!-- Divider -->
         <div class="border-t border-gray-100 dark:border-gray-700"></div>
 
-        <!-- Contact Buttons -->
+        <!-- Action Buttons -->
         <div class="p-4 space-y-3">
-          <p class="text-xs text-center text-gray-500 dark:text-gray-400 mb-4">
-            Menemukan barang pemilik ini? Hubungi sekarang:
-          </p>
-          
-          <!-- WhatsApp Button -->
-          <button 
-            (click)="contactViaWhatsApp()"
-            class="w-full flex items-center justify-center gap-3 py-3 px-4 bg-green-500 text-white font-medium rounded-xl hover:bg-green-600 transition">
-            <i class="ph-fill ph-whatsapp-logo text-xl"></i>
-            <span>Hubungi via WhatsApp</span>
-          </button>
+          @if (isOwnQr()) {
+            <!-- If user scans their own QR -->
+            <div class="text-center py-4">
+              <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="ph ph-user-circle text-3xl text-blue-600"></i>
+              </div>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Ini adalah QR Code milik Anda sendiri.
+              </p>
+              <button 
+                (click)="goHome()"
+                class="w-full flex items-center justify-center gap-2 py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition">
+                <i class="ph ph-house"></i>
+                <span>Kembali ke Beranda</span>
+              </button>
+            </div>
+          } @else {
+            <!-- If someone else scans the QR -->
+            <p class="text-xs text-center text-gray-500 dark:text-gray-400 mb-4">
+              Menemukan barang pemilik ini? Buat laporan penemuan:
+            </p>
+            
+            <!-- Report Found Item Button -->
+            <button 
+              (click)="reportFoundItem()"
+              class="w-full flex items-center justify-center gap-3 py-3 px-4 bg-green-500 text-white font-medium rounded-xl hover:bg-green-600 transition">
+              <i class="ph ph-plus-circle text-xl"></i>
+              <span>Laporkan Penemuan Barang</span>
+            </button>
 
-          <!-- Phone Button -->
-          <button 
-            (click)="contactViaPhone()"
-            class="w-full flex items-center justify-center gap-3 py-3 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition">
-            <i class="ph ph-phone text-xl"></i>
-            <span>Telepon Langsung</span>
-          </button>
+            <!-- Info Box -->
+            <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+              <p class="text-xs text-blue-700 dark:text-blue-400 text-center">
+                <i class="ph ph-info"></i> Dengan QR Code ini, pemilik dapat diverifikasi secara otomatis oleh sistem.
+              </p>
+            </div>
+          }
         </div>
       </div>
 

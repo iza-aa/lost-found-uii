@@ -1,10 +1,10 @@
 import { Component, OnInit, AfterViewInit, OnDestroy, PLATFORM_ID, Inject, signal } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import type * as LeafletTypes from 'leaflet';
-import { Item, ItemCategory, ItemStatus, UrgencyLevel, StorageLocation } from '../../core/models';
-import { MOCK_CATEGORIES, MOCK_LOCATIONS, MOCK_ITEMS, UII_CENTER, CampusLocation } from '../../core/mocks';
+import { Item, ItemCategory, ItemStatus, UrgencyLevel, StorageLocation, AlternativeContact, ReportStatus, User } from '../../core/models';
+import { MOCK_CATEGORIES, MOCK_LOCATIONS, MOCK_ITEMS, UII_CENTER, CampusLocation, MOCK_USERS } from '../../core/mocks';
 import { AuthService } from '../../core/services/auth.service';
 
 // Leaflet types only - actual import is dynamic
@@ -23,9 +23,14 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   private map: LeafletTypes.Map | null = null;
   private marker: LeafletTypes.Marker | null = null;
 
-  // Steps: Lost=7 steps (includes suggestions), Found=6 steps (no suggestions)
+  // QR Scan mode - when user scans a QR code and reports found item
+  isQrScanMode = signal(false);
+  qrOwner = signal<User | null>(null);
+
+  // Steps: Lost=7 steps (includes suggestions), Found=6 steps (no suggestions), QR=5 steps (no status selection)
   currentStep = signal(1);
   get totalSteps(): number {
+    if (this.isQrScanMode()) return 5; // QR mode: Image, Detail, Category, Location, Info
     return this.formData.status === 'found' ? 6 : 7;
   }
   get stepsArray(): number[] {
@@ -41,6 +46,10 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Custom location
   customLocationName = '';
+  
+  // Warning modal for found items
+  showWarningModal = signal(false);
+  warningAccepted = signal(false);
 
   // Form Data
   formData = {
@@ -56,10 +65,18 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     // Lost specific
     reward: false,
     urgency: 'normal' as UrgencyLevel,
+    exposePhone: true,              // NEW: mau ekspos no WA?
+    alternativeContact: {           // NEW: kontak alternatif jika tidak ekspos phone
+      instagram: '',
+      telegram: '',
+      line: '',
+      other: ''
+    } as AlternativeContact,
     // Found specific
     storageLocation: 'with-me' as StorageLocation,
     entrustedTo: '',
-    willingToDeliver: false
+    willingToDeliver: false,        // DEPRECATED
+    willingToCod: false             // NEW: bersedia COD di tengah/kampus
   };
 
   // Data
@@ -82,6 +99,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(
     @Inject(PLATFORM_ID) platformId: Object,
     private router: Router,
+    private route: ActivatedRoute,
     private authService: AuthService
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
@@ -90,6 +108,45 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.formData.date = this.getTodayDate();
     this.formData.time = this.getCurrentTime();
+    
+    // Check if this is a QR scan mode
+    const isQr = this.route.snapshot.queryParamMap.get('qr');
+    const qrData = this.route.snapshot.queryParamMap.get('qrData');
+    
+    if (isQr === 'true' && qrData) {
+      this.initQrScanMode(qrData);
+    }
+  }
+
+  // Initialize QR Scan mode
+  private initQrScanMode(qrData: string): void {
+    try {
+      const decoded = atob(qrData);
+      const userData = JSON.parse(decoded);
+      
+      if (userData && userData.name && userData.phone) {
+        const qrUser: User = {
+          id: userData.id || 'qr-user',
+          name: userData.name,
+          email: '',
+          phone: userData.phone,
+          badge: userData.badge || 'gray',
+          role: userData.badge === 'gold' ? 'staff' : userData.badge === 'blue' ? 'student' : 'public',
+          avatar: userData.avatar,
+          faculty: userData.faculty,
+          studentId: userData.studentId,
+          employeeId: userData.employeeId
+        };
+        
+        this.qrOwner.set(qrUser);
+        this.isQrScanMode.set(true);
+        this.formData.status = 'found'; // QR scan is always "found" item
+        this.warningAccepted.set(true); // Auto-accept warning for QR mode
+      }
+    } catch {
+      // Invalid QR data, redirect to normal post-item
+      console.error('Invalid QR data');
+    }
   }
 
   ngAfterViewInit(): void {}
@@ -111,26 +168,35 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   // Step Navigation
   nextStep(): void {
     if (this.canProceed()) {
+      // For QR mode: submit after step 5
+      if (this.isQrScanMode() && this.currentStep() === 5) {
+        this.submitForm();
+        return;
+      }
+      
       // For Found items: submit after step 6 (no suggestions step)
-      if (this.formData.status === 'found' && this.currentStep() === 6) {
+      if (this.formData.status === 'found' && !this.isQrScanMode() && this.currentStep() === 6) {
         this.submitForm();
         return;
       }
       
       if (this.currentStep() < this.totalSteps) {
-        // Destroy map before leaving step 5
-        if (this.currentStep() === 5) {
+        // Destroy map before leaving map step
+        const mapStep = this.isQrScanMode() ? 4 : 5;
+        if (this.currentStep() === mapStep) {
           this.destroyMap();
         }
         
         this.currentStep.update(v => v + 1);
         
-        if (this.currentStep() === 5 && this.isBrowser) {
+        // Init map on map step
+        const nextMapStep = this.isQrScanMode() ? 4 : 5;
+        if (this.currentStep() === nextMapStep && this.isBrowser) {
           setTimeout(() => this.initMap(), 100);
         }
         
-        // Step 7: Check for similar items (only for Lost items)
-        if (this.currentStep() === 7 && this.formData.status === 'lost') {
+        // Step 7: Check for similar items (only for Lost items, non-QR mode)
+        if (this.currentStep() === 7 && this.formData.status === 'lost' && !this.isQrScanMode()) {
           this.checkSimilarItems();
         }
       }
@@ -138,16 +204,22 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   prevStep(): void {
+    // In QR mode, step 1 cannot go back
+    if (this.isQrScanMode() && this.currentStep() === 1) {
+      return;
+    }
+    
     if (this.currentStep() > 1) {
-      // Destroy map before leaving step 5
-      if (this.currentStep() === 5) {
+      // Destroy map before leaving map step
+      const mapStep = this.isQrScanMode() ? 4 : 5;
+      if (this.currentStep() === mapStep) {
         this.destroyMap();
       }
       
       this.currentStep.update(v => v - 1);
       
-      // Re-init map when going back to step 5
-      if (this.currentStep() === 5 && this.isBrowser) {
+      // Re-init map when going back to map step
+      if (this.currentStep() === mapStep && this.isBrowser) {
         setTimeout(() => this.initMap(), 100);
       }
     }
@@ -155,21 +227,45 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
 
   goToStep(step: number): void {
     if (step <= this.currentStep() && step >= 1) {
-      // Destroy map if leaving step 5
-      if (this.currentStep() === 5 && step !== 5) {
+      // Destroy map if leaving map step
+      const mapStep = this.isQrScanMode() ? 4 : 5;
+      if (this.currentStep() === mapStep && step !== mapStep) {
         this.destroyMap();
       }
       
       this.currentStep.set(step);
       
-      // Init map when going to step 5
-      if (step === 5 && this.isBrowser) {
+      // Init map when going to map step
+      if (step === mapStep && this.isBrowser) {
         setTimeout(() => this.initMap(), 100);
       }
     }
   }
 
   canProceed(): boolean {
+    // QR Scan mode has different steps
+    if (this.isQrScanMode()) {
+      switch (this.currentStep()) {
+        case 1: // Image
+          return true;
+        case 2: // Title + Description
+          return this.formData.title.trim().length >= 3 && 
+                 this.formData.description.trim().length >= 10;
+        case 3: // Category
+          return this.formData.category !== '';
+        case 4: // Location
+          if (this.isCustomLocation()) {
+            return this.formData.location !== null && this.customLocationName.trim().length >= 3;
+          }
+          return this.formData.location !== null;
+        case 5: // Additional Info
+          return true;
+        default:
+          return false;
+      }
+    }
+    
+    // Normal mode
     switch (this.currentStep()) {
       case 1:
         return this.formData.status !== '';
@@ -187,11 +283,20 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         return this.formData.location !== null;
       case 6:
-        // If Found item with 'entrusted' storage, require entrustedTo
-        if (this.formData.status === 'found' && this.formData.storageLocation === 'entrusted') {
-          return this.formData.entrustedTo.trim().length >= 3;
+        // FOUND: Must accept warning first, then if 'entrusted', require entrustedTo
+        if (this.formData.status === 'found') {
+          if (!this.warningAccepted()) return false;
+          if (this.formData.storageLocation === 'entrusted') {
+            return this.formData.entrustedTo.trim().length >= 3;
+          }
+          return true;
         }
-        return true; // Other options are optional
+        // LOST: If not exposing phone, require at least one alternative contact
+        if (this.formData.status === 'lost' && !this.formData.exposePhone) {
+          const alt = this.formData.alternativeContact;
+          return !!(alt.instagram || alt.telegram || alt.line || alt.other);
+        }
+        return true;
       case 7:
         return true; // Can always proceed from suggestions
       default:
@@ -444,6 +549,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       description: this.formData.description,
       category: this.formData.category as ItemCategory,
       status: this.formData.status as ItemStatus,
+      reportStatus: 'active' as ReportStatus,  // NEW: all new reports start as active
       imageUrl: this.formData.imageUrl,
       date: this.formatDate(this.formData.date),
       time: this.formData.time,
@@ -459,16 +565,31 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       createdAt: new Date()
     };
     
+    // Add QR scan specific fields
+    if (this.isQrScanMode() && this.qrOwner()) {
+      const owner = this.qrOwner()!;
+      newItem.isScannedByQr = true;
+      newItem.scannedQrOwnerId = owner.id;
+      newItem.scannedQrOwnerName = owner.name;
+      newItem.scannedQrOwnerPhone = owner.phone;
+    }
+    
     // Add status-specific fields
     if (this.formData.status === 'lost') {
       newItem.reward = this.formData.reward;
       newItem.urgency = this.formData.urgency;
+      newItem.exposePhone = this.formData.exposePhone;
+      newItem.willingToCod = this.formData.willingToCod;
+      // Add alternative contact if phone is not exposed
+      if (!this.formData.exposePhone) {
+        newItem.alternativeContact = this.formData.alternativeContact;
+      }
     } else if (this.formData.status === 'found') {
       newItem.storageLocation = this.formData.storageLocation;
       if (this.formData.storageLocation === 'entrusted') {
         newItem.entrustedTo = this.formData.entrustedTo;
       }
-      newItem.willingToDeliver = this.formData.willingToDeliver;
+      newItem.willingToCod = this.formData.willingToCod;  // Changed from willingToDeliver
     }
 
     console.log('New item created:', newItem);
@@ -511,15 +632,25 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       time: this.getCurrentTime(),
       reward: false,
       urgency: 'normal',
+      exposePhone: true,
+      alternativeContact: {
+        instagram: '',
+        telegram: '',
+        line: '',
+        other: ''
+      },
       storageLocation: 'with-me',
       entrustedTo: '',
-      willingToDeliver: false
+      willingToDeliver: false,
+      willingToCod: false
     };
     this.customLocationName = '';
     this.currentStep.set(1);
     this.isSuccess.set(false);
     this.similarItems.set([]);
     this.selectedSuggestion.set(null);
+    this.warningAccepted.set(false);
+    this.showWarningModal.set(false);
     
     if (this.marker && this.map) {
       this.map.removeLayer(this.marker);
@@ -528,6 +659,18 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getStepTitle(): string {
+    // QR Scan mode titles
+    if (this.isQrScanMode()) {
+      const qrTitles = [
+        'Masukkan foto barang',
+        'Masukkan nama dan ciri-ciri barang',
+        'Pilih kategori barang',
+        'Pilih lokasi ditemukan',
+        'Informasi tambahan penemuan'
+      ];
+      return qrTitles[this.currentStep() - 1] || '';
+    }
+    
     const titles = [
       'Kamu kehilangan atau menemukan barang?',
       'Kamu punya bukti foto?',
@@ -541,6 +684,18 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getStepSubtitle(): string {
+    // QR Scan mode subtitles
+    if (this.isQrScanMode()) {
+      const qrSubtitles = [
+        'Agar pemilik lebih mengenal barangnya',
+        'Berikan detail agar mudah dikenali',
+        'Kategori membantu pencarian lebih cepat',
+        'Tandai di peta tempat barang ditemukan',
+        'Beritahu dimana barang disimpan'
+      ];
+      return qrSubtitles[this.currentStep() - 1] || '';
+    }
+    
     const subtitles = [
       'Pilih jenis laporan yang ingin kamu buat',
       'Foto membantu barang lebih mudah dikenali (opsional)',
@@ -548,7 +703,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       'Kategori membantu pencarian lebih cepat',
       'Tandai di peta tempat barang hilang/ditemukan',
       this.formData.status === 'lost' 
-        ? 'Atur tingkat urgensi dan tawarkan imbalan' 
+        ? 'Atur tingkat urgensi dan preferensi kontak' 
         : 'Beritahu dimana barang disimpan',
       'Kami menemukan barang serupa, cek dulu sebelum lapor'
     ];
@@ -570,8 +725,32 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     this.formData.storageLocation = location;
   }
   
-  // Toggle willing to deliver
+  // Toggle willing to deliver (DEPRECATED)
   toggleWillingToDeliver(): void {
     this.formData.willingToDeliver = !this.formData.willingToDeliver;
+  }
+  
+  // Toggle willing to COD
+  toggleWillingToCod(): void {
+    this.formData.willingToCod = !this.formData.willingToCod;
+  }
+  
+  // Toggle expose phone
+  toggleExposePhone(): void {
+    this.formData.exposePhone = !this.formData.exposePhone;
+  }
+  
+  // Warning modal methods for found items
+  openWarningModal(): void {
+    this.showWarningModal.set(true);
+  }
+  
+  closeWarningModal(): void {
+    this.showWarningModal.set(false);
+  }
+  
+  acceptWarning(): void {
+    this.warningAccepted.set(true);
+    this.showWarningModal.set(false);
   }
 }
