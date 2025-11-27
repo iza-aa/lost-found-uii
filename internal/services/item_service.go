@@ -66,6 +66,38 @@ func (s *ItemService) ReportFoundItem(req dto.CreateFoundItemRequest, finderID u
 	}, nil
 }
 
+func (s *ItemService) ReportLostItem(req dto.CreateLostItemRequest, ownerID uuid.UUID) (*dto.ItemResponse, error) {
+	dateLost, err := time.Parse("2006-01-02", req.DateLost)
+	if err != nil {
+		return nil, errors.New("invalid date format, use YYYY-MM-DD")
+	}
+
+	item := &models.Item{
+		Title:               req.Title,
+		Type:                models.ItemTypeLost,
+		CategoryID:          req.CategoryID,
+		LocationDescription: req.LocationLastSeen,
+		ImageURL:            req.ImageURL,
+		OwnerID:             &ownerID,
+		DateLost:            &dateLost,
+		Status:              models.ItemStatusOpen,
+	}
+
+	if err := s.ItemRepo.Create(item); err != nil {
+		return nil, err
+	}
+
+	return &dto.ItemResponse{
+		ID:           item.ID,
+		Title:        item.Title,
+		CategoryID:   item.CategoryID,
+		LocationName: item.LocationDescription, // Map description to LocationName in response
+		ImageURL:     item.ImageURL,
+		Status:       string(item.Status),
+		CreatedAt:    item.CreatedAt,
+	}, nil
+}
+
 func (s *ItemService) GetItem(id string) (*models.Item, error) {
 	return s.ItemRepo.FindByID(id)
 }
