@@ -44,6 +44,7 @@ pipeline {
                         -p ${PORT}:3000 \
                         -v /var/www/campus-lost-found/storage:/root/storage \
                         --env-file /var/www/campus-lost-found/.env \
+                        --sysctl net.ipv6.conf.all.disable_ipv6=1 \
                         --restart unless-stopped \
                         ${DOCKER_IMAGE_NAME}
                     """
