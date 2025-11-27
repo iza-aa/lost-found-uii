@@ -34,18 +34,10 @@ pipeline {
                 script {
                     echo 'Deploying to VPS...'
                     
-                    // Stop and remove existing container if it exists
-                    // Using try-catch or allowing failure in case container doesn't exist yet
-                    sh """
-                        docker stop ${CONTAINER_NAME} || true
-                        docker rm ${CONTAINER_NAME} || true
-                    """
+                    // Force remove existing container to prevent duplicates/conflicts
+                    sh "docker rm -f ${CONTAINER_NAME} || true"
 
                     // Run the new container
-                    // Mapping port 3000 on host to 3000 on container
-                    // Passing environment variables if needed. 
-                    // IMPORTANT: Make sure to set actual DB credentials in Jenkins Credentials and inject them here.
-                    // Example: --env DATABASE_URL=${DATABASE_URL}
                     sh """
                         docker run -d \
                         --name ${CONTAINER_NAME} \
@@ -61,11 +53,17 @@ pipeline {
     }
 
     post {
+        always {
+            // Clean up dangling images to save space and prevent duplicates
+            sh "docker image prune -f || true"
+        }
         success {
             echo 'Deployment successful!'
         }
         failure {
             echo 'Deployment failed.'
+            // Optional: Try to remove the container if it failed to start properly
+            sh "docker rm -f ${CONTAINER_NAME} || true"
         }
     }
 }
