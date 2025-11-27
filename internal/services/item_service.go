@@ -6,7 +6,6 @@ import (
 	"campus-lost-and-found/internal/models"
 	"campus-lost-and-found/internal/repository"
 	"errors"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -92,13 +91,15 @@ func (s *ItemService) SubmitClaim(itemID string, req dto.CreateClaimRequest, own
 	}
 
 	// Notify Finder
-	s.NotifService.CreateNotification(
-		item.FinderID,
-		"New Claim Received",
-		"Someone has claimed an item you found.",
-		"CLAIM_NEW",
-		claim.ID,
-	)
+	if item.FinderID != nil {
+		s.NotifService.CreateNotification(
+			*item.FinderID,
+			"New Claim Received",
+			"Someone has claimed an item you found.",
+			"CLAIM_NEW",
+			claim.ID,
+		)
+	}
 
 	return &dto.ClaimResponse{
 		ID:          claim.ID,
@@ -116,7 +117,7 @@ func (s *ItemService) GetClaims(itemID string, userID uuid.UUID) ([]models.Claim
 		return nil, err
 	}
 
-	if item.FinderID != userID {
+	if item.FinderID == nil || *item.FinderID != userID {
 		return nil, errors.New("unauthorized")
 	}
 
@@ -135,7 +136,7 @@ func (s *ItemService) DecideClaim(claimID string, status string, userID uuid.UUI
 		return err
 	}
 
-	if item.FinderID != userID {
+	if item.FinderID == nil || *item.FinderID != userID {
 		return errors.New("unauthorized")
 	}
 
