@@ -16,7 +16,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go app
-RUN CGO_ENABLED=0 GOOS=linux go build -o campus-lost-found ./cmd/server/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -v -x -p 1 -o campus-lost-found ./cmd/server/main.go
 
 # Run Stage
 FROM alpine:latest
