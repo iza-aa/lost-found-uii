@@ -81,16 +81,26 @@ pipeline {
             sh "docker rm -f ${CONTAINER_NAME}-backup || true"
         }
         failure {
-            echo 'Deployment failed. Rolling back to previous version...'
-            
-            // 1. Remove the failed new container
-            sh "docker rm -f ${CONTAINER_NAME} || true"
-            
-            // 2. Restore the backup container
-            sh "docker rename ${CONTAINER_NAME}-backup ${CONTAINER_NAME} || true"
-            sh "docker start ${CONTAINER_NAME} || true"
-            
-            echo 'Rollback completed.'
+            script {
+                // Only rollback if a backup exists (meaning we failed DURING deployment)
+                // If build failed, backup won't exist, and we shouldn't touch the running container.
+                def backupExists = sh(script: "docker ps -a -q -f name=${CONTAINER_NAME}-backup", returnStdout: true).trim()
+                
+                if (backupExists) {
+                    echo 'Deployment failed during container switch. Rolling back...'
+                    
+                    // 1. Remove the failed new container (if it exists)
+                    sh "docker rm -f ${CONTAINER_NAME} || true"
+                    
+                    // 2. Restore the backup container
+                    sh "docker rename ${CONTAINER_NAME}-backup ${CONTAINER_NAME} || true"
+                    sh "docker start ${CONTAINER_NAME} || true"
+                    
+                    echo 'Rollback completed.'
+                } else {
+                    echo 'Build failed before deployment. Production container is safe and untouched.'
+                }
+            }
         }
     }
 }
