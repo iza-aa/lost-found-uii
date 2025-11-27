@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
@@ -11,7 +13,11 @@ import (
 )
 
 type Config struct {
-	DB *gorm.DB
+	DB             *gorm.DB
+	JWTExpiry      time.Duration
+	AllowedOrigins []string
+	MaxUploadSize  int64
+	UploadPath     string
 }
 
 var AppConfig *Config
@@ -42,8 +48,43 @@ func InitConfig() {
 
 	log.Println("Database connection established")
 
+	// JWT Expiry
+	jwtExpiryStr := os.Getenv("JWT_EXPIRY")
+	jwtExpiry, err := time.ParseDuration(jwtExpiryStr)
+	if err != nil {
+		jwtExpiry = 24 * time.Hour // Default
+	}
+
+	// Allowed Origins
+	allowedOriginsStr := os.Getenv("ALLOWED_ORIGINS")
+	var allowedOrigins []string
+	if allowedOriginsStr != "" {
+		allowedOrigins = strings.Split(allowedOriginsStr, ",")
+	} else {
+		allowedOrigins = []string{"*"}
+	}
+
+	// Max Upload Size
+	maxUploadSizeStr := os.Getenv("MAX_UPLOAD_SIZE")
+	var maxUploadSize int64
+	if maxUploadSizeStr != "" {
+		fmt.Sscanf(maxUploadSizeStr, "%d", &maxUploadSize)
+	} else {
+		maxUploadSize = 10 * 1024 * 1024 // 10MB Default
+	}
+
+	// Upload Path
+	uploadPath := os.Getenv("UPLOAD_PATH")
+	if uploadPath == "" {
+		uploadPath = "./uploads"
+	}
+
 	AppConfig = &Config{
-		DB: db,
+		DB:             db,
+		JWTExpiry:      jwtExpiry,
+		AllowedOrigins: allowedOrigins,
+		MaxUploadSize:  maxUploadSize,
+		UploadPath:     uploadPath,
 	}
 }
 

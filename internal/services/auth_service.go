@@ -49,8 +49,14 @@ func (s *AuthService) Register(req dto.RegisterRequest) (*dto.AuthResponse, erro
 		return nil, err
 	}
 
+	refreshToken, err := utils.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &dto.AuthResponse{
-		Token: token,
+		Token:        token,
+		RefreshToken: refreshToken,
 		User: dto.UserResponse{
 			ID:    user.ID,
 			Name:  user.Name,
@@ -75,8 +81,52 @@ func (s *AuthService) Login(req dto.LoginRequest) (*dto.AuthResponse, error) {
 		return nil, err
 	}
 
+	refreshToken, err := utils.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &dto.AuthResponse{
-		Token: token,
+		Token:        token,
+		RefreshToken: refreshToken,
+		User: dto.UserResponse{
+			ID:    user.ID,
+			Name:  user.Name,
+			Email: user.Email,
+			Role:  string(user.Role),
+		},
+	}, nil
+}
+
+func (s *AuthService) RefreshToken(req dto.RefreshTokenRequest) (*dto.AuthResponse, error) {
+	claims, err := utils.ValidateToken(req.RefreshToken)
+	if err != nil {
+		return nil, errors.New("invalid refresh token")
+	}
+
+	if claims.Role != "REFRESH" {
+		return nil, errors.New("invalid token type")
+	}
+
+	user, err := s.UserRepo.FindByID(claims.UserID)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	newToken, err := utils.GenerateToken(user.ID, string(user.Role))
+	if err != nil {
+		return nil, err
+	}
+
+	// Optionally rotate refresh token here
+	newRefreshToken, err := utils.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.AuthResponse{
+		Token:        newToken,
+		RefreshToken: newRefreshToken,
 		User: dto.UserResponse{
 			ID:    user.ID,
 			Name:  user.Name,

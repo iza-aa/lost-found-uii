@@ -26,6 +26,28 @@ func (r *EnumerationRepository) GetLocations() ([]models.CampusLocation, error) 
 	return locations, err
 }
 
+func (r *EnumerationRepository) CreateCategory(name string) (*models.ItemCategory, error) {
+	category := &models.ItemCategory{Name: name}
+	err := r.DB.Create(category).Error
+	if err != nil {
+		return nil, err
+	}
+	return category, nil
+}
+
+func (r *EnumerationRepository) CreateLocation(name string, lat, long float64) (*models.CampusLocation, error) {
+	location := &models.CampusLocation{
+		Name:      name,
+		Latitude:  lat,
+		Longitude: long,
+	}
+	err := r.DB.Create(location).Error
+	if err != nil {
+		return nil, err
+	}
+	return location, nil
+}
+
 func (r *EnumerationRepository) Seed() {
 	// Simple seed check
 	var count int64

@@ -1,6 +1,7 @@
 package router
 
 import (
+	"campus-lost-and-found/config"
 	"campus-lost-and-found/internal/controllers"
 	"campus-lost-and-found/internal/middleware"
 
@@ -40,6 +41,23 @@ func (r *AppRouter) Setup(engine *gin.Engine) {
 	// Swagger
 	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	// Static Files
+	engine.Static("/uploads", config.AppConfig.UploadPath)
+
+	// Static Files (Uploads)
+	// Ensure config is imported or passed, but AppRouter doesn't have config.
+	// We can use config.AppConfig directly since it's a global singleton in this project structure.
+	// But router package needs to import config.
+	// Let's check imports first.
+	// I will assume I need to add import if not present.
+	// For now, I'll use a hardcoded path or try to access config if imported.
+	// Wait, router.go imports "campus-lost-and-found/internal/controllers" and "middleware".
+	// It does NOT import "config".
+	// I should add the import in a separate step or use a hardcoded fallback if I can't easily add import here without viewing.
+	// I viewed router.go, it does NOT import config.
+	// I will add the import first.
+
+
 	// Public Routes
 	api := engine.Group("/api/v1")
 	{
@@ -47,12 +65,15 @@ func (r *AppRouter) Setup(engine *gin.Engine) {
 		{
 			auth.POST("/register", r.AuthController.Register)
 			auth.POST("/login", r.AuthController.Login)
+			auth.POST("/refresh", r.AuthController.RefreshToken)
 		}
 
 		enum := api.Group("/enumerations")
 		{
 			enum.GET("/item-categories", r.EnumerationController.GetCategories)
+			enum.POST("/item-categories", r.EnumerationController.CreateCategory)
 			enum.GET("/campus-locations", r.EnumerationController.GetLocations)
+			enum.POST("/campus-locations", r.EnumerationController.CreateLocation)
 		}
 
 		// Public Scan

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"campus-lost-and-found/config"
 	"errors"
 	"os"
 	"time"
@@ -16,10 +17,25 @@ type Claims struct {
 }
 
 func GenerateToken(userID uuid.UUID, role string) (string, error) {
-	expirationTime := time.Now().Add(24 * time.Hour)
+	expirationTime := time.Now().Add(config.AppConfig.JWTExpiry)
 	claims := &Claims{
 		UserID: userID,
 		Role:   role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			Issuer:    "campus-lost-found",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+}
+
+func GenerateRefreshToken(userID uuid.UUID) (string, error) {
+	expirationTime := time.Now().Add(7 * 24 * time.Hour) // 7 Days
+	claims := &Claims{
+		UserID: userID,
+		Role:   "REFRESH",
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			Issuer:    "campus-lost-found",

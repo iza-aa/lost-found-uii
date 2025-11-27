@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"campus-lost-and-found/config"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -23,7 +24,7 @@ func NewUploadService() *UploadService {
 }
 
 func (s *UploadService) UploadFile(file multipart.File, header *multipart.FileHeader) (string, error) {
-	uploadDir := "uploads"
+	uploadDir := config.AppConfig.UploadPath
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
 		os.Mkdir(uploadDir, 0755)
 	}
@@ -45,7 +46,7 @@ func (s *UploadService) UploadFile(file multipart.File, header *multipart.FileHe
 }
 
 func (s *UploadService) UploadBytes(data []byte, filename string) (string, error) {
-	uploadDir := "uploads"
+	uploadDir := config.AppConfig.UploadPath
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
 		os.Mkdir(uploadDir, 0755)
 	}

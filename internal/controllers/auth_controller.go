@@ -67,3 +67,29 @@ func (ctrl *AuthController) Login(c *gin.Context) {
 
 	c.JSON(http.StatusOK, res)
 }
+
+// RefreshToken godoc
+// @Summary Refresh access token
+// @Description Get new access token using refresh token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body dto.RefreshTokenRequest true "Refresh Token Request"
+// @Success 200 {object} dto.AuthResponse
+// @Failure 401 {object} map[string]string
+// @Router /auth/refresh [post]
+func (ctrl *AuthController) RefreshToken(c *gin.Context) {
+	var req dto.RefreshTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	res, err := ctrl.Service.RefreshToken(req)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
+}

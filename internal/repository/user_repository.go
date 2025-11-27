@@ -3,6 +3,7 @@ package repository
 import (
 	"campus-lost-and-found/internal/models"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -27,7 +28,7 @@ func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
-func (r *UserRepository) FindByID(id string) (*models.User, error) {
+func (r *UserRepository) FindByID(id uuid.UUID) (*models.User, error) {
 	var user models.User
 	err := r.DB.Where("id = ?", id).First(&user).Error
 	if err != nil {

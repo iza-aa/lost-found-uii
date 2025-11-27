@@ -24,6 +24,8 @@ definitions:
     type: object
   dto.AuthResponse:
     properties:
+      refresh_token:
+        type: string
       token:
         type: string
       user:
@@ -128,6 +130,13 @@ definitions:
     required:
     - email
     - password
+    type: object
+  dto.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
     type: object
   dto.RegisterRequest:
     properties:
@@ -568,6 +577,34 @@ paths:
               type: string
             type: object
       summary: Login user
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get new access token using refresh token
+      parameters:
+      - description: Refresh Token Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refresh access token
       tags:
       - auth
   /auth/register:
