@@ -2,7 +2,7 @@ import { Injectable, PLATFORM_ID, Inject, signal, computed } from '@angular/core
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { User, getBadgeFromEmail } from '../models/user.model';
-import { getMockUserByEmail, MOCK_USERS } from '../mocks/user.mock';
+import { getMockUserByEmail, MOCK_USERS, addMockUser } from '../mocks/user.mock';
 
 @Injectable({
   providedIn: 'root'
@@ -29,6 +29,7 @@ export class AuthService {
 
   /**
    * Load user from localStorage (if browser)
+   * If user exists in mock data, use mock data (more up-to-date)
    */
   private loadUserFromStorage(): void {
     if (!this.isBrowser) return;
@@ -36,8 +37,22 @@ export class AuthService {
     const stored = localStorage.getItem(this.STORAGE_KEY);
     if (stored) {
       try {
-        const user = JSON.parse(stored) as User;
-        this.currentUserSignal.set(user);
+        const storedUser = JSON.parse(stored) as User;
+        
+        // Check if this user exists in mock data (by email)
+        // If yes, use mock data to get updated info
+        const mockUser = getMockUserByEmail(storedUser.email);
+        
+        if (mockUser) {
+          // Use mock user data (more up-to-date)
+          this.currentUserSignal.set(mockUser);
+          this.saveUserToStorage(mockUser);
+        } else {
+          // Use stored user data
+          this.currentUserSignal.set(storedUser);
+          // Also add to MOCK_USERS so public profile can find them
+          addMockUser(storedUser);
+        }
       } catch {
         localStorage.removeItem(this.STORAGE_KEY);
       }
@@ -107,6 +122,9 @@ export class AuthService {
     if (role === 'staff') {
       newUser.employeeId = `19${Math.floor(100000 + Math.random() * 900000)}`;
     }
+
+    // Add new user to MOCK_USERS so public profile can find them
+    addMockUser(newUser);
 
     this.currentUserSignal.set(newUser);
     this.saveUserToStorage(newUser);

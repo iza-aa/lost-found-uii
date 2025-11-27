@@ -31,19 +31,19 @@
       <!-- Progress Bar -->
       <div class="mb-8">
         <div class="flex items-center justify-between mb-2">
-          @for (step of [1,2,3,4,5,6]; track step) {
+          @for (step of stepsArray; track step) {
             <button 
               (click)="goToStep(step)"
               [class]="step <= currentStep() 
-                ? 'w-8 h-8 rounded-full bg-uii-blue text-white text-sm font-semibold flex items-center justify-center transition' 
-                : 'w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 text-sm font-semibold flex items-center justify-center'"
+                ? 'w-7 h-7 rounded-full bg-uii-blue text-white text-xs font-semibold flex items-center justify-center transition' 
+                : 'w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 text-xs font-semibold flex items-center justify-center'"
               [disabled]="step > currentStep()">
               {{ step }}
             </button>
-            @if (step < 6) {
+            @if (step < totalSteps) {
               <div [class]="step < currentStep() 
-                ? 'flex-1 h-1 bg-uii-blue mx-1' 
-                : 'flex-1 h-1 bg-gray-200 dark:bg-gray-700 mx-1'"></div>
+                ? 'flex-1 h-1 bg-uii-blue mx-0.5' 
+                : 'flex-1 h-1 bg-gray-200 dark:bg-gray-700 mx-0.5'"></div>
             }
           }
         </div>
@@ -186,14 +186,15 @@
             <!-- Location Dropdown -->
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Atau pilih lokasi:
+                Pilih lokasi:
               </label>
               <select 
+                [value]="formData.location?.id || ''"
                 (change)="selectLocationFromDropdown($event)"
                 class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition">
                 <option value="">-- Pilih Lokasi --</option>
                 @for (loc of locations; track loc.id) {
-                  <option [value]="loc.id">{{ loc.name }}</option>
+                  <option [value]="loc.id" [selected]="formData.location?.id === loc.id">{{ loc.name }}</option>
                 }
               </select>
             </div>
@@ -201,16 +202,40 @@
             <!-- Map Container -->
             <div id="map" class="w-full h-64 rounded-xl border border-gray-200 dark:border-gray-700 z-0"></div>
             
+            <!-- Custom Location Name Input (when clicking custom point on map) -->
+            @if (isCustomLocation()) {
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Nama Lokasi <span class="text-red-500">*</span>
+                </label>
+                <input 
+                  type="text"
+                  [(ngModel)]="customLocationName"
+                  (input)="updateCustomLocationName()"
+                  placeholder="Contoh: Depan Gedung A, Toilet Lt. 2, dll"
+                  class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition"
+                >
+                <p class="text-xs text-gray-400">
+                  <i class="ph ph-info"></i> Lokasi tidak ada di daftar, silakan tulis nama lokasi
+                </p>
+              </div>
+            }
+            
             <!-- Selected Location -->
             @if (formData.location) {
               <div class="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
                 <i class="ph-fill ph-map-pin text-green-500 text-xl"></i>
-                <div>
+                <div class="flex-1">
                   <p class="font-medium text-green-700 dark:text-green-400">{{ formData.location.name }}</p>
                   @if (formData.location.description) {
                     <p class="text-xs text-green-600 dark:text-green-500">{{ formData.location.description }}</p>
                   }
                 </div>
+                @if (isCustomLocation()) {
+                  <span class="px-2 py-1 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full">
+                    Custom
+                  </span>
+                }
               </div>
             } @else {
               <p class="text-center text-sm text-gray-400">
@@ -220,8 +245,161 @@
           </div>
         }
 
-        <!-- Step 6: Suggestions -->
+        <!-- Step 6: Status-Specific Options -->
         @if (currentStep() === 6) {
+          <div class="space-y-6">
+            <!-- LOST: Kehilangan Options -->
+            @if (formData.status === 'lost') {
+              <!-- Urgency Level -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  <i class="ph ph-warning-circle"></i> Tingkat Urgensi
+                </label>
+                <div class="grid grid-cols-3 gap-3">
+                  @for (opt of urgencyOptions; track opt.value) {
+                    <button 
+                      type="button"
+                      (click)="setUrgency(opt.value)"
+                      [class]="formData.urgency === opt.value 
+                        ? 'p-3 rounded-xl border-2 transition-all ' + 
+                          (opt.color === 'gray' ? 'border-gray-500 bg-gray-50 dark:bg-gray-700' : '') +
+                          (opt.color === 'yellow' ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' : '') +
+                          (opt.color === 'red' ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : '')
+                        : 'p-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 transition-all'">
+                      <i [class]="'ph ' + opt.icon + ' text-xl mb-1 ' + 
+                        (opt.color === 'gray' ? 'text-gray-500' : '') +
+                        (opt.color === 'yellow' ? 'text-yellow-500' : '') +
+                        (opt.color === 'red' ? 'text-red-500' : '')"></i>
+                      <p class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ opt.label }}</p>
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- Reward Toggle -->
+              <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-uii-gold/20 flex items-center justify-center">
+                    <i class="ph ph-gift text-xl text-uii-gold"></i>
+                  </div>
+                  <div>
+                    <p class="font-medium text-gray-900 dark:text-white">Tawarkan Imbalan?</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Beri tahu jika ada imbalan bagi penemu</p>
+                  </div>
+                </div>
+                <button 
+                  type="button"
+                  (click)="toggleReward()"
+                  [class]="formData.reward 
+                    ? 'w-12 h-7 bg-uii-gold rounded-full relative transition-colors' 
+                    : 'w-12 h-7 bg-gray-300 dark:bg-gray-600 rounded-full relative transition-colors'">
+                  <span [class]="formData.reward 
+                    ? 'absolute top-0.5 right-0.5 w-6 h-6 bg-white rounded-full shadow transition-all' 
+                    : 'absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-all'"></span>
+                </button>
+              </div>
+
+              @if (formData.reward) {
+                <div class="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
+                  <p class="text-sm text-yellow-700 dark:text-yellow-400">
+                    <i class="ph ph-info"></i> Imbalan akan ditampilkan di laporan. Negosiasi langsung dengan penemu.
+                  </p>
+                </div>
+              }
+            }
+
+            <!-- FOUND: Menemukan Options -->
+            @if (formData.status === 'found') {
+              <!-- Storage Location -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  <i class="ph ph-package"></i> Barang Disimpan Di
+                </label>
+                <div class="space-y-3">
+                  @for (opt of storageOptions; track opt.value) {
+                    <button 
+                      type="button"
+                      (click)="setStorageLocation(opt.value)"
+                      [class]="formData.storageLocation === opt.value 
+                        ? 'w-full p-4 rounded-xl border-2 border-uii-blue bg-blue-50 dark:bg-blue-900/20 transition-all text-left flex items-center gap-4' 
+                        : 'w-full p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 transition-all text-left flex items-center gap-4'">
+                      <div [class]="formData.storageLocation === opt.value 
+                        ? 'w-12 h-12 rounded-full bg-uii-blue/20 flex items-center justify-center flex-shrink-0' 
+                        : 'w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0'">
+                        <i [class]="'ph ' + opt.icon + ' text-2xl ' + (formData.storageLocation === opt.value ? 'text-uii-blue' : 'text-gray-500')"></i>
+                      </div>
+                      <div>
+                        <p [class]="formData.storageLocation === opt.value ? 'font-semibold text-uii-blue' : 'font-semibold text-gray-900 dark:text-white'">{{ opt.label }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ opt.description }}</p>
+                      </div>
+                      @if (formData.storageLocation === opt.value) {
+                        <i class="ph-fill ph-check-circle text-uii-blue text-xl ml-auto"></i>
+                      }
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- Entrusted To Input (only when 'entrusted' is selected) -->
+              @if (formData.storageLocation === 'entrusted') {
+                <div class="space-y-2">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <i class="ph ph-user"></i> Dititipkan Ke Siapa? <span class="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="formData.entrustedTo"
+                    placeholder="cth: Security a/n Pak Budi"
+                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-uii-blue focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400">
+                  @if (formData.entrustedTo.trim().length > 0 && formData.entrustedTo.trim().length < 3) {
+                    <p class="text-xs text-red-500">
+                      <i class="ph ph-warning"></i> Minimal 3 karakter
+                    </p>
+                  }
+                  @if (formData.entrustedTo.trim().length >= 3) {
+                    <p class="text-xs text-green-500">
+                      <i class="ph-fill ph-check-circle"></i> Barang dititipkan ke: {{ formData.entrustedTo }}
+                    </p>
+                  }
+                </div>
+              }
+
+              <!-- Willing to Deliver Toggle -->
+              <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                    <i class="ph ph-car text-xl text-green-600"></i>
+                  </div>
+                  <div>
+                    <p class="font-medium text-gray-900 dark:text-white">Bersedia Mengantarkan?</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Anda bisa mengantar barang ke pemilik</p>
+                  </div>
+                </div>
+                <button 
+                  type="button"
+                  (click)="toggleWillingToDeliver()"
+                  [class]="formData.willingToDeliver 
+                    ? 'w-12 h-7 bg-green-500 rounded-full relative transition-colors' 
+                    : 'w-12 h-7 bg-gray-300 dark:bg-gray-600 rounded-full relative transition-colors'">
+                  <span [class]="formData.willingToDeliver 
+                    ? 'absolute top-0.5 right-0.5 w-6 h-6 bg-white rounded-full shadow transition-all' 
+                    : 'absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-all'"></span>
+                </button>
+              </div>
+
+              @if (formData.willingToDeliver) {
+                <div class="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                  <p class="text-sm text-green-700 dark:text-green-400">
+                    <i class="ph ph-info"></i> Pemilik akan menghubungi Anda untuk mengatur lokasi penyerahan.
+                  </p>
+                </div>
+              }
+            }
+          </div>
+        }
+
+        <!-- Step 7: Suggestions -->
+        @if (currentStep() === 7) {
           <div class="space-y-4">
             @if (isCheckingSuggestions()) {
               <!-- Loading State -->
@@ -319,15 +497,22 @@
               class="flex-1 py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
               @if (currentStep() === 2 && !formData.imageUrl) {
                 Lewati
-              } @else if (currentStep() === 5) {
+              } @else if (currentStep() === 6 && formData.status === 'lost') {
                 Cek Barang Serupa
+              } @else if (currentStep() === 6 && formData.status === 'found') {
+                @if (isSubmitting()) {
+                  <i class="ph ph-spinner animate-spin text-xl mr-1"></i>
+                  Mengirim...
+                } @else {
+                  Kirim Laporan
+                }
               } @else {
                 Lanjut
               }
               <i class="ph ph-arrow-right"></i>
             </button>
           } @else {
-            <!-- Step 6: Final Submit -->
+            <!-- Step 7: Final Submit -->
             <button 
               (click)="skipSuggestions()"
               [disabled]="isSubmitting() || isCheckingSuggestions()"

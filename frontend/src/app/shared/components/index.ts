@@ -8,3 +8,5 @@ export * from './user-badge/user-badge.component';
 export * from './cube-loader/cube-loader.component';
 export * from './leaflet-map/leaflet-map.component';
 export * from './confirm-modal/confirm-modal.component';
+export * from './qr-scanner/qr-scanner.component';
+export * from './qr-display/qr-display.component';

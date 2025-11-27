@@ -30,9 +30,17 @@
           <div class="flex justify-center mb-3">
             <app-user-badge [badge]="currentUser()?.badge || 'gray'" size="md"></app-user-badge>
           </div>
-          <p class="text-gray-500 dark:text-gray-400 text-sm">
+          <p class="text-gray-500 dark:text-gray-400 text-sm mb-4">
             {{ currentUser()?.email }}
           </p>
+
+          <!-- QR Code Button -->
+          <button 
+            (click)="openQRModal()"
+            class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+            <i class="ph ph-qr-code text-lg"></i>
+            <span class="text-sm font-medium">QR Code Saya</span>
+          </button>
         </div>
 
         <!-- Info Akun -->
@@ -330,6 +338,43 @@
         <button class="w-full mt-6 py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition">
           Simpan Perubahan
         </button>
+      </div>
+    </div>
+  }
+
+  <!-- QR Code Modal -->
+  @if (showQRModal()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <!-- Backdrop -->
+      <div 
+        class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        (click)="closeQRModal()">
+      </div>
+      
+      <!-- Modal -->
+      <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-sm animate-scale-up">
+        <button 
+          (click)="closeQRModal()"
+          class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+          <i class="ph ph-x text-xl"></i>
+        </button>
+        
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">QR Code Saya</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+          Tempel QR ini di barang-barang Anda agar mudah dihubungi jika ditemukan
+        </p>
+        
+        <!-- QR Display -->
+        @if (qrCodeUrl()) {
+          <app-qr-display
+            [data]="qrCodeUrl()"
+            [size]="200"
+            [title]="currentUser()?.name || ''"
+            [subtitle]="getBadgeLabel()"
+            [showDownload]="true"
+            [showShare]="true">
+          </app-qr-display>
+        }
       </div>
     </div>
   }

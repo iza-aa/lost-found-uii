@@ -3,7 +3,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import type * as LeafletTypes from 'leaflet';
-import { Item, ItemCategory, ItemStatus } from '../../core/models';
+import { Item, ItemCategory, ItemStatus, UrgencyLevel, StorageLocation } from '../../core/models';
 import { MOCK_CATEGORIES, MOCK_LOCATIONS, MOCK_ITEMS, UII_CENTER, CampusLocation } from '../../core/mocks';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -23,9 +23,14 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   private map: LeafletTypes.Map | null = null;
   private marker: LeafletTypes.Marker | null = null;
 
-  // Steps
+  // Steps: Lost=7 steps (includes suggestions), Found=6 steps (no suggestions)
   currentStep = signal(1);
-  totalSteps = 6;
+  get totalSteps(): number {
+    return this.formData.status === 'found' ? 6 : 7;
+  }
+  get stepsArray(): number[] {
+    return Array.from({ length: this.totalSteps }, (_, i) => i + 1);
+  }
   isSubmitting = signal(false);
   isSuccess = signal(false);
   isCheckingSuggestions = signal(false);
@@ -33,6 +38,9 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   // Suggestions
   similarItems = signal<Item[]>([]);
   selectedSuggestion = signal<Item | null>(null);
+
+  // Custom location
+  customLocationName = '';
 
   // Form Data
   formData = {
@@ -44,12 +52,32 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     category: '' as ItemCategory | '',
     location: null as CampusLocation | null,
     date: '',
-    time: ''
+    time: '',
+    // Lost specific
+    reward: false,
+    urgency: 'normal' as UrgencyLevel,
+    // Found specific
+    storageLocation: 'with-me' as StorageLocation,
+    entrustedTo: '',
+    willingToDeliver: false
   };
 
   // Data
   categories = MOCK_CATEGORIES.filter(c => c.id !== 'all') as Array<{id: ItemCategory; label: string; icon: string}>;
   locations = MOCK_LOCATIONS;
+  
+  // Urgency options
+  urgencyOptions: { value: UrgencyLevel; label: string; icon: string; color: string }[] = [
+    { value: 'normal', label: 'Biasa', icon: 'ph-circle', color: 'gray' },
+    { value: 'important', label: 'Penting', icon: 'ph-warning', color: 'yellow' },
+    { value: 'very-important', label: 'Sangat Penting', icon: 'ph-warning-octagon', color: 'red' }
+  ];
+  
+  // Storage location options
+  storageOptions: { value: StorageLocation; label: string; icon: string; description: string }[] = [
+    { value: 'with-me', label: 'Saya Bawa', icon: 'ph-hand-grabbing', description: 'Barang ada di tangan saya' },
+    { value: 'entrusted', label: 'Dititipkan', icon: 'ph-user-check', description: 'Barang dititipkan ke orang lain' }
+  ];
 
   constructor(
     @Inject(PLATFORM_ID) platformId: Object,
@@ -83,6 +111,12 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   // Step Navigation
   nextStep(): void {
     if (this.canProceed()) {
+      // For Found items: submit after step 6 (no suggestions step)
+      if (this.formData.status === 'found' && this.currentStep() === 6) {
+        this.submitForm();
+        return;
+      }
+      
       if (this.currentStep() < this.totalSteps) {
         // Destroy map before leaving step 5
         if (this.currentStep() === 5) {
@@ -95,8 +129,8 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
           setTimeout(() => this.initMap(), 100);
         }
         
-        // Step 6: Check for similar items
-        if (this.currentStep() === 6) {
+        // Step 7: Check for similar items (only for Lost items)
+        if (this.currentStep() === 7 && this.formData.status === 'lost') {
           this.checkSimilarItems();
         }
       }
@@ -147,14 +181,39 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       case 4:
         return this.formData.category !== '';
       case 5:
+        // If custom location, require name to be filled
+        if (this.isCustomLocation()) {
+          return this.formData.location !== null && this.customLocationName.trim().length >= 3;
+        }
         return this.formData.location !== null;
       case 6:
+        // If Found item with 'entrusted' storage, require entrustedTo
+        if (this.formData.status === 'found' && this.formData.storageLocation === 'entrusted') {
+          return this.formData.entrustedTo.trim().length >= 3;
+        }
+        return true; // Other options are optional
+      case 7:
         return true; // Can always proceed from suggestions
       default:
         return false;
     }
   }
 
+  // Check if current location is custom (not from predefined list)
+  isCustomLocation(): boolean {
+    return this.formData.location?.id === 'custom';
+  }
+
+  // Update custom location name
+  updateCustomLocationName(): void {
+    if (this.formData.location && this.formData.location.id === 'custom') {
+      this.formData.location = {
+        ...this.formData.location,
+        name: this.customLocationName.trim() || 'Lokasi Custom',
+        description: `Koordinat: ${this.formData.location.lat.toFixed(6)}, ${this.formData.location.lng.toFixed(6)}`
+      };
+    }
+  }
   // Step 1: Status
   selectStatus(status: ItemStatus): void {
     this.formData.status = status;
@@ -237,9 +296,12 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       // DEBUG: Log coordinates for easy copying
       console.log(`📍 Koordinat: { lat: ${e.latlng.lat}, lng: ${e.latlng.lng} }`);
       
+      // Reset custom location name when clicking new custom point
+      this.customLocationName = '';
+      
       const customLocation: CampusLocation = {
         id: 'custom',
-        name: 'Lokasi Dipilih',
+        name: 'Lokasi Custom (isi nama lokasi)',
         lat: e.latlng.lat,
         lng: e.latlng.lng,
         description: `Koordinat: ${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`
@@ -273,6 +335,11 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   selectLocation(location: CampusLocation): void {
     this.formData.location = location;
     
+    // Reset custom name if selecting from predefined list
+    if (location.id !== 'custom') {
+      this.customLocationName = '';
+    }
+    
     if (this.map && L) {
       if (this.marker) {
         this.map.removeLayer(this.marker);
@@ -298,6 +365,8 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     const select = event.target as HTMLSelectElement;
     const location = this.locations.find(l => l.id === select.value);
     if (location) {
+      // Reset custom location name when selecting from dropdown
+      this.customLocationName = '';
       this.selectLocation(location);
     }
   }
@@ -316,11 +385,11 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private findSimilarItems(): Item[] {
-    const { title, description, category, status } = this.formData;
+    const { title, description, category } = this.formData;
     const searchTerms = `${title} ${description}`.toLowerCase().split(/\s+/);
     
-    // Get opposite status (if user lost something, show found items and vice versa)
-    const targetStatus = status === 'lost' ? 'found' : 'lost';
+    // Only search for found items (to match against lost reports)
+    const targetStatus = 'found';
     
     return MOCK_ITEMS
       .filter(item => {
@@ -369,22 +438,38 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const user = this.authService.getCurrentUser();
     
-    const newItem = {
+    const newItem: Partial<Item> = {
       id: `item_${Date.now()}`,
       title: this.formData.title,
       description: this.formData.description,
-      category: this.formData.category,
-      status: this.formData.status,
+      category: this.formData.category as ItemCategory,
+      status: this.formData.status as ItemStatus,
       imageUrl: this.formData.imageUrl,
       date: this.formatDate(this.formData.date),
       time: this.formData.time,
-      location: this.formData.location,
+      location: this.formData.location ? {
+        name: this.formData.location.name,
+        lat: this.formData.location.lat,
+        lng: this.formData.location.lng
+      } : undefined,
       reporterId: user?.id,
       reporterName: user?.name,
       reporterBadge: user?.badge,
       reporterPhone: user?.phone,
       createdAt: new Date()
     };
+    
+    // Add status-specific fields
+    if (this.formData.status === 'lost') {
+      newItem.reward = this.formData.reward;
+      newItem.urgency = this.formData.urgency;
+    } else if (this.formData.status === 'found') {
+      newItem.storageLocation = this.formData.storageLocation;
+      if (this.formData.storageLocation === 'entrusted') {
+        newItem.entrustedTo = this.formData.entrustedTo;
+      }
+      newItem.willingToDeliver = this.formData.willingToDeliver;
+    }
 
     console.log('New item created:', newItem);
 
@@ -423,8 +508,14 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       category: '',
       location: null,
       date: this.getTodayDate(),
-      time: this.getCurrentTime()
+      time: this.getCurrentTime(),
+      reward: false,
+      urgency: 'normal',
+      storageLocation: 'with-me',
+      entrustedTo: '',
+      willingToDeliver: false
     };
+    this.customLocationName = '';
     this.currentStep.set(1);
     this.isSuccess.set(false);
     this.similarItems.set([]);
@@ -443,6 +534,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       'Masukkan nama dan ciri-ciri barang',
       'Pilih kategori barang',
       'Pilih lokasi kejadian',
+      this.formData.status === 'lost' ? 'Informasi tambahan kehilangan' : 'Informasi tambahan penemuan',
       'Apakah ini barang kamu?'
     ];
     return titles[this.currentStep() - 1] || '';
@@ -455,8 +547,31 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       'Berikan detail agar mudah ditemukan',
       'Kategori membantu pencarian lebih cepat',
       'Tandai di peta tempat barang hilang/ditemukan',
+      this.formData.status === 'lost' 
+        ? 'Atur tingkat urgensi dan tawarkan imbalan' 
+        : 'Beritahu dimana barang disimpan',
       'Kami menemukan barang serupa, cek dulu sebelum lapor'
     ];
     return subtitles[this.currentStep() - 1] || '';
+  }
+  
+  // Toggle reward
+  toggleReward(): void {
+    this.formData.reward = !this.formData.reward;
+  }
+  
+  // Set urgency level
+  setUrgency(level: UrgencyLevel): void {
+    this.formData.urgency = level;
+  }
+  
+  // Set storage location
+  setStorageLocation(location: StorageLocation): void {
+    this.formData.storageLocation = location;
+  }
+  
+  // Toggle willing to deliver
+  toggleWillingToDeliver(): void {
+    this.formData.willingToDeliver = !this.formData.willingToDeliver;
   }
 }

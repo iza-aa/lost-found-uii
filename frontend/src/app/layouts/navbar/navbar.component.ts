@@ -1,17 +1,19 @@
-import { Component, inject } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Component, inject, signal } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
+import { QrScannerComponent } from '../../shared/components';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterModule, CommonModule], 
+  imports: [RouterModule, CommonModule, QrScannerComponent], 
   templateUrl: './navbar.component.html',
-  styleUrl: './navbar.component.css'
+  styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent {
   private authService = inject(AuthService);
+  private router = inject(Router);
   
   // Reactive signals from AuthService
   currentUser = this.authService.currentUser;
@@ -19,6 +21,7 @@ export class NavbarComponent {
   
   notificationCount = 3; // TODO: Ambil dari service nanti
   showUserMenu = false;
+  showQRScanner = signal(false);
 
   toggleUserMenu(): void {
     this.showUserMenu = !this.showUserMenu;
@@ -34,12 +37,35 @@ export class NavbarComponent {
   }
 
   openQRScanner(): void {
-    // TODO: Implementasi QR Scanner
-    console.log('Open QR Scanner');
+    this.showQRScanner.set(true);
   }
 
-  openNotifications(): void {
-    // TODO: Implementasi Notification panel
-    console.log('Open Notifications');
+  closeQRScanner(): void {
+    this.showQRScanner.set(false);
+  }
+
+  onQRScanSuccess(result: string): void {
+    this.showQRScanner.set(false);
+    
+    // Check if it's a valid URL from our app
+    if (result.includes('/u/')) {
+      // Extract userId and navigate
+      const userId = result.split('/u/').pop();
+      if (userId) {
+        this.router.navigate(['/u', userId]);
+      }
+    } else {
+      // Try to open as URL or show error
+      try {
+        const url = new URL(result);
+        window.open(url.href, '_blank');
+      } catch {
+        alert('QR Code tidak valid');
+      }
+    }
+  }
+
+  onQRScanError(error: string): void {
+    console.error('QR Scan error:', error);
   }
 }

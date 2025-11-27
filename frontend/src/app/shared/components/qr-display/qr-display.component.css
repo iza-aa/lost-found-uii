@@ -1,0 +1,4 @@
+/* QR Display styles */
+:host {
+  display: block;
+}

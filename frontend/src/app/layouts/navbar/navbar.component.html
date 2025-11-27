@@ -18,9 +18,9 @@
            class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
           Beranda
         </a>
-        <a routerLink="/search" routerLinkActive="text-uii-gold border-uii-gold" 
+        <a routerLink="/notification" routerLinkActive="text-uii-gold border-uii-gold" 
            class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
-          Cari Barang
+          Notifikasi
         </a>
         <a routerLink="/radar" routerLinkActive="text-uii-gold border-uii-gold" 
            class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
@@ -45,20 +45,7 @@
           <i class="ph ph-qr-code text-2xl"></i>
         </button>
 
-        <!-- Notification Button (only if authenticated) -->
-        @if (isAuthenticated()) {
-          <button 
-            (click)="openNotifications()"
-            class="relative p-2 rounded-lg hover:bg-white/10 transition"
-            title="Notifikasi">
-            <i class="ph ph-bell text-2xl"></i>
-            @if (notificationCount > 0) {
-              <span class="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                {{ notificationCount }}
-              </span>
-            }
-          </button>
-        }
+
 
         <!-- User Menu / Login Button (Desktop Only) -->
         @if (isAuthenticated()) {
@@ -150,3 +137,12 @@
     </div>
   </div>
 </nav>
+
+<!-- QR Scanner Modal -->
+@if (showQRScanner()) {
+  <app-qr-scanner
+    (scanSuccess)="onQRScanSuccess($event)"
+    (scanError)="onQRScanError($event)"
+    (close)="closeQRScanner()">
+  </app-qr-scanner>
+}

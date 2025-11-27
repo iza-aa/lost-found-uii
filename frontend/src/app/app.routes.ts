@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from './features/home/home.component';
-import { SearchComponent } from './features/search/search.component';
+import { NotificationComponent } from './features/notification/notification.component';
 import { PostItemComponent } from './features/post-item/post-item.component';
 import { RadarComponent } from './features/radar/radar.component';
 import { ProfileComponent } from './features/profile/profile.component';
@@ -10,6 +10,12 @@ export const routes: Routes = [
   // Public routes
   { path: '', component: HomeComponent },
   
+  // Public profile (untuk QR scan) - tanpa navbar/bottom-nav
+  { 
+    path: 'u/:userId', 
+    loadComponent: () => import('./features/public-profile/public-profile.component').then(m => m.PublicProfileComponent)
+  },
+  
   // Auth routes (hanya untuk guest)
   { 
     path: 'login', 
@@ -18,7 +24,7 @@ export const routes: Routes = [
   },
   
   // Protected routes (harus login)
-  { path: 'search', component: SearchComponent, canActivate: [authGuard] },
+  { path: 'notification', component: NotificationComponent, canActivate: [authGuard] },
   { path: 'post-item', component: PostItemComponent, canActivate: [authGuard] },
   { path: 'radar', component: RadarComponent, canActivate: [authGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },

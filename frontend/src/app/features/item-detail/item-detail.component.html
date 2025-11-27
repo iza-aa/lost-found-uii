@@ -165,6 +165,92 @@
           <p class="text-gray-600 dark:text-gray-400 leading-relaxed lg:text-lg">{{ item.description }}</p>
         </div>
 
+        <!-- Status-Specific Info -->
+        @if (item.status === 'lost') {
+          <!-- Lost Item Additional Info -->
+          <div class="mb-6 space-y-3">
+            <!-- Urgency Badge -->
+            @if (item.urgency && item.urgency !== 'normal') {
+              <div [class]="'flex items-center gap-3 p-3 rounded-xl ' + 
+                (item.urgency === 'very-important' ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' : 
+                 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800')">
+                <div [class]="'w-10 h-10 rounded-full flex items-center justify-center ' + 
+                  (item.urgency === 'very-important' ? 'bg-red-100 dark:bg-red-900/50' : 'bg-yellow-100 dark:bg-yellow-900/50')">
+                  <i [class]="'ph-fill text-xl ' + 
+                    (item.urgency === 'very-important' ? 'ph-warning-octagon text-red-500' : 'ph-warning text-yellow-500')"></i>
+                </div>
+                <div>
+                  <p [class]="'font-medium ' + 
+                    (item.urgency === 'very-important' ? 'text-red-700 dark:text-red-400' : 'text-yellow-700 dark:text-yellow-400')">
+                    {{ item.urgency === 'very-important' ? 'Sangat Penting' : 'Penting' }}
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Barang ini memiliki urgensi tinggi</p>
+                </div>
+              </div>
+            }
+
+            <!-- Reward Badge -->
+            @if (item.reward) {
+              <div class="flex items-center gap-3 p-3 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
+                <div class="w-10 h-10 rounded-full bg-yellow-100 dark:bg-yellow-900/50 flex items-center justify-center">
+                  <i class="ph-fill ph-gift text-xl text-yellow-600"></i>
+                </div>
+                <div>
+                  <p class="font-medium text-yellow-700 dark:text-yellow-400">Ada Imbalan! 🎁</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Pelapor menawarkan imbalan bagi yang menemukan</p>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @if (item.status === 'found') {
+          <!-- Found Item Additional Info -->
+          <div class="mb-6 space-y-3">
+            <!-- Storage Location -->
+            @if (item.storageLocation) {
+              <div class="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                  @if (item.storageLocation === 'with-me') {
+                    <i class="ph-fill ph-hand-grabbing text-xl text-blue-600"></i>
+                  } @else {
+                    <i class="ph-fill ph-user-circle text-xl text-blue-600"></i>
+                  }
+                </div>
+                <div>
+                  <p class="font-medium text-blue-700 dark:text-blue-400">
+                    @if (item.storageLocation === 'with-me') {
+                      Dibawa oleh Penemu
+                    } @else {
+                      Dititipkan ke {{ item.entrustedTo || 'Pihak Lain' }}
+                    }
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    @if (item.storageLocation === 'with-me') {
+                      Hubungi penemu untuk mengambil barang
+                    } @else {
+                      Ambil barang di tempat penitipan
+                    }
+                  </p>
+                </div>
+              </div>
+            }
+
+            <!-- Willing to Deliver -->
+            @if (item.willingToDeliver) {
+              <div class="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+                  <i class="ph-fill ph-car text-xl text-green-600"></i>
+                </div>
+                <div>
+                  <p class="font-medium text-green-700 dark:text-green-400">Bersedia Mengantarkan 🚗</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Penemu bisa mengantar barang ke lokasi Anda</p>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
         <!-- Mobile Map (if has coordinates) -->
         @if (hasMapLocation()) {
           <div class="mb-6 lg:hidden">

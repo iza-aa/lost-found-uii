@@ -1,15 +1,15 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, signal, computed, PLATFORM_ID, Inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { Item, User } from '../../core/models';
-import { MOCK_ITEMS } from '../../core/mocks';
-import { StatusBadgeComponent, UserBadgeComponent, ConfirmModalComponent } from '../../shared/components';
+import { MOCK_ITEMS, generateUserQRData } from '../../core/mocks';
+import { StatusBadgeComponent, UserBadgeComponent, ConfirmModalComponent, QrDisplayComponent } from '../../shared/components';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, RouterModule, StatusBadgeComponent, UserBadgeComponent, ConfirmModalComponent],
+  imports: [CommonModule, RouterModule, StatusBadgeComponent, UserBadgeComponent, ConfirmModalComponent, QrDisplayComponent],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.css']
 })
@@ -36,14 +36,33 @@ export class ProfileComponent implements OnInit {
   // Modal states
   showLogoutModal = signal(false);
   showEditProfileModal = signal(false);
+  showQRModal = signal(false);
+
+  // QR Code URL
+  qrCodeUrl = signal('');
+  private isBrowser: boolean;
 
   constructor(
     private authService: AuthService,
-    private router: Router
-  ) {}
+    private router: Router,
+    @Inject(PLATFORM_ID) platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
 
   ngOnInit(): void {
     this.loadUserItems();
+    this.generateQRUrl();
+  }
+
+  private generateQRUrl(): void {
+    const user = this.currentUser();
+    if (user && this.isBrowser) {
+      // Use helper function from user.mock for consistency
+      const encoded = generateUserQRData(user);
+      const baseUrl = window.location.origin;
+      this.qrCodeUrl.set(`${baseUrl}/u/${encoded}`);
+    }
   }
 
   private loadUserItems(): void {
@@ -95,6 +114,15 @@ export class ProfileComponent implements OnInit {
 
   closeEditProfile(): void {
     this.showEditProfileModal.set(false);
+  }
+
+  // QR Code
+  openQRModal(): void {
+    this.showQRModal.set(true);
+  }
+
+  closeQRModal(): void {
+    this.showQRModal.set(false);
   }
 
   // Get category icon

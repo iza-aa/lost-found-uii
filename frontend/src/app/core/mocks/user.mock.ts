@@ -1,11 +1,29 @@
 import { User } from '../models/user.model';
 
-// Mock users dengan badge system
+// Helper function to generate QR data for a user
+export function generateUserQRData(user: User): string {
+  const userData = {
+    id: user.id,
+    name: user.name,
+    phone: user.phone,
+    badge: user.badge,
+    faculty: user.faculty,
+    studentId: user.studentId,
+    employeeId: user.employeeId,
+    avatar: user.avatar
+  };
+  // Use btoa directly without encodeURIComponent for shorter QR data
+  return btoa(JSON.stringify(userData));
+}
+
+// 3 Demo Users: Mahasiswa, Staff, Umum
+// Email alternatif: demo@students.uii.ac.id, demo@uii.ac.id, demo@gmail.com
 export const MOCK_USERS: User[] = [
+  // Demo Mahasiswa (email: demo@students.uii.ac.id)
   {
-    id: '1',
+    id: 'user-mahasiswa',
     name: 'Ahmad Fauzi',
-    email: 'ahmad.fauzi@students.uii.ac.id',
+    email: 'demo@students.uii.ac.id',
     phone: '081234567890',
     avatar: 'https://i.pravatar.cc/150?img=1',
     faculty: 'Fakultas Teknologi Industri',
@@ -13,10 +31,11 @@ export const MOCK_USERS: User[] = [
     role: 'student',
     badge: 'blue'
   },
+  // Demo Staff (email: demo@uii.ac.id)
   {
-    id: '2',
+    id: 'user-staff',
     name: 'Dr. Budi Santoso',
-    email: 'budi.santoso@uii.ac.id',
+    email: 'demo@uii.ac.id',
     phone: '081298765432',
     avatar: 'https://i.pravatar.cc/150?img=12',
     faculty: 'Fakultas Teknologi Industri',
@@ -24,45 +43,13 @@ export const MOCK_USERS: User[] = [
     role: 'staff',
     badge: 'gold'
   },
+  // Demo Umum (email: demo@gmail.com)
   {
-    id: '3',
-    name: 'Siti Aminah',
-    email: 'siti.aminah@students.uii.ac.id',
-    phone: '082112345678',
-    avatar: 'https://i.pravatar.cc/150?img=5',
-    faculty: 'Fakultas Ekonomi',
-    studentId: '20523002',
-    role: 'student',
-    badge: 'blue'
-  },
-  {
-    id: '4',
-    name: 'Rizky Pratama',
-    email: 'rizky.pratama@students.uii.ac.id',
-    phone: '085678901234',
-    avatar: 'https://i.pravatar.cc/150?img=3',
-    faculty: 'Fakultas Teknologi Industri',
-    studentId: '20523003',
-    role: 'student',
-    badge: 'blue'
-  },
-  {
-    id: '5',
-    name: 'Rina Wulandari',
-    email: 'rina.w@uii.ac.id',
-    phone: '089012345678',
-    avatar: 'https://i.pravatar.cc/150?img=9',
-    faculty: 'Fakultas Hukum',
-    employeeId: '19900034',
-    role: 'staff',
-    badge: 'gold'
-  },
-  {
-    id: '6',
-    name: 'John Doe',
-    email: 'johndoe@gmail.com',
+    id: 'user-umum',
+    name: 'Siti Rahayu',
+    email: 'demo@gmail.com',
     phone: '081345678901',
-    avatar: 'https://i.pravatar.cc/150?img=8',
+    avatar: 'https://i.pravatar.cc/150?img=5',
     role: 'public',
     badge: 'gray'
   }
@@ -76,5 +63,19 @@ export function getMockUserById(id: string): User | undefined {
 // Get user by email
 export function getMockUserByEmail(email: string): User | undefined {
   return MOCK_USERS.find(user => user.email.toLowerCase() === email.toLowerCase());
+}
+
+// Add user to mock (for dynamically created/registered users)
+export function addMockUser(user: User): void {
+  const existing = MOCK_USERS.find(u => u.id === user.id);
+  if (!existing) {
+    MOCK_USERS.push(user);
+  }
+}
+
+// Get QR URL for a user
+export function getUserQRUrl(user: User, baseUrl: string): string {
+  const qrData = generateUserQRData(user);
+  return `${baseUrl}/u/${qrData}`;
 }
 

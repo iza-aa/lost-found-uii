@@ -6,6 +6,12 @@ export type ItemStatus = 'lost' | 'found' | 'claimed';
 // Item category
 export type ItemCategory = 'bags' | 'wallet' | 'phone' | 'electronics' | 'documents' | 'keys' | 'clothing' | 'others';
 
+// Urgency level untuk barang hilang
+export type UrgencyLevel = 'normal' | 'important' | 'very-important';
+
+// Storage location untuk barang ditemukan
+export type StorageLocation = 'with-me' | 'entrusted';
+
 // Location dengan koordinat untuk Leaflet
 export interface ItemLocation {
   lat: number;
@@ -30,6 +36,15 @@ export interface Item {
   reporterName: string;
   reporterBadge: UserBadge;
   reporterPhone?: string;
+  
+  // Lost item specific fields
+  reward?: boolean;           // Tawarkan imbalan?
+  urgency?: UrgencyLevel;     // Tingkat urgensi
+  
+  // Found item specific fields
+  storageLocation?: StorageLocation;  // Barang disimpan di mana
+  entrustedTo?: string;               // Dititipkan ke siapa (jika storageLocation = 'entrusted')
+  willingToDeliver?: boolean;         // Bersedia diantar?
   
   createdAt: Date;
   updatedAt?: Date;

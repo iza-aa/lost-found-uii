@@ -1,0 +1,55 @@
+<div class="flex flex-col items-center">
+  <!-- QR Code Container -->
+  <div 
+    #qrContainer
+    class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-600">
+    <qrcode
+      [qrdata]="data"
+      [width]="size"
+      [errorCorrectionLevel]="'M'"
+      [colorDark]="darkColor"
+      [colorLight]="lightColor"
+      [elementType]="'canvas'"
+      [margin]="1">
+    </qrcode>
+  </div>
+
+  <!-- Info -->
+  @if (title || subtitle) {
+    <div class="mt-4 text-center">
+      @if (title) {
+        <p class="font-semibold text-gray-900 dark:text-white">{{ title }}</p>
+      }
+      @if (subtitle) {
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ subtitle }}</p>
+      }
+    </div>
+  }
+
+  <!-- Actions -->
+  @if (showDownload || showShare) {
+    <div class="flex items-center gap-3 mt-4">
+      @if (showDownload) {
+        <button
+          (click)="downloadQR()"
+          [disabled]="isDownloading()"
+          class="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition disabled:opacity-50">
+          @if (isDownloading()) {
+            <i class="ph ph-spinner animate-spin"></i>
+          } @else {
+            <i class="ph ph-download-simple"></i>
+          }
+          <span class="text-sm font-medium">Download</span>
+        </button>
+      }
+      @if (showShare) {
+        <button
+          (click)="shareQR()"
+          class="flex items-center gap-2 px-4 py-2 bg-uii-blue text-white rounded-xl hover:bg-uii-blue/90 transition">
+          <i class="ph ph-share-network"></i>
+          <span class="text-sm font-medium">Share</span>
+        </button>
+      }
+    </div>
+  }
+</div>

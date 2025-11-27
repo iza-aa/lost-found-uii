@@ -1,180 +1,208 @@
-import { Item, Category } from '../models/item.model';
+import { Item, Category, UrgencyLevel, StorageLocation } from '../models/item.model';
+import { getMockUserById } from './user.mock';
+import { getLocationById, CampusLocation } from './location.mock';
 
-// Dummy items data dengan badge system
-export const MOCK_ITEMS: Item[] = [
+// Base item data tanpa reporter info (akan di-populate dari user.mock dan location.mock)
+interface BaseItem {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  status: 'lost' | 'found' | 'claimed';
+  imageUrl: string;
+  date: string;
+  time: string;
+  locationId: string; // Reference ke location.mock
+  reporterId: string;
+  createdAt: Date;
+  // Lost specific
+  reward?: boolean;
+  urgency?: UrgencyLevel;
+  // Found specific
+  storageLocation?: StorageLocation;
+  entrustedTo?: string;
+  willingToDeliver?: boolean;
+}
+
+// Raw items data - hanya dengan reporterId dan locationId
+const RAW_ITEMS: BaseItem[] = [
+  // ============ MAHASISWA - 3 Laporan ============
   {
-    id: '1',
-    title: 'Duffle Bag',
-    description: 'Brown colored duffle bag found at the ground. Message me if you are the owner.',
+    id: 'item-1',
+    title: 'Tas Ransel Navy',
+    description: 'Kehilangan tas ransel warna navy merk Eiger di Perpustakaan Pusat lantai 2. Di dalam ada laptop dan buku catatan.',
     category: 'bags',
-    status: 'found',
+    status: 'lost',
     imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400',
-    date: '05 Sep',
-    time: '07:55 PM',
-    location: {
-      name: 'Gedung FTI',
-      lat: -7.6872,
-      lng: 110.4098
-    },
-    reporterId: '1',
-    reporterName: 'Ahmad Fauzi',
-    reporterBadge: 'blue',
-    reporterPhone: '081234567890',
-    createdAt: new Date('2024-09-05')
+    date: '20 Nov',
+    time: '10:30 AM',
+    locationId: 'perpus',
+    reporterId: 'user-mahasiswa',
+    createdAt: new Date('2024-11-20'),
+    reward: true,
+    urgency: 'very-important'
   },
   {
-    id: '2',
-    title: 'Dompet Hitam',
-    description: 'Dompet kulit warna hitam berisi KTM dan beberapa kartu. Ditemukan di kantin FTI.',
+    id: 'item-2',
+    title: 'Airpods Pro',
+    description: 'Ditemukan Airpods Pro dengan case hitam di meja belajar Gedung FTI Lt. 3. Masih menyala dan ada suara musik.',
+    category: 'electronics',
+    status: 'found',
+    imageUrl: 'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?w=400',
+    date: '22 Nov',
+    time: '02:15 PM',
+    locationId: 'fti',
+    reporterId: 'user-mahasiswa',
+    createdAt: new Date('2024-11-22'),
+    storageLocation: 'with-me',
+    willingToDeliver: true
+  },
+  {
+    id: 'item-3',
+    title: 'Kunci Motor Honda',
+    description: 'Kehilangan kunci motor Honda Beat dengan gantungan kunci doraemon di area parkir motor FTI.',
+    category: 'keys',
+    status: 'lost',
+    imageUrl: 'https://images.unsplash.com/photo-1582139329536-e7284fece509?w=400',
+    date: '24 Nov',
+    time: '04:00 PM',
+    locationId: 'parkir-motor',
+    reporterId: 'user-mahasiswa',
+    createdAt: new Date('2024-11-24'),
+    urgency: 'important'
+  },
+
+  // ============ STAFF - 3 Laporan ============
+  {
+    id: 'item-4',
+    title: 'Dompet Kulit Hitam',
+    description: 'Ditemukan dompet kulit hitam berisi KTP dan beberapa kartu ATM di depan Gedung FTI. Hubungi saya untuk klaim.',
     category: 'wallet',
     status: 'found',
     imageUrl: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=400',
-    date: '10 Sep',
-    time: '12:30 PM',
-    location: {
-      name: 'Kantin FTI',
-      lat: -7.6873,
-      lng: 110.4082
-    },
-    reporterId: '2',
-    reporterName: 'Dr. Budi Santoso',
-    reporterBadge: 'gold',
-    reporterPhone: '081298765432',
-    createdAt: new Date('2024-09-10')
+    date: '19 Nov',
+    time: '09:00 AM',
+    locationId: 'fti',
+    reporterId: 'user-staff',
+    createdAt: new Date('2024-11-19'),
+    storageLocation: 'entrusted',
+    entrustedTo: 'Security Gedung FTI a/n Pak Hendra'
   },
   {
-    id: '3',
-    title: 'iPhone 13 Pro',
-    description: 'Kehilangan iPhone 13 Pro warna silver di area parkir. Ada case bening.',
-    category: 'phone',
-    status: 'lost',
-    imageUrl: 'https://images.unsplash.com/photo-1632661674596-df8be59a8056?w=400',
-    date: '12 Sep',
-    time: '03:00 PM',
-    location: {
-      name: 'Parkiran Rektorat',
-      lat: -7.6882,
-      lng: 110.4078
-    },
-    reporterId: '3',
-    reporterName: 'Siti Aminah',
-    reporterBadge: 'blue',
-    reporterPhone: '082112345678',
-    createdAt: new Date('2024-09-12')
-  },
-  {
-    id: '4',
-    title: 'Kunci Motor Honda',
-    description: 'Ditemukan kunci motor Honda dengan gantungan kuning di depan Masjid Ulil Albab.',
-    category: 'keys',
-    status: 'found',
-    imageUrl: 'https://images.unsplash.com/photo-1582139329536-e7284fece509?w=400',
-    date: '14 Sep',
-    time: '08:15 AM',
-    location: 'Masjid Ulil Albab',
-    reporterId: '4',
-    reporterName: 'Rizky Pratama',
-    reporterBadge: 'blue',
-    reporterPhone: '085678901234',
-    createdAt: new Date('2024-09-14')
-  },
-  {
-    id: '5',
+    id: 'item-5',
     title: 'Laptop Asus ROG',
-    description: 'Kehilangan laptop Asus ROG di Lab Komputer. Ada sticker anime di cover.',
+    description: 'Ditemukan laptop Asus ROG di Gedung FTI setelah jam kuliah. Ada sticker UII di cover. Silakan ambil di ruang dosen.',
     category: 'electronics',
-    status: 'lost',
+    status: 'found',
     imageUrl: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=400',
-    date: '15 Sep',
-    time: '04:45 PM',
-    location: 'Lab Komputer FTI',
-    reporterId: '6',
-    reporterName: 'John Doe',
-    reporterBadge: 'gray',
-    reporterPhone: '087654321098',
-    createdAt: new Date('2024-09-15')
+    date: '21 Nov',
+    time: '05:30 PM',
+    locationId: 'fti',
+    reporterId: 'user-staff',
+    createdAt: new Date('2024-11-21'),
+    storageLocation: 'with-me',
+    willingToDeliver: false
   },
   {
-    id: '6',
+    id: 'item-6',
     title: 'Jaket Almamater UII',
-    description: 'Ditemukan jaket almamater UII ukuran L di Gedung Kuliah Umum.',
+    description: 'Ditemukan jaket almamater UII ukuran L tertinggal di GKU. Sudah diklaim oleh pemilik.',
     category: 'clothing',
     status: 'claimed',
     imageUrl: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400',
-    date: '16 Sep',
-    time: '10:00 AM',
-    location: 'Gedung Kuliah Umum',
-    reporterId: '5',
-    reporterName: 'Rina Wulandari',
-    reporterBadge: 'gold',
-    reporterPhone: '089012345678',
-    createdAt: new Date('2024-09-16')
+    date: '23 Nov',
+    time: '11:00 AM',
+    locationId: 'gku',
+    reporterId: 'user-staff',
+    createdAt: new Date('2024-11-23')
   },
+
+  // ============ UMUM - 3 Laporan ============
   {
-    id: '7',
-    title: 'Airpods Pro',
-    description: 'Kehilangan Airpods Pro dengan case hitam di Perpustakaan Pusat.',
-    category: 'electronics',
+    id: 'item-7',
+    title: 'iPhone 14 Pro Silver',
+    description: 'Kehilangan iPhone 14 Pro warna silver dengan case bening di area Masjid Ulil Albab setelah sholat Jumat.',
+    category: 'phone',
     status: 'lost',
-    imageUrl: 'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?w=400',
-    date: '18 Sep',
-    time: '02:30 PM',
-    location: 'Perpustakaan Pusat',
-    reporterId: '1',
-    reporterName: 'Ahmad Fauzi',
-    reporterBadge: 'blue',
-    reporterPhone: '081345678901',
-    createdAt: new Date('2024-09-18')
+    imageUrl: 'https://images.unsplash.com/photo-1632661674596-df8be59a8056?w=400',
+    date: '18 Nov',
+    time: '01:30 PM',
+    locationId: 'masjid',
+    reporterId: 'user-umum',
+    createdAt: new Date('2024-11-18'),
+    reward: true,
+    urgency: 'very-important'
   },
   {
-    id: '8',
-    title: 'KTM dan KTP',
-    description: 'Ditemukan KTM atas nama mahasiswa Teknik Informatika beserta KTP di toilet FTI.',
+    id: 'item-8',
+    title: 'KTM dan Kartu ATM',
+    description: 'Ditemukan KTM atas nama mahasiswa Teknik Informatika beserta kartu ATM BRI di toilet Gedung Rektorat.',
     category: 'documents',
     status: 'found',
     imageUrl: 'https://images.unsplash.com/photo-1616077168712-fc6c788db4af?w=400',
-    date: '20 Sep',
-    time: '11:20 AM',
-    location: 'Toilet FTI Lt. 2',
-    reporterId: '3',
-    reporterName: 'Siti Aminah',
-    reporterBadge: 'blue',
-    reporterPhone: '082234567890',
-    createdAt: new Date('2024-09-20')
+    date: '25 Nov',
+    time: '03:45 PM',
+    locationId: 'rektorat',
+    reporterId: 'user-umum',
+    createdAt: new Date('2024-11-25'),
+    storageLocation: 'entrusted',
+    entrustedTo: 'Resepsionis Rektorat'
   },
   {
-    id: '9',
-    title: 'Payung Hitam',
-    description: 'Ditemukan payung hitam di dekat parkiran sepeda FTI. Belum ada yang mengaku.',
+    id: 'item-9',
+    title: 'Payung Lipat Biru',
+    description: 'Kehilangan payung lipat warna biru merk Nagoya di Kantin FTI. Tolong hubungi jika menemukan.',
     category: 'others',
-    status: 'found',
+    status: 'lost',
     imageUrl: 'https://images.unsplash.com/photo-1592928307985-2f8d5f3c7eaf?w=400',
-    date: '21 Sep',
-    time: '08:45 AM',
-    location: 'Parkiran Sepeda FTI',
-    reporterId: '4',
-    reporterName: 'Rizky Pratama',
-    reporterBadge: 'blue',
-    reporterPhone: '081234567891',
-    createdAt: new Date('2024-09-21')
-  },
-  {
-    id: '10',
-    title: 'Dompet Cokelat',
-    description: 'Dompet cokelat berisi beberapa kartu mahasiswa ditemukan di kantin FTI.',
-    category: 'wallet',
-    status: 'found',
-    imageUrl: 'https://images.unsplash.com/photo-1600180758895-f8f0f31b8c5b?w=400',
-    date: '22 Sep',
-    time: '01:30 PM',
-    location: 'Kantin FTI Lt. 1',
-    reporterId: '2',
-    reporterName: 'Dr. Budi Santoso',
-    reporterBadge: 'gold',
-    reporterPhone: '082345678912',
-    createdAt: new Date('2024-09-22')
+    date: '26 Nov',
+    time: '12:00 PM',
+    locationId: 'kantin',
+    reporterId: 'user-umum',
+    createdAt: new Date('2024-11-26'),
+    urgency: 'normal'
   }
 ];
+
+// Populate reporter info dari user.mock dan location dari location.mock
+function populateItemData(baseItem: BaseItem): Item {
+  const user = getMockUserById(baseItem.reporterId);
+  const location = getLocationById(baseItem.locationId);
+  
+  return {
+    id: baseItem.id,
+    title: baseItem.title,
+    description: baseItem.description,
+    category: baseItem.category,
+    status: baseItem.status,
+    imageUrl: baseItem.imageUrl,
+    date: baseItem.date,
+    time: baseItem.time,
+    location: location ? {
+      name: location.name,
+      lat: location.lat,
+      lng: location.lng
+    } : {
+      name: 'Lokasi tidak diketahui',
+      lat: -7.6875,
+      lng: 110.4095
+    },
+    reporterId: baseItem.reporterId,
+    reporterName: user?.name ?? 'Unknown',
+    reporterBadge: user?.badge ?? 'gray',
+    reporterPhone: user?.phone ?? '',
+    // Lost specific fields
+    reward: baseItem.reward,
+    urgency: baseItem.urgency,
+    // Found specific fields
+    storageLocation: baseItem.storageLocation,
+    willingToDeliver: baseItem.willingToDeliver,
+    createdAt: baseItem.createdAt
+  } as Item;
+}
+
+// Export MOCK_ITEMS dengan data lengkap dari user.mock dan location.mock
+export const MOCK_ITEMS: Item[] = RAW_ITEMS.map(populateItemData);
 
 // Categories untuk filter
 export const MOCK_CATEGORIES: Category[] = [
