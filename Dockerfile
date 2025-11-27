@@ -17,8 +17,8 @@ COPY . .
 
 # Build the Go app
 # Set GOGC to lower value to trigger GC more frequently and reduce memory usage
-ENV GOGC=20
-RUN CGO_ENABLED=0 GOOS=linux go build -v -x -p 1 -o campus-lost-found ./cmd/server/main.go
+ENV GOGC=10
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -v -p 1 -o campus-lost-found ./cmd/server/main.go
 
 # Run Stage
 FROM alpine:latest
