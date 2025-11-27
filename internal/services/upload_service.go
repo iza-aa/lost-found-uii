@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -24,6 +25,33 @@ func NewUploadService() *UploadService {
 }
 
 func (s *UploadService) UploadFile(file multipart.File, header *multipart.FileHeader) (string, error) {
+	// 1. Validate File Size
+	if header.Size > config.AppConfig.MaxUploadSize {
+		return "", fmt.Errorf("file size exceeds the limit of %d MB", config.AppConfig.MaxUploadSize/(1024*1024))
+	}
+
+	// 2. Validate File Type
+	// Read first 512 bytes to detect content type
+	buffer := make([]byte, 512)
+	if _, err := file.Read(buffer); err != nil {
+		return "", err
+	}
+	// Reset file pointer to start
+	if _, err := file.Seek(0, 0); err != nil {
+		return "", err
+	}
+
+	contentType := http.DetectContentType(buffer)
+	allowedTypes := map[string]bool{
+		"image/jpeg": true,
+		"image/png":  true,
+		"image/jpg":  true, // Sometimes detected as this
+	}
+
+	if !allowedTypes[contentType] {
+		return "", fmt.Errorf("file type not allowed: %s. Only JPG and PNG are allowed", contentType)
+	}
+
 	uploadDir := config.AppConfig.UploadPath
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
 		os.Mkdir(uploadDir, 0755)

@@ -73,7 +73,7 @@ func InitConfig() {
 	if maxUploadSizeStr != "" {
 		fmt.Sscanf(maxUploadSizeStr, "%d", &maxUploadSize)
 	} else {
-		maxUploadSize = 10 * 1024 * 1024 // 10MB Default
+		maxUploadSize = 5 * 1024 * 1024 // 5MB Default
 	}
 
 	// Upload Path
