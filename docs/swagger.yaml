@@ -108,6 +108,27 @@ definitions:
     - verification_answer
     - verification_question
     type: object
+  dto.CreateLostItemRequest:
+    properties:
+      category_id:
+        type: string
+      date_lost:
+        description: Format YYYY-MM-DD
+        type: string
+      description:
+        type: string
+      image_url:
+        type: string
+      location_last_seen:
+        type: string
+      title:
+        type: string
+    required:
+    - category_id
+    - date_lost
+    - location_last_seen
+    - title
+    type: object
   dto.DecideClaimRequest:
     properties:
       status:
@@ -310,9 +331,12 @@ definitions:
         type: string
       created_at:
         type: string
+      date_lost:
+        type: string
       finder:
         $ref: '#/definitions/models.User'
       finder_id:
+        description: Nullable for Lost items
         type: string
       id:
         type: string
@@ -320,12 +344,23 @@ definitions:
         type: string
       location:
         $ref: '#/definitions/models.CampusLocation'
+      location_description:
+        description: For Lost items (free text)
+        type: string
       location_id:
+        description: Nullable for Lost items
+        type: string
+      owner:
+        $ref: '#/definitions/models.User'
+      owner_id:
+        description: Nullable for Found items
         type: string
       status:
         $ref: '#/definitions/models.ItemStatus'
       title:
         type: string
+      type:
+        $ref: '#/definitions/models.ItemType'
       updated_at:
         type: string
       verification_question:
@@ -348,6 +383,14 @@ definitions:
     - ItemStatusOpen
     - ItemStatusClaimed
     - ItemStatusResolved
+  models.ItemType:
+    enum:
+    - LOST
+    - FOUND
+    type: string
+    x-enum-varnames:
+    - ItemTypeLost
+    - ItemTypeFound
   models.Notification:
     properties:
       body:
@@ -390,12 +433,16 @@ definitions:
     - USER
     - ADMIN
     - SECURITY
+    - STUDENT
+    - STAFF
     type: string
     x-enum-varnames:
     - RoleUser
     - RoleAdmin
     - RoleSecurity
-host: localhost:8080
+    - RoleStudent
+    - RoleStaff
+host: http://157.10.161.213:3000
 info:
   contact:
     email: support@swagger.io
@@ -569,6 +616,29 @@ paths:
               type: string
             type: object
       summary: Report asset found (Scan QR)
+      tags:
+      - assets
+  /assets/lost:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of assets reported as lost
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.AssetResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all lost assets
       tags:
       - assets
   /auth/login:
@@ -878,6 +948,36 @@ paths:
       security:
       - BearerAuth: []
       summary: Report a found item (Finder First)
+      tags:
+      - items
+  /items/lost:
+    post:
+      consumes:
+      - application/json
+      description: Report a lost item without QR code
+      parameters:
+      - description: Create Lost Item Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateLostItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ItemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Report a lost item (Ad-Hoc)
       tags:
       - items
   /notifications:

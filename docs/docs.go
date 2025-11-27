@@ -72,6 +72,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/assets/lost": {
+            "get": {
+                "description": "Get a list of assets reported as lost",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets"
+                ],
+                "summary": "Get all lost assets",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.AssetResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/assets/{id}": {
             "get": {
                 "security": [
@@ -657,6 +692,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/items/lost": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Report a lost item without QR code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "items"
+                ],
+                "summary": "Report a lost item (Ad-Hoc)",
+                "parameters": [
+                    {
+                        "description": "Create Lost Item Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateLostItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ItemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/items/{id}/claim": {
             "post": {
                 "security": [
@@ -1045,6 +1128,36 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreateLostItemRequest": {
+            "type": "object",
+            "required": [
+                "category_id",
+                "date_lost",
+                "location_last_seen",
+                "title"
+            ],
+            "properties": {
+                "category_id": {
+                    "type": "string"
+                },
+                "date_lost": {
+                    "description": "Format YYYY-MM-DD",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "location_last_seen": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.DecideClaimRequest": {
             "type": "object",
             "required": [
@@ -1345,10 +1458,14 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "date_lost": {
+                    "type": "string"
+                },
                 "finder": {
                     "$ref": "#/definitions/models.User"
                 },
                 "finder_id": {
+                    "description": "Nullable for Lost items",
                     "type": "string"
                 },
                 "id": {
@@ -1360,7 +1477,19 @@ const docTemplate = `{
                 "location": {
                     "$ref": "#/definitions/models.CampusLocation"
                 },
+                "location_description": {
+                    "description": "For Lost items (free text)",
+                    "type": "string"
+                },
                 "location_id": {
+                    "description": "Nullable for Lost items",
+                    "type": "string"
+                },
+                "owner": {
+                    "$ref": "#/definitions/models.User"
+                },
+                "owner_id": {
+                    "description": "Nullable for Found items",
                     "type": "string"
                 },
                 "status": {
@@ -1368,6 +1497,9 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/models.ItemType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -1399,6 +1531,17 @@ const docTemplate = `{
                 "ItemStatusOpen",
                 "ItemStatusClaimed",
                 "ItemStatusResolved"
+            ]
+        },
+        "models.ItemType": {
+            "type": "string",
+            "enum": [
+                "LOST",
+                "FOUND"
+            ],
+            "x-enum-varnames": [
+                "ItemTypeLost",
+                "ItemTypeFound"
             ]
         },
         "models.Notification": {
@@ -1462,12 +1605,16 @@ const docTemplate = `{
             "enum": [
                 "USER",
                 "ADMIN",
-                "SECURITY"
+                "SECURITY",
+                "STUDENT",
+                "STAFF"
             ],
             "x-enum-varnames": [
                 "RoleUser",
                 "RoleAdmin",
-                "RoleSecurity"
+                "RoleSecurity",
+                "RoleStudent",
+                "RoleStaff"
             ]
         }
     },
@@ -1483,7 +1630,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "157.10.161.213:3000",
+	Host:             "localhost:8080",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "Campus Lost & Found API",
