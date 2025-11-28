@@ -442,7 +442,7 @@ definitions:
     - RoleSecurity
     - RoleStudent
     - RoleStaff
-host: http://157.10.161.213:3000
+host: 157.10.161.213:3000
 info:
   contact:
     email: support@swagger.io
