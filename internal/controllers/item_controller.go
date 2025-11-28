@@ -73,6 +73,31 @@ func (ctrl *ItemController) ReportLostItem(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+// GetAllItems godoc
+// @Summary Get all items
+// @Description Get a list of all items (Lost & Found) with optional filters
+// @Tags items
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param status query string false "Filter by status (e.g., OPEN, CLAIMED)"
+// @Param type query string false "Filter by type (LOST, FOUND)"
+// @Success 200 {object} []dto.ItemResponse
+// @Failure 500 {object} map[string]string
+// @Router /items [get]
+func (ctrl *ItemController) GetAllItems(c *gin.Context) {
+	status := c.Query("status")
+	itemType := c.Query("type")
+
+	items, err := ctrl.Service.GetAllItems(status, itemType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, items)
+}
+
 // SubmitClaim godoc
 // @Summary Submit a claim for an item
 // @Description Claim a found item

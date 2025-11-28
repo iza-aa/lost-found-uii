@@ -128,6 +128,7 @@ func (r *AppRouter) Setup(engine *gin.Engine) {
 		{
 			items.POST("/lost", r.ItemController.ReportLostItem) // Ad-Hoc Lost Item
 			items.POST("/found", r.ItemController.ReportFoundItem)
+			items.GET("", r.ItemController.GetAllItems)
 			items.POST("/:id/claim", r.ItemController.SubmitClaim)
 			items.GET("/:id/claims", r.ItemController.GetClaims)
 		}

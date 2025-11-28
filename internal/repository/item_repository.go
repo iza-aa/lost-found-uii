@@ -27,13 +27,16 @@ func (r *ItemRepository) FindByID(id string) (*models.Item, error) {
 	return &item, nil
 }
 
-func (r *ItemRepository) FindAll(status string) ([]models.Item, error) {
+func (r *ItemRepository) FindAll(status string, itemType string) ([]models.Item, error) {
 	var items []models.Item
-	query := r.DB.Preload("Category").Preload("Location")
+	query := r.DB.Preload("Category").Preload("Location").Preload("Finder").Preload("Owner")
 	if status != "" {
 		query = query.Where("status = ?", status)
 	}
-	err := query.Find(&items).Error
+	if itemType != "" {
+		query = query.Where("type = ?", itemType)
+	}
+	err := query.Order("created_at desc").Find(&items).Error
 	return items, err
 }
 

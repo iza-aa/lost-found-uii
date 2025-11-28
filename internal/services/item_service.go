@@ -6,6 +6,7 @@ import (
 	"campus-lost-and-found/internal/models"
 	"campus-lost-and-found/internal/repository"
 	"errors"
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -100,6 +101,76 @@ func (s *ItemService) ReportLostItem(req dto.CreateLostItemRequest, ownerID uuid
 
 func (s *ItemService) GetItem(id string) (*models.Item, error) {
 	return s.ItemRepo.FindByID(id)
+}
+
+func (s *ItemService) GetAllItems(status string, itemType string) ([]dto.ItemResponse, error) {
+	var itemResponses []dto.ItemResponse
+
+	// 1. Fetch Items (Ad-Hoc)
+	items, err := s.ItemRepo.FindAll(status, itemType)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range items {
+		resp := dto.ItemResponse{
+			ID:                   item.ID,
+			Title:                item.Title,
+			CategoryID:           item.CategoryID,
+			ImageURL:             item.ImageURL,
+			Status:               string(item.Status),
+			CreatedAt:            item.CreatedAt,
+			VerificationQuestion: item.VerificationQuestion,
+		}
+
+		if item.LocationID != nil {
+			resp.LocationID = *item.LocationID
+		}
+		if item.Location != nil {
+			resp.LocationName = item.Location.Name
+		} else if item.LocationDescription != "" {
+			resp.LocationName = item.LocationDescription
+		}
+
+		itemResponses = append(itemResponses, resp)
+	}
+
+	// 2. Fetch Lost Assets (Registered) - Only if we want LOST items or ALL items
+	// And only if status is OPEN or empty (assuming lost assets are effectively "OPEN" lost items)
+	if (itemType == "" || itemType == "LOST") && (status == "" || status == "OPEN") {
+		lostAssets, err := s.AssetRepo.FindLostAssets()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, asset := range lostAssets {
+			resp := dto.ItemResponse{
+				ID:           asset.ID,
+				Title:        asset.Description, // Use description as title for assets
+				CategoryID:   asset.CategoryID,
+				ImageURL:     asset.PrivateImageURL, // Show private image for lost assets so people can identify
+				Status:       "LOST",
+				CreatedAt:    asset.UpdatedAt, // Use UpdatedAt as the time it was marked lost
+				LocationName: "Registered Asset",
+			}
+			itemResponses = append(itemResponses, resp)
+		}
+	}
+
+	// 3. Sort by CreatedAt Descending
+	// We need to sort the combined list.
+	// Since we appended, it might be out of order.
+	// Let's use a simple bubble sort or slice.SortFunc if Go 1.21+ (we are on 1.24)
+	// But to avoid importing "sort" or "slices" if not already imported, I'll check imports.
+	// "sort" is not imported. I should add it or use a simple loop.
+	// Given the list size might be small, I'll add "sort" import.
+
+	// 3. Sort by CreatedAt Descending
+	sort.Slice(itemResponses, func(i, j int) bool {
+		return itemResponses[i].CreatedAt.After(itemResponses[j].CreatedAt)
+	})
+
+	return itemResponses, nil
 }
 
 func (s *ItemService) SubmitClaim(itemID string, req dto.CreateClaimRequest, ownerID uuid.UUID) (*dto.ClaimResponse, error) {
