@@ -560,6 +560,93 @@
                   }
                 }
 
+                <!-- Expose Phone Toggle (for Found items) -->
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                  <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                        <i class="ph-fill ph-whatsapp-logo text-xl text-green-600"></i>
+                      </div>
+                      <div>
+                        <p class="font-medium text-gray-900 dark:text-white">Tampilkan No. WhatsApp?</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Pemilik bisa langsung menghubungi Anda setelah terverifikasi</p>
+                      </div>
+                    </div>
+                    <button 
+                      type="button"
+                      (click)="toggleExposePhone()"
+                      [class]="formData.exposePhone 
+                        ? 'w-12 h-7 bg-green-500 rounded-full relative transition-colors' 
+                        : 'w-12 h-7 bg-gray-300 dark:bg-gray-600 rounded-full relative transition-colors'">
+                      <span [class]="formData.exposePhone 
+                        ? 'absolute top-0.5 right-0.5 w-6 h-6 bg-white rounded-full shadow transition-all' 
+                        : 'absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-all'"></span>
+                    </button>
+                  </div>
+
+                  <!-- Alternative Contact (when exposePhone is OFF) -->
+                  @if (!formData.exposePhone) {
+                    <div class="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl space-y-4">
+                      <p class="text-sm font-medium text-blue-700 dark:text-blue-400">
+                        <i class="ph ph-info"></i> Tambahkan kontak alternatif agar pemilik bisa menghubungi Anda
+                      </p>
+                      
+                      <!-- Grid of Contact Cards -->
+                      @if (formData.alternativeContacts.length > 0) {
+                        <div [class]="'grid gap-3 ' + (formData.alternativeContacts.length === 1 ? 'grid-cols-1' : formData.alternativeContacts.length === 2 ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3')">
+                          @for (contact of formData.alternativeContacts; track contact; let i = $index) {
+                            <div class="relative p-3 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
+                              <!-- Remove Button -->
+                              <button 
+                                type="button"
+                                (click)="removeAlternativeContact(i)"
+                                class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition text-xs">
+                                <i class="ph ph-x"></i>
+                              </button>
+                              
+                              <!-- Contact Type Selector -->
+                              <select
+                                [(ngModel)]="contact.type"
+                                class="w-full px-3 py-2 mb-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+                                @for (opt of alternativeContactOptions; track opt.value) {
+                                  <option [value]="opt.value">{{ opt.label }}</option>
+                                }
+                              </select>
+                              
+                              <!-- Contact Value Input -->
+                              <div class="relative">
+                                @if (needsAtPrefix(contact.type)) {
+                                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">&#64;</span>
+                                  <input
+                                    type="text"
+                                    [(ngModel)]="contact.value"
+                                    [placeholder]="getContactPlaceholder(contact.type)"
+                                    class="w-full pl-7 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+                                } @else {
+                                  <input
+                                    type="text"
+                                    [(ngModel)]="contact.value"
+                                    [placeholder]="getContactPlaceholder(contact.type)"
+                                    class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+                                }
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      }
+
+                      <!-- Add Contact Button -->
+                      <button 
+                        type="button"
+                        (click)="addAlternativeContact()"
+                        class="w-full py-3 px-4 border-2 border-dashed border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 font-medium rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition flex items-center justify-center gap-2">
+                        <i class="ph ph-plus-circle text-xl"></i>
+                        Tambahkan Kontak
+                      </button>
+                    </div>
+                  }
+                </div>
+
                 <!-- Security Recommendation Info -->
                 <div class="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
                   <p class="text-sm text-green-700 dark:text-green-400">

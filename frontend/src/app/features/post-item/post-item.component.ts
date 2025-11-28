@@ -3,7 +3,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import type * as LeafletTypes from 'leaflet';
-import { Item, ItemCategory, ItemStatus, UrgencyLevel, StorageLocation, AlternativeContact, ReportStatus, User } from '../../core/models';
+import { Item, ItemCategory, ItemStatus, UrgencyLevel, StorageLocation, AlternativeContact, AlternativeContactType, ContactEntry, ReportStatus, User } from '../../core/models';
 import { MOCK_CATEGORIES, MOCK_LOCATIONS, MOCK_ITEMS, UII_CENTER, CampusLocation, MOCK_USERS } from '../../core/mocks';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -66,7 +66,10 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     reward: false,
     urgency: 'normal' as UrgencyLevel,
     exposePhone: true,              // NEW: mau ekspos no WA?
-    alternativeContact: {           // NEW: kontak alternatif jika tidak ekspos phone
+    alternativeContacts: [] as ContactEntry[],  // NEW: multiple kontak alternatif
+    alternativeContact: {           // Legacy - for backward compatibility
+      type: undefined as AlternativeContactType | undefined,
+      value: '',
       instagram: '',
       telegram: '',
       line: '',
@@ -94,6 +97,16 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   storageOptions: { value: StorageLocation; label: string; icon: string; description: string }[] = [
     { value: 'with-me', label: 'Saya Bawa', icon: 'ph-hand-grabbing', description: 'Barang ada di tangan saya' },
     { value: 'entrusted', label: 'Dititipkan', icon: 'ph-user-check', description: 'Barang dititipkan ke orang lain' }
+  ];
+
+  // Alternative contact options (dropdown)
+  alternativeContactOptions: { value: AlternativeContactType; label: string; icon: string }[] = [
+    { value: 'instagram', label: 'Instagram', icon: 'ph-instagram-logo' },
+    { value: 'telegram', label: 'Telegram', icon: 'ph-telegram-logo' },
+    { value: 'line', label: 'LINE', icon: 'ph-chat-circle-text' },
+    { value: 'whatsapp_other', label: 'WhatsApp Lain', icon: 'ph-whatsapp-logo' },
+    { value: 'email', label: 'Email', icon: 'ph-envelope' },
+    { value: 'other', label: 'Lainnya', icon: 'ph-link' }
   ];
 
   constructor(
@@ -633,6 +646,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       reward: false,
       urgency: 'normal',
       exposePhone: true,
+      alternativeContacts: [],
       alternativeContact: {
         instagram: '',
         telegram: '',
@@ -738,6 +752,82 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   // Toggle expose phone
   toggleExposePhone(): void {
     this.formData.exposePhone = !this.formData.exposePhone;
+    // Reset alternative contacts when toggling
+    if (this.formData.exposePhone) {
+      this.formData.alternativeContacts = [];
+    }
+  }
+
+  // Add new contact entry
+  addAlternativeContact(): void {
+    this.formData.alternativeContacts.push({
+      type: 'instagram',
+      value: ''
+    });
+  }
+
+  // Remove contact entry by index
+  removeAlternativeContact(index: number): void {
+    this.formData.alternativeContacts.splice(index, 1);
+  }
+
+  // Get label for alternative contact input by type
+  getContactLabel(type: AlternativeContactType): string {
+    switch (type) {
+      case 'instagram': return 'Username Instagram';
+      case 'telegram': return 'Username Telegram';
+      case 'line': return 'LINE ID';
+      case 'whatsapp_other': return 'Nomor WhatsApp';
+      case 'email': return 'Alamat Email';
+      case 'other': return 'Kontak Lainnya';
+      default: return 'Kontak';
+    }
+  }
+
+  // Get placeholder for alternative contact input by type
+  getContactPlaceholder(type: AlternativeContactType): string {
+    switch (type) {
+      case 'instagram': return 'username_instagram';
+      case 'telegram': return 'username_telegram';
+      case 'line': return 'line_id_anda';
+      case 'whatsapp_other': return '081234567890';
+      case 'email': return 'email@domain.com';
+      case 'other': return 'Masukkan kontak Anda';
+      default: return '';
+    }
+  }
+
+  // Check if contact type needs @ prefix
+  needsAtPrefix(type: AlternativeContactType): boolean {
+    return type === 'instagram' || type === 'telegram';
+  }
+
+  // Get label for alternative contact input (legacy)
+  getAlternativeContactLabel(): string {
+    const type = this.formData.alternativeContact.type;
+    switch (type) {
+      case 'instagram': return 'Username Instagram';
+      case 'telegram': return 'Username Telegram';
+      case 'line': return 'LINE ID';
+      case 'whatsapp_other': return 'Nomor WhatsApp';
+      case 'email': return 'Alamat Email';
+      case 'other': return 'Kontak Lainnya';
+      default: return 'Kontak';
+    }
+  }
+
+  // Get placeholder for alternative contact input (legacy)
+  getAlternativeContactPlaceholder(): string {
+    const type = this.formData.alternativeContact.type;
+    switch (type) {
+      case 'instagram': return 'username_instagram';
+      case 'telegram': return 'username_telegram';
+      case 'line': return 'line_id_anda';
+      case 'whatsapp_other': return '081234567890';
+      case 'email': return 'email@domain.com';
+      case 'other': return 'Masukkan kontak Anda';
+      default: return '';
+    }
   }
   
   // Warning modal methods for found items

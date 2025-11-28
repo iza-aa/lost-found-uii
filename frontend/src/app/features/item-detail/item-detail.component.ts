@@ -1,9 +1,9 @@
-import { Component, OnInit, OnDestroy, PLATFORM_ID, Inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, PLATFORM_ID, Inject, signal, computed } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import type * as LeafletTypes from 'leaflet';
-import { Item, ReportStatus } from '../../core/models';
+import { Item, ReportStatus, Claimant, ClaimantStatus, Finder, VerificationAnswer } from '../../core/models';
 import { MOCK_ITEMS } from '../../core/mocks';
 import { UserBadgeComponent } from '../../shared/components/user-badge/user-badge.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
@@ -46,6 +46,49 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
   isCheckingQrOwnership = signal(false);
   isQrOwnerVerified = signal(false);
   showQrVerificationModal = signal(false);
+  
+  // Claimants/Pemohon - for Finder to manage claimants
+  showClaimantsModal = signal(false);
+  selectedClaimant = signal<Claimant | null>(null);
+  showClaimantDetailModal = signal(false);
+  showRejectReasonModal = signal(false);
+  rejectReason = '';
+  
+  // For Claimer - check their own claim status
+  userClaimStatus = computed(() => {
+    const item = this.item();
+    const user = this.currentUser();
+    if (!item?.claimants || !user) return null;
+    return item.claimants.find(c => c.claimerId === user.id);
+  });
+
+  // =====================
+  // FINDERS (for Lost items) - people who claim to have found the item
+  // =====================
+  showFindersModal = signal(false);
+  selectedFinder = signal<Finder | null>(null);
+  showFinderDetailModal = signal(false);
+  showFinderRejectReasonModal = signal(false);
+  finderRejectReason = '';
+  
+  // Verification form for lost items (when someone claims they found it)
+  showFinderVerificationModal = signal(false);
+  finderVerificationForm = {
+    answers: [] as { questionId: string; question: string; answer: string }[],
+    photoUrl: '',
+    photoPreview: '',
+    additionalContact: ''
+  };
+  isSubmittingFinderVerification = signal(false);
+  finderVerificationSuccess = signal(false);
+  
+  // For Finder - check their own finder status
+  userFinderStatus = computed(() => {
+    const item = this.item();
+    const user = this.currentUser();
+    if (!item?.finders || !user) return null;
+    return item.finders.find(f => f.finderId === user.id);
+  });
   
   // Owner actions
   showDeleteConfirm = signal(false);
@@ -322,32 +365,42 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
 
     this.isSubmittingVerification.set(true);
 
-    // Simulate API call - in real app this would send to backend
-    // Backend would then use Meta WhatsApp API to send message to finder
+    // Simulate API call - Submit to claimants/pemohon table
     setTimeout(() => {
       const user = this.currentUser();
       const item = this.item();
       const isQrVerified = item?.isScannedByQr && this.isQrOwnerVerified();
 
-      console.log('Verification submitted:', {
-        itemId: item?.id,
-        claimerId: user?.id,
-        claimerName: user?.name,
+      // Create new claimant entry
+      const newClaimant: Claimant = {
+        id: `claim-${Date.now()}`,
+        claimerId: user?.id || '',
+        claimerName: user?.name || '',
+        claimerBadge: user?.badge || 'gray',
         claimerPhone: user?.phone,
-        isQrVerified: isQrVerified,
         description: isQrVerified ? '(QR Verified Owner)' : this.verificationForm.description,
-        photoUrl: this.verificationForm.photoUrl,
-        additionalContact: this.verificationForm.additionalContact
-      });
+        photoUrl: this.verificationForm.photoUrl || undefined,
+        additionalContact: this.verificationForm.additionalContact ? 
+          { other: this.verificationForm.additionalContact } : undefined,
+        status: 'pending',
+        isQrVerified: isQrVerified,
+        createdAt: new Date()
+      };
+
+      console.log('Claim submitted to Pemohon table:', newClaimant);
 
       // In real implementation:
-      // - Backend receives this data
-      // - Backend sends WhatsApp message to the finder (item.reporterPhone)
-      // - For QR verified: Message format is different
-      //   "NIM xxx nama yyy adalah pemilik barang (berdasarkan QR sudah diverifikasi sistem) kontak: zzz"
-      // - For non-QR: 
-      //   "NIM xxx nama yyy mengaku sebagai pemilik dan mengirim bukti..."
-      // - Finder's phone number is never exposed to the claimer
+      // - Backend receives this data and adds to claimants array
+      // - Finder can see the list of claimants on their item detail page
+      // - Finder can approve/reject claimants
+      // - Approved claimant gets notification and can see finder's contact
+
+      // Update item locally with new claimant
+      this.item.update(current => {
+        if (!current) return null;
+        const claimants = current.claimants || [];
+        return { ...current, claimants: [...claimants, newClaimant] };
+      });
 
       this.isSubmittingVerification.set(false);
       this.verificationSuccess.set(true);
@@ -398,25 +451,339 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
       const user = this.currentUser();
       const item = this.item();
       
-      console.log('QR Verification submitted:', {
-        itemId: item?.id,
-        ownerId: user?.id,
-        ownerName: user?.name,
-        ownerPhone: user?.phone,
-        ownerStudentId: user?.studentId,
-        ownerEmployeeId: user?.employeeId,
+      // Create new claimant entry with QR verification
+      const newClaimant: Claimant = {
+        id: `claim-${Date.now()}`,
+        claimerId: user?.id || '',
+        claimerName: user?.name || '',
+        claimerBadge: user?.badge || 'gray',
+        claimerPhone: user?.phone,
+        description: '(QR Verified Owner)',
+        additionalContact: this.verificationForm.additionalContact ? 
+          { other: this.verificationForm.additionalContact } : undefined,
+        status: 'pending',
         isQrVerified: true,
-        additionalContact: this.verificationForm.additionalContact
-      });
+        createdAt: new Date()
+      };
 
-      // Message to finder:
-      // "NIM xxx nama yyy adalah pemilik barang (berdasarkan QR sudah diverifikasi sistem)"
-      // "Kontak yang bisa dihubungi: zzz"
+      console.log('QR Verification submitted to Pemohon table:', newClaimant);
+
+      // Update item locally with new claimant
+      this.item.update(current => {
+        if (!current) return null;
+        const claimants = current.claimants || [];
+        return { ...current, claimants: [...claimants, newClaimant] };
+      });
       
       this.isSubmittingVerification.set(false);
       this.verificationSuccess.set(true);
       this.showQrVerificationModal.set(false);
     }, 1500);
+  }
+
+  // =====================
+  // CLAIMANTS MANAGEMENT METHODS (for Finder)
+  // =====================
+  
+  openClaimantsModal(): void {
+    this.showClaimantsModal.set(true);
+  }
+
+  closeClaimantsModal(): void {
+    this.showClaimantsModal.set(false);
+  }
+
+  viewClaimantDetail(claimant: Claimant): void {
+    this.selectedClaimant.set(claimant);
+    this.showClaimantDetailModal.set(true);
+  }
+
+  closeClaimantDetailModal(): void {
+    this.showClaimantDetailModal.set(false);
+    this.selectedClaimant.set(null);
+  }
+
+  approveClaimant(claimant: Claimant): void {
+    // Update claimant status to approved
+    this.item.update(current => {
+      if (!current?.claimants) return current;
+      const updatedClaimants = current.claimants.map(c => {
+        if (c.id === claimant.id) {
+          return { ...c, status: 'approved' as ClaimantStatus, updatedAt: new Date() };
+        }
+        // Optionally reject other pending claims when one is approved
+        return c;
+      });
+      return { ...current, claimants: updatedClaimants, reportStatus: 'claimed' as ReportStatus };
+    });
+
+    console.log('Claimant approved:', claimant);
+    this.closeClaimantDetailModal();
+  }
+
+  openRejectReasonModal(claimant: Claimant): void {
+    this.selectedClaimant.set(claimant);
+    this.rejectReason = '';
+    this.showRejectReasonModal.set(true);
+  }
+
+  closeRejectReasonModal(): void {
+    this.showRejectReasonModal.set(false);
+    this.rejectReason = '';
+  }
+
+  rejectClaimant(): void {
+    const claimant = this.selectedClaimant();
+    if (!claimant) return;
+
+    // Update claimant status to rejected with reason
+    this.item.update(current => {
+      if (!current?.claimants) return current;
+      const updatedClaimants = current.claimants.map(c => {
+        if (c.id === claimant.id) {
+          return { 
+            ...c, 
+            status: 'rejected' as ClaimantStatus, 
+            rejectionReason: this.rejectReason || 'Bukti tidak cukup',
+            updatedAt: new Date() 
+          };
+        }
+        return c;
+      });
+      return { ...current, claimants: updatedClaimants };
+    });
+
+    console.log('Claimant rejected:', claimant, 'Reason:', this.rejectReason);
+    this.closeRejectReasonModal();
+    this.closeClaimantDetailModal();
+  }
+
+  getClaimantStatusLabel(status: ClaimantStatus): string {
+    switch (status) {
+      case 'pending': return 'Menunggu';
+      case 'approved': return 'Disetujui';
+      case 'rejected': return 'Ditolak';
+      default: return status;
+    }
+  }
+
+  getClaimantStatusColor(status: ClaimantStatus): string {
+    switch (status) {
+      case 'pending': return 'yellow';
+      case 'approved': return 'green';
+      case 'rejected': return 'red';
+      default: return 'gray';
+    }
+  }
+
+  getPendingClaimantsCount(): number {
+    const item = this.item();
+    if (!item?.claimants) return 0;
+    return item.claimants.filter(c => c.status === 'pending').length;
+  }
+
+  // =====================
+  // FINDER VERIFICATION METHODS (for Lost items - someone claims they found it)
+  // =====================
+  
+  openFinderVerificationModal(): void {
+    const item = this.item();
+    if (!item?.verificationQuestions) return;
+    
+    // Initialize answers array from questions
+    this.finderVerificationForm.answers = item.verificationQuestions.map(q => ({
+      questionId: q.id,
+      question: q.question,
+      answer: ''
+    }));
+    this.showFinderVerificationModal.set(true);
+  }
+
+  closeFinderVerificationModal(): void {
+    this.showFinderVerificationModal.set(false);
+    this.resetFinderVerificationForm();
+  }
+
+  resetFinderVerificationForm(): void {
+    this.finderVerificationForm = {
+      answers: [],
+      photoUrl: '',
+      photoPreview: '',
+      additionalContact: ''
+    };
+    this.finderVerificationSuccess.set(false);
+  }
+
+  onFinderPhotoSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.finderVerificationForm.photoPreview = e.target?.result as string;
+        this.finderVerificationForm.photoUrl = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  removeFinderPhoto(): void {
+    this.finderVerificationForm.photoUrl = '';
+    this.finderVerificationForm.photoPreview = '';
+  }
+
+  canSubmitFinderVerification(): boolean {
+    const item = this.item();
+    if (!item?.verificationQuestions) return false;
+    
+    // Check that all required questions are answered
+    const requiredQuestions = item.verificationQuestions.filter(q => q.isRequired);
+    for (const q of requiredQuestions) {
+      const answer = this.finderVerificationForm.answers.find(a => a.questionId === q.id);
+      if (!answer || answer.answer.trim().length < 3) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  submitFinderVerification(): void {
+    if (!this.canSubmitFinderVerification()) return;
+
+    this.isSubmittingFinderVerification.set(true);
+
+    // Simulate API call
+    setTimeout(() => {
+      const user = this.currentUser();
+      const item = this.item();
+
+      // Create new finder entry
+      const newFinder: Finder = {
+        id: `finder-${Date.now()}`,
+        finderId: user?.id || '',
+        finderName: user?.name || '',
+        finderBadge: user?.badge || 'gray',
+        finderPhone: user?.phone,
+        answers: this.finderVerificationForm.answers as VerificationAnswer[],
+        photoUrl: this.finderVerificationForm.photoUrl || undefined,
+        additionalContact: this.finderVerificationForm.additionalContact ? 
+          { other: this.finderVerificationForm.additionalContact } : undefined,
+        status: 'pending',
+        createdAt: new Date()
+      };
+
+      console.log('Finder submitted:', newFinder);
+
+      // Update item locally with new finder
+      this.item.update(current => {
+        if (!current) return null;
+        const finders = current.finders || [];
+        return { ...current, finders: [...finders, newFinder] };
+      });
+
+      this.isSubmittingFinderVerification.set(false);
+      this.finderVerificationSuccess.set(true);
+    }, 1500);
+  }
+
+  // =====================
+  // FINDERS MANAGEMENT METHODS (for Lost item owner)
+  // =====================
+  
+  openFindersModal(): void {
+    this.showFindersModal.set(true);
+  }
+
+  closeFindersModal(): void {
+    this.showFindersModal.set(false);
+  }
+
+  viewFinderDetail(finder: Finder): void {
+    this.selectedFinder.set(finder);
+    this.showFinderDetailModal.set(true);
+  }
+
+  closeFinderDetailModal(): void {
+    this.showFinderDetailModal.set(false);
+    this.selectedFinder.set(null);
+  }
+
+  approveFinder(finder: Finder): void {
+    // Update finder status to approved
+    this.item.update(current => {
+      if (!current?.finders) return current;
+      const updatedFinders = current.finders.map(f => {
+        if (f.id === finder.id) {
+          return { ...f, status: 'approved' as ClaimantStatus, updatedAt: new Date() };
+        }
+        return f;
+      });
+      return { ...current, finders: updatedFinders, reportStatus: 'resolved' as ReportStatus };
+    });
+
+    console.log('Finder approved:', finder);
+    this.closeFinderDetailModal();
+  }
+
+  openFinderRejectReasonModal(finder: Finder): void {
+    this.selectedFinder.set(finder);
+    this.finderRejectReason = '';
+    this.showFinderRejectReasonModal.set(true);
+  }
+
+  closeFinderRejectReasonModal(): void {
+    this.showFinderRejectReasonModal.set(false);
+    this.finderRejectReason = '';
+  }
+
+  rejectFinder(): void {
+    const finder = this.selectedFinder();
+    if (!finder) return;
+
+    // Update finder status to rejected with reason
+    this.item.update(current => {
+      if (!current?.finders) return current;
+      const updatedFinders = current.finders.map(f => {
+        if (f.id === finder.id) {
+          return { 
+            ...f, 
+            status: 'rejected' as ClaimantStatus, 
+            rejectionReason: this.finderRejectReason || 'Jawaban tidak sesuai',
+            updatedAt: new Date() 
+          };
+        }
+        return f;
+      });
+      return { ...current, finders: updatedFinders };
+    });
+
+    console.log('Finder rejected:', finder, 'Reason:', this.finderRejectReason);
+    this.closeFinderRejectReasonModal();
+    this.closeFinderDetailModal();
+  }
+
+  getFinderStatusLabel(status: ClaimantStatus): string {
+    switch (status) {
+      case 'pending': return 'Menunggu Verifikasi';
+      case 'approved': return 'Disetujui';
+      case 'rejected': return 'Ditolak';
+      default: return status;
+    }
+  }
+
+  getFinderStatusColor(status: ClaimantStatus): string {
+    switch (status) {
+      case 'pending': return 'yellow';
+      case 'approved': return 'green';
+      case 'rejected': return 'red';
+      default: return 'gray';
+    }
+  }
+
+  getPendingFindersCount(): number {
+    const item = this.item();
+    if (!item?.finders) return 0;
+    return item.finders.filter(f => f.status === 'pending').length;
   }
 
   // =====================
@@ -508,6 +875,7 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
     const item = this.item();
     if (!item?.alternativeContact) return false;
     const alt = item.alternativeContact;
-    return !!(alt.instagram || alt.telegram || alt.line || alt.other);
+    // Check new format (contacts array) or legacy format
+    return !!(alt.contacts && alt.contacts.length > 0) || !!(alt.instagram || alt.telegram || alt.line || alt.other);
   }
 }

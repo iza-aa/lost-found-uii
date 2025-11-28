@@ -23,11 +23,75 @@ export interface ItemLocation {
 }
 
 // Alternative contact for user who doesn't want to expose phone
+export type AlternativeContactType = 'instagram' | 'telegram' | 'line' | 'whatsapp_other' | 'email' | 'other';
+
+// Single contact entry
+export interface ContactEntry {
+  type: AlternativeContactType;
+  value: string;
+}
+
 export interface AlternativeContact {
+  // New: Array of contacts
+  contacts?: ContactEntry[];
+  // Legacy single contact - for backward compatibility
+  type?: AlternativeContactType;      // Dropdown selected type
+  value?: string;                     // The contact value (username, number, etc)
+  // Legacy fields - for backward compatibility
   instagram?: string;
   telegram?: string;
   line?: string;
   other?: string;
+}
+
+// Claimant status for verification flow
+export type ClaimantStatus = 'pending' | 'approved' | 'rejected';
+
+// Verification question for lost items
+export interface VerificationQuestion {
+  id: string;
+  question: string;
+  isRequired: boolean;
+}
+
+// Answer to verification question
+export interface VerificationAnswer {
+  questionId: string;
+  question: string;
+  answer: string;
+}
+
+// Claimant/Pemohon interface - untuk orang yang mengklaim barang (Found items)
+export interface Claimant {
+  id: string;                         // Unique ID for this claim
+  claimerId: string;                  // User ID of the person claiming
+  claimerName: string;                // Name of the claimant
+  claimerBadge: UserBadge;           // Badge of the claimant
+  claimerPhone?: string;              // Phone number (revealed after approval)
+  description: string;                // Description/proof of ownership
+  photoUrl?: string;                  // Photo evidence
+  additionalContact?: AlternativeContact;  // Alternative contact info
+  status: ClaimantStatus;             // pending | approved | rejected
+  isQrVerified?: boolean;             // True if verified via QR scan
+  rejectionReason?: string;           // Reason for rejection (if rejected)
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+// Finder interface - untuk orang yang mengaku menemukan barang (Lost items)
+export interface Finder {
+  id: string;                         // Unique ID for this finder claim
+  finderId: string;                   // User ID of the person who found
+  finderName: string;                 // Name of the finder
+  finderBadge: UserBadge;            // Badge of the finder
+  finderPhone?: string;               // Phone number (revealed after approval)
+  answers: VerificationAnswer[];      // Answers to verification questions
+  photoUrl?: string;                  // Photo evidence (optional)
+  additionalContact?: AlternativeContact;  // Alternative contact info
+  status: ClaimantStatus;             // pending | approved | rejected
+  rejectionReason?: string;           // Reason for rejection (if rejected)
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
 // Main Item interface
@@ -57,6 +121,7 @@ export interface Item {
   // Lost item specific fields
   reward?: boolean;           // Tawarkan imbalan?
   urgency?: UrgencyLevel;     // Tingkat urgensi
+  verificationQuestions?: VerificationQuestion[];  // Pertanyaan verifikasi untuk penemu
   
   // Found item specific fields
   storageLocation?: StorageLocation;  // Barang disimpan di mana
@@ -68,6 +133,12 @@ export interface Item {
   scannedQrOwnerId?: string;          // User ID of the QR owner (claimed owner)
   scannedQrOwnerName?: string;        // Name of the QR owner
   scannedQrOwnerPhone?: string;       // Phone of the QR owner (private, not exposed)
+  
+  // Claimants/Pemohon (NEW) - List of people claiming this item
+  claimants?: Claimant[];             // Array of claimants for found items
+  
+  // Finders (NEW) - List of people who claim to have found this lost item
+  finders?: Finder[];                 // Array of finders for lost items
   
   createdAt: Date;
   updatedAt?: Date;
