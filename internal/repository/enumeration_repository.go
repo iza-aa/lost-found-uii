@@ -66,10 +66,21 @@ func (r *EnumerationRepository) Seed() {
 	r.DB.Model(&models.CampusLocation{}).Count(&count)
 	if count == 0 {
 		locations := []models.CampusLocation{
-			{Name: "Library", Latitude: -6.200000, Longitude: 106.816666},
-			{Name: "Canteen", Latitude: -6.201000, Longitude: 106.817000},
-			{Name: "Main Hall", Latitude: -6.202000, Longitude: 106.818000},
-			{Name: "Security Post 1", Latitude: -6.203000, Longitude: 106.819000},
+			{Name: "Gedung FTI (Fakultas Teknologi Industri)", Latitude: -7.686369, Longitude: 110.410806, Description: "Gedung Fakultas Teknologi Industri"},
+			{Name: "Gedung Fakultas Hukum", Latitude: -7.689302, Longitude: 110.412969, Description: "Gedung Fakultas Hukum"},
+			{Name: "Gedung FIAI", Latitude: -7.688265, Longitude: 110.414749, Description: "Fakultas Ilmu Agama Islam"},
+			{Name: "Gedung FPSB", Latitude: -7.687150, Longitude: 110.414422, Description: "Fakultas Psikologi dan Ilmu Sosial Budaya"},
+			{Name: "Perpustakaan UII", Latitude: -7.688298, Longitude: 110.415142, Description: "Perpustakaan Pusat UII"},
+			{Name: "Masjid Ulil Albab", Latitude: -7.687475, Longitude: 110.415268, Description: "Masjid Kampus UII"},
+			{Name: "Gedung Rektorat", Latitude: -7.687939, Longitude: 110.413624, Description: "Gedung Rektorat UII"},
+			{Name: "Gedung Kuliah Umum (GKU)", Latitude: -7.688357, Longitude: 110.413558, Description: "Gedung Kuliah Umum"},
+			{Name: "Auditorium KH. Abdurrahman Wahid", Latitude: -7.687475, Longitude: 110.415268, Description: "Auditorium Kampus"},
+			{Name: "Kantin FTI", Latitude: -7.687475, Longitude: 110.411443, Description: "Kantin FTI"},
+			{Name: "Parkiran Motor FTI", Latitude: -7.686937, Longitude: 110.411773, Description: "Area Parkir Motor"},
+			{Name: "Parkiran Mobil FTI", Latitude: -7.686968, Longitude: 110.410962, Description: "Area Parkir Mobil"},
+			{Name: "GOR UII", Latitude: -7.686763, Longitude: 110.409404, Description: "Gedung Olahraga"},
+			{Name: "Asrama Mahasiswa", Latitude: -7.690400, Longitude: 110.413203, Description: "Asrama Mahasiswa UII"},
+			{Name: "Lokasi Lainnya", Latitude: -7.687528, Longitude: 110.412678, Description: "Lokasi lain di sekitar kampus"},
 		}
 		r.DB.Create(&locations)
 	}

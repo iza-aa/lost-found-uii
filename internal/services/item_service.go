@@ -45,6 +45,15 @@ func (s *ItemService) ReportFoundItem(req dto.CreateFoundItemRequest, finderID u
 		})
 	}
 
+	// Map Contacts
+	var contacts []models.ItemContact
+	for _, c := range req.Contacts {
+		contacts = append(contacts, models.ItemContact{
+			Platform: models.PlatformType(c.Platform),
+			Value:    c.Value,
+		})
+	}
+
 	item := &models.Item{
 		Title:         req.Title,
 		Type:          models.ItemTypeFound,
@@ -52,6 +61,8 @@ func (s *ItemService) ReportFoundItem(req dto.CreateFoundItemRequest, finderID u
 		LocationID:    &req.LocationID,
 		ImageURL:      req.ImageURL,
 		Verifications: verifications,
+		Contacts:      contacts,
+		ShowPhone:     req.ShowPhone,
 		FinderID:      &finderID,
 		Status:        models.ItemStatusOpen,
 		DateFound:     &dateFound,
@@ -79,6 +90,15 @@ func (s *ItemService) ReportFoundItem(req dto.CreateFoundItemRequest, finderID u
 		})
 	}
 
+	// Map response contacts
+	var contactResponses []dto.ContactResponse
+	for _, c := range item.Contacts {
+		contactResponses = append(contactResponses, dto.ContactResponse{
+			Platform: string(c.Platform),
+			Value:    c.Value,
+		})
+	}
+
 	return &dto.ItemResponse{
 		ID:            item.ID,
 		Title:         item.Title,
@@ -86,6 +106,8 @@ func (s *ItemService) ReportFoundItem(req dto.CreateFoundItemRequest, finderID u
 		LocationID:    *item.LocationID,
 		ImageURL:      item.ImageURL,
 		Verifications: verifResponses,
+		ShowPhone:     item.ShowPhone,
+		Contacts:      contactResponses,
 		Status:        string(item.Status),
 		CreatedAt:     item.CreatedAt,
 	}, nil
@@ -250,6 +272,7 @@ func (s *ItemService) SubmitClaim(itemID string, req dto.CreateClaimRequest, own
 		ItemID:      item.ID,
 		OwnerID:     ownerID,
 		AnswerInput: req.AnswerInput,
+		ImageURL:    req.ImageURL,
 		Status:      models.ClaimStatusPending,
 	}
 
@@ -273,6 +296,7 @@ func (s *ItemService) SubmitClaim(itemID string, req dto.CreateClaimRequest, own
 		ItemID:      claim.ItemID,
 		OwnerID:     claim.OwnerID,
 		AnswerInput: claim.AnswerInput,
+		ImageURL:    claim.ImageURL,
 		Status:      string(claim.Status),
 		CreatedAt:   claim.CreatedAt,
 	}, nil

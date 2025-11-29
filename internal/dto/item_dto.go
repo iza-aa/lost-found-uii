@@ -15,6 +15,8 @@ type CreateFoundItemRequest struct {
 	DateFound     string                `json:"date_found" binding:"required" example:"2023-10-27"` // Format YYYY-MM-DD or RFC3339
 	ReturnMethod  string                `json:"return_method" binding:"required,oneof=BRING_BY_FINDER HANDED_TO_SECURITY" example:"BRING_BY_FINDER"`
 	COD           bool                  `json:"cod" example:"false"`
+	ShowPhone     bool                  `json:"show_phone" example:"false"`
+	Contacts      []ContactRequest      `json:"contacts" binding:"dive"`
 }
 
 type CreateLostItemRequest struct {
@@ -48,12 +50,13 @@ type ItemResponse struct {
 	LocationID    uuid.UUID              `json:"location_id"`
 	LocationName  string                 `json:"location_name,omitempty"`
 	ImageURL      string                 `json:"image_url"`
-	Verifications []VerificationResponse `json:"verifications,omitempty"`
+	Verifications []VerificationResponse `json:"verifications,omitempty"` // For found items
 	Status        string                 `json:"status"`
 	CreatedAt     time.Time              `json:"created_at"`
-	Urgency       string                 `json:"urgency,omitempty"`
-	OfferReward   bool                   `json:"offer_reward"`
-	Contacts      []ContactResponse      `json:"contacts,omitempty"`
+	Urgency       string                 `json:"urgency,omitempty"`      // For lost items
+	OfferReward   bool                   `json:"offer_reward,omitempty"` // For lost items
+	ShowPhone     bool                   `json:"show_phone"`             // For both item types
+	Contacts      []ContactResponse      `json:"contacts,omitempty"`     // For both item types
 }
 
 type VerificationResponse struct {
@@ -67,7 +70,8 @@ type ContactResponse struct {
 }
 
 type CreateClaimRequest struct {
-	AnswerInput string `json:"answer_input" binding:"required"`
+	AnswerInput string `json:"answer_input" binding:"required" example:"Blue wallet with university ID"`
+	ImageURL    string `json:"image_url" example:"http://example.com/proof.jpg"`
 }
 
 type ClaimResponse struct {
@@ -75,6 +79,7 @@ type ClaimResponse struct {
 	ItemID      uuid.UUID `json:"item_id"`
 	OwnerID     uuid.UUID `json:"owner_id"`
 	AnswerInput string    `json:"answer_input"`
+	ImageURL    string    `json:"image_url"`
 	Status      string    `json:"status"`
 	CreatedAt   time.Time `json:"created_at"`
 }

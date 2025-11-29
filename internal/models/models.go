@@ -43,10 +43,11 @@ type ItemCategory struct {
 }
 
 type CampusLocation struct {
-	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	Name      string    `json:"name"`
-	Latitude  float64   `json:"latitude"`
-	Longitude float64   `json:"longitude"`
+	ID          uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Name        string    `json:"name"`
+	Latitude    float64   `json:"latitude"`
+	Longitude   float64   `json:"longitude"`
+	Description string    `json:"description"`
 }
 
 type Asset struct {
@@ -172,6 +173,7 @@ type Claim struct {
 	OwnerID     uuid.UUID   `json:"owner_id"`
 	Owner       User        `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
 	AnswerInput string      `json:"answer_input"`
+	ImageURL    string      `json:"image_url"` // Proof image for claim
 	Status      ClaimStatus `gorm:"default:'PENDING'" json:"status"`
 	CreatedAt   time.Time   `json:"created_at"`
 	UpdatedAt   time.Time   `json:"updated_at"`
