@@ -36,3 +36,16 @@ func (r *UserRepository) FindByID(id uuid.UUID) (*models.User, error) {
 	}
 	return &user, nil
 }
+
+func (r *UserRepository) FindAll() ([]models.User, error) {
+	var users []models.User
+	err := r.DB.Find(&users).Error
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func (r *UserRepository) Update(user *models.User) error {
+	return r.DB.Save(user).Error
+}

@@ -47,6 +47,8 @@ func main() {
 		&models.Asset{},
 		&models.FoundEvent{},
 		&models.Item{},
+		&models.ItemVerification{},
+		&models.ItemContact{},
 		&models.Claim{},
 		&models.Notification{},
 	)
@@ -77,6 +79,7 @@ func main() {
 	authController := controllers.NewAuthController(authService)
 	assetController := controllers.NewAssetController(assetService)
 	itemController := controllers.NewItemController(itemService)
+	userController := controllers.NewUserController(services.NewUserService(userRepo))
 	enumController := controllers.NewEnumerationController(enumRepo)
 	notifController := controllers.NewNotificationController(notifService)
 	uploadController := controllers.NewUploadController(uploadService)
@@ -86,6 +89,7 @@ func main() {
 		authController,
 		assetController,
 		itemController,
+		userController,
 		enumController,
 		notifController,
 		uploadController,

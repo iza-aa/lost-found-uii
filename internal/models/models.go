@@ -18,20 +18,23 @@ type Base struct {
 type UserRole string
 
 const (
-	RoleUser     UserRole = "USER"
+	RoleUser    UserRole = "PUBLIK"
+	RoleStudent UserRole = "MAHASISWA"
+	RoleStaff   UserRole = "STAFF_DOSEN"
+	// Keeping these for backward compatibility or internal use if needed, but primary roles are above
 	RoleAdmin    UserRole = "ADMIN"
 	RoleSecurity UserRole = "SECURITY"
-	RoleStudent  UserRole = "STUDENT"
-	RoleStaff    UserRole = "STAFF"
 )
 
 type User struct {
 	Base
-	Name         string   `json:"name"`
-	Email        string   `gorm:"uniqueIndex:idx_users_email" json:"email"`
-	PasswordHash string   `json:"-"`
-	Phone        string   `json:"phone"`
-	Role         UserRole `gorm:"default:'USER'" json:"role"`
+	Name           string   `json:"name"`
+	Email          string   `gorm:"uniqueIndex:idx_users_email" json:"email"`
+	PasswordHash   string   `json:"-"`
+	Phone          string   `json:"phone"`
+	IdentityNumber string   `gorm:"uniqueIndex:idx_users_identity" json:"identity_number"`
+	Role           UserRole `gorm:"default:'PUBLIK'" json:"role"`
+	Faculty        *string  `json:"faculty,omitempty"` // Nullable, null for Staff/Dosen
 }
 
 type ItemCategory struct {
@@ -86,25 +89,72 @@ const (
 	ItemTypeFound ItemType = "FOUND"
 )
 
+type ReturnMethod string
+
+const (
+	ReturnMethodBringByFinder    ReturnMethod = "BRING_BY_FINDER"
+	ReturnMethodHandedToSecurity ReturnMethod = "HANDED_TO_SECURITY"
+)
+
+type PlatformType string
+
+const (
+	PlatformInstagram PlatformType = "INSTAGRAM"
+	PlatformTelegram  PlatformType = "TELEGRAM"
+	PlatformLine      PlatformType = "LINE"
+	PlatformTwitter   PlatformType = "TWITTER"
+	PlatformEmail     PlatformType = "EMAIL"
+	PlatformWhatsapp  PlatformType = "WHATSAPP"
+	PlatformOther     PlatformType = "OTHER"
+)
+
+type ItemContact struct {
+	Base
+	ItemID   uuid.UUID    `json:"item_id"`
+	Platform PlatformType `gorm:"type:varchar(50)" json:"platform"`
+	Value    string       `json:"value"`
+}
+
+type ItemVerification struct {
+	Base
+	ItemID   uuid.UUID `json:"item_id"`
+	Question string    `json:"question"`
+	Answer   string    `json:"-"` // Hidden from JSON
+}
+
+type ItemUrgency string
+
+const (
+	UrgencyNormal   ItemUrgency = "NORMAL"
+	UrgencyHigh     ItemUrgency = "HIGH"
+	UrgencyCritical ItemUrgency = "CRITICAL"
+)
+
 // Finder-First Item (and now Owner-First Lost Item)
 type Item struct {
 	Base
-	Title                string         `json:"title"`
-	Type                 ItemType       `gorm:"default:'FOUND'" json:"type"`
-	CategoryID           uuid.UUID      `json:"category_id"`
-	Category             ItemCategory   `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
-	LocationID           *uuid.UUID     `json:"location_id"` // Nullable for Lost items
-	Location             *CampusLocation `gorm:"foreignKey:LocationID" json:"location,omitempty"`
-	LocationDescription  string         `json:"location_description"` // For Lost items (free text)
-	ImageURL             string         `json:"image_url"`
-	VerificationQuestion string         `json:"verification_question"`
-	VerificationAnswer   string         `json:"-"` // Plaintext per request, but hidden from JSON
-	FinderID             *uuid.UUID     `json:"finder_id"` // Nullable for Lost items
-	Finder               *User          `gorm:"foreignKey:FinderID" json:"finder,omitempty"`
-	OwnerID              *uuid.UUID     `json:"owner_id"` // Nullable for Found items
-	Owner                *User          `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
-	DateLost             *time.Time     `json:"date_lost"`
-	Status               ItemStatus     `gorm:"default:'OPEN'" json:"status"`
+	Title               string             `json:"title"`
+	Type                ItemType           `gorm:"default:'FOUND'" json:"type"`
+	CategoryID          uuid.UUID          `json:"category_id"`
+	Category            ItemCategory       `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
+	LocationID          *uuid.UUID         `json:"location_id"` // Nullable for Lost items
+	Location            *CampusLocation    `gorm:"foreignKey:LocationID" json:"location,omitempty"`
+	LocationDescription string             `json:"location_description"` // For Lost items (free text)
+	ImageURL            string             `json:"image_url"`
+	Verifications       []ItemVerification `gorm:"foreignKey:ItemID" json:"verifications,omitempty"`
+	FinderID            *uuid.UUID         `json:"finder_id"` // Nullable for Lost items
+	Finder              *User              `gorm:"foreignKey:FinderID" json:"finder,omitempty"`
+	OwnerID             *uuid.UUID         `json:"owner_id"` // Nullable for Found items
+	Owner               *User              `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
+	DateLost            *time.Time         `json:"date_lost"`
+	DateFound           *time.Time         `json:"date_found"`
+	Status              ItemStatus         `gorm:"default:'OPEN'" json:"status"`
+	ReturnMethod        ReturnMethod       `json:"return_method"`
+	COD                 bool               `gorm:"default:false" json:"cod"`
+	ShowPhone           bool               `gorm:"default:false" json:"show_phone"`
+	Contacts            []ItemContact      `gorm:"foreignKey:ItemID" json:"contacts,omitempty"`
+	Urgency             ItemUrgency        `gorm:"default:'NORMAL'" json:"urgency"`
+	OfferReward         bool               `gorm:"default:false" json:"offer_reward"`
 }
 
 type ClaimStatus string

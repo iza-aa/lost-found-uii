@@ -18,6 +18,11 @@ func NewAuthService(userRepo *repository.UserRepository) *AuthService {
 }
 
 func (s *AuthService) Register(req dto.RegisterRequest) (*dto.AuthResponse, error) {
+	// Validate that email starts with identity number
+	if !strings.HasPrefix(req.Email, req.IdentityNumber) {
+		return nil, errors.New("Email validation failed. Your email must start with your NIM/NIP.")
+	}
+
 	existingUser, _ := s.UserRepo.FindByEmail(req.Email)
 	if existingUser != nil {
 		return nil, errors.New("email already registered")
@@ -28,30 +33,42 @@ func (s *AuthService) Register(req dto.RegisterRequest) (*dto.AuthResponse, erro
 		return nil, err
 	}
 
-	role := models.RoleUser
-	if strings.HasSuffix(req.Email, "@students.uii.ac.id") {
-		role = models.RoleStudent
-	} else if strings.HasSuffix(req.Email, "@uii.ac.id") {
-		role = models.RoleStaff
-	} else if req.Role != "" {
-		// Optional: Allow manual override if needed, or remove this if strict
-		// Keeping it for Admin/Security creation if exposed, but usually public reg ignores it.
-		// Let's prioritize email logic for these domains, but allow others?
-		// For safety, let's say if email matches, enforce it.
-		// If not, default to USER (or whatever req.Role is if we trust it? No, public reg shouldn't trust req.Role)
-		// Let's stick to the plan:
-		// Others -> USER.
-		// If we want to allow ADMIN creation, that should be a separate seeded process or admin-only endpoint.
-		// So for public register:
-		role = models.RoleUser
+	role := models.RoleUser // Default to PUBLIK
+	if req.Role != "" {
+		role = models.UserRole(req.Role)
+	} else {
+		// Auto-assign based on email domain if role not specified (optional logic)
+		if strings.HasSuffix(req.Email, "@students.uii.ac.id") {
+			role = models.RoleStudent
+		} else if strings.HasSuffix(req.Email, "@uii.ac.id") {
+			role = models.RoleStaff
+		}
+	}
+
+	var faculty *string
+	if role == models.RoleStudent && req.Faculty != "" {
+		f := req.Faculty
+		faculty = &f
+	} else if role == models.RoleStaff {
+		faculty = nil // Explicitly null for Staff/Dosen
+	} else if req.Faculty != "" {
+		// Allow faculty for others? Prompt says "If User is Staff/Dosen, faculty value is null".
+		// Implies others might have it? Or only Student?
+		// "For model User... additional field, which is faculty. There's an exception where if the User is Staff/Dosen, the faculty value is null"
+		// Let's assume only Students need it, or maybe Publik too?
+		// Safest is to allow it if provided, unless it's Staff/Dosen.
+		f := req.Faculty
+		faculty = &f
 	}
 
 	user := &models.User{
-		Name:         req.Name,
-		Email:        req.Email,
-		PasswordHash: hashedPassword,
-		Phone:        req.Phone,
-		Role:         role,
+		Name:           req.Name,
+		Email:          req.Email,
+		PasswordHash:   hashedPassword,
+		Phone:          req.Phone,
+		IdentityNumber: req.IdentityNumber,
+		Role:           role,
+		Faculty:        faculty,
 	}
 
 	if err := s.UserRepo.Create(user); err != nil {
@@ -68,26 +85,40 @@ func (s *AuthService) Register(req dto.RegisterRequest) (*dto.AuthResponse, erro
 		return nil, err
 	}
 
+	facultyStr := ""
+	if user.Faculty != nil {
+		facultyStr = *user.Faculty
+	}
+
 	return &dto.AuthResponse{
 		Token:        token,
 		RefreshToken: refreshToken,
 		User: dto.UserResponse{
-			ID:    user.ID,
-			Name:  user.Name,
-			Email: user.Email,
-			Role:  string(user.Role),
+			ID:             user.ID,
+			Name:           user.Name,
+			Email:          user.Email,
+			IdentityNumber: user.IdentityNumber,
+			Role:           string(user.Role),
+			Faculty:        facultyStr,
 		},
 	}, nil
 }
 
 func (s *AuthService) Login(req dto.LoginRequest) (*dto.AuthResponse, error) {
+	if req.Email == "" || req.Password == "" {
+		return nil, errors.New("email and password are required")
+	}
+
 	user, err := s.UserRepo.FindByEmail(req.Email)
 	if err != nil {
-		return nil, errors.New("invalid credentials")
+		// "Verify login with unregistered username/email" -> "User not found"
+		// Or "Invalid Credentials" if we want to be safe, but prompt asked for specific.
+		return nil, errors.New("user not found")
 	}
 
 	if !utils.CheckPasswordHash(req.Password, user.PasswordHash) {
-		return nil, errors.New("invalid credentials")
+		// "Verify login with valid username and invalid password" -> "Invalid password"
+		return nil, errors.New("invalid password")
 	}
 
 	token, err := utils.GenerateToken(user.ID, string(user.Role))
@@ -100,14 +131,21 @@ func (s *AuthService) Login(req dto.LoginRequest) (*dto.AuthResponse, error) {
 		return nil, err
 	}
 
+	facultyStr := ""
+	if user.Faculty != nil {
+		facultyStr = *user.Faculty
+	}
+
 	return &dto.AuthResponse{
 		Token:        token,
 		RefreshToken: refreshToken,
 		User: dto.UserResponse{
-			ID:    user.ID,
-			Name:  user.Name,
-			Email: user.Email,
-			Role:  string(user.Role),
+			ID:             user.ID,
+			Name:           user.Name,
+			Email:          user.Email,
+			IdentityNumber: user.IdentityNumber,
+			Role:           string(user.Role),
+			Faculty:        facultyStr,
 		},
 	}, nil
 }
@@ -138,14 +176,21 @@ func (s *AuthService) RefreshToken(req dto.RefreshTokenRequest) (*dto.AuthRespon
 		return nil, err
 	}
 
+	facultyStr := ""
+	if user.Faculty != nil {
+		facultyStr = *user.Faculty
+	}
+
 	return &dto.AuthResponse{
 		Token:        newToken,
 		RefreshToken: newRefreshToken,
 		User: dto.UserResponse{
-			ID:    user.ID,
-			Name:  user.Name,
-			Email: user.Email,
-			Role:  string(user.Role),
+			ID:             user.ID,
+			Name:           user.Name,
+			Email:          user.Email,
+			IdentityNumber: user.IdentityNumber,
+			Role:           string(user.Role),
+			Faculty:        facultyStr,
 		},
 	}, nil
 }

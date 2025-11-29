@@ -3,16 +3,18 @@ package dto
 import "github.com/google/uuid"
 
 type RegisterRequest struct {
-	Name     string `json:"name" binding:"required"`
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
-	Phone    string `json:"phone" binding:"required"`
-	Role     string `json:"role" binding:"oneof=USER ADMIN SECURITY"` // Optional, default to USER in service if empty
+	Name           string `json:"name" binding:"required" example:"John Doe"`
+	Email          string `json:"email" binding:"required,email" example:"john@students.uii.ac.id"`
+	Password       string `json:"password" binding:"required,min=6" example:"password123"`
+	Phone          string `json:"phone" binding:"required" example:"08123456789"`
+	IdentityNumber string `json:"identity_number" binding:"required" example:"21523001"`
+	Role           string `json:"role" binding:"oneof=PUBLIK MAHASISWA STAFF_DOSEN ADMIN SECURITY" example:"MAHASISWA"`
+	Faculty        string `json:"faculty" example:"Fakultas Teknologi Industri"` // Optional, empty for Staff/Dosen
 }
 
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+	Email    string `json:"email" binding:"required,email" example:"john@students.uii.ac.id"`
+	Password string `json:"password" binding:"required" example:"password123"`
 }
 
 type AuthResponse struct {
@@ -26,8 +28,10 @@ type RefreshTokenRequest struct {
 }
 
 type UserResponse struct {
-	ID    uuid.UUID `json:"id"`
-	Name  string    `json:"name"`
-	Email string    `json:"email"`
-	Role  string    `json:"role"`
+	ID             uuid.UUID `json:"id"`
+	Name           string    `json:"name"`
+	Email          string    `json:"email"`
+	IdentityNumber string    `json:"identity_number"`
+	Role           string    `json:"role"`
+	Faculty        string    `json:"faculty,omitempty"`
 }

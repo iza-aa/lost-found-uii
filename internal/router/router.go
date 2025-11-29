@@ -11,29 +11,32 @@ import (
 )
 
 type AppRouter struct {
-	AuthController        *controllers.AuthController
-	AssetController       *controllers.AssetController
-	ItemController        *controllers.ItemController
-	EnumerationController *controllers.EnumerationController
+	AuthController         *controllers.AuthController
+	AssetController        *controllers.AssetController
+	ItemController         *controllers.ItemController
+	UserController         *controllers.UserController
+	EnumerationController  *controllers.EnumerationController
 	NotificationController *controllers.NotificationController
-	UploadController      *controllers.UploadController
+	UploadController       *controllers.UploadController
 }
 
 func NewAppRouter(
 	auth *controllers.AuthController,
 	asset *controllers.AssetController,
 	item *controllers.ItemController,
+	user *controllers.UserController,
 	enum *controllers.EnumerationController,
 	notif *controllers.NotificationController,
 	upload *controllers.UploadController,
 ) *AppRouter {
 	return &AppRouter{
-		AuthController:        auth,
-		AssetController:       asset,
-		ItemController:        item,
-		EnumerationController: enum,
+		AuthController:         auth,
+		AssetController:        asset,
+		ItemController:         item,
+		UserController:         user,
+		EnumerationController:  enum,
 		NotificationController: notif,
-		UploadController:      upload,
+		UploadController:       upload,
 	}
 }
 
@@ -56,7 +59,6 @@ func (r *AppRouter) Setup(engine *gin.Engine) {
 	// I should add the import in a separate step or use a hardcoded fallback if I can't easily add import here without viewing.
 	// I viewed router.go, it does NOT import config.
 	// I will add the import first.
-
 
 	// Public Routes
 	api := engine.Group("/api/v1")
@@ -148,8 +150,16 @@ func (r *AppRouter) Setup(engine *gin.Engine) {
 
 		// Upload
 		protected.POST("/upload", r.UploadController.UploadFile)
+
+		// Users
+		users := protected.Group("/users")
+		{
+			users.GET("", r.UserController.GetAllUsers)
+			users.GET("/:id", r.UserController.GetUser)
+			users.PUT("/me", r.UserController.UpdateUser)
+		}
 	}
-	
+
 	// Public Scan Endpoint (Specific)
 	// Already registered above in line 59
 

@@ -66,6 +66,25 @@ definitions:
       status:
         type: string
     type: object
+  dto.ContactRequest:
+    properties:
+      platform:
+        example: WHATSAPP
+        type: string
+      value:
+        example: "08123456789"
+        type: string
+    required:
+    - platform
+    - value
+    type: object
+  dto.ContactResponse:
+    properties:
+      platform:
+        type: string
+      value:
+        type: string
+    type: object
   dto.CreateAssetRequest:
     properties:
       category_id:
@@ -90,38 +109,79 @@ definitions:
   dto.CreateFoundItemRequest:
     properties:
       category_id:
+        example: 1bd43cf7-fc4f-4968-bd4f-c45699b03c18
+        type: string
+      cod:
+        example: false
+        type: boolean
+      date_found:
+        description: Format YYYY-MM-DD or RFC3339
+        example: "2023-10-27"
         type: string
       image_url:
+        example: http://example.com/image.jpg
         type: string
       location_id:
+        example: e9464495-bfe5-4ed0-8ea4-a2d69afa0b39
+        type: string
+      return_method:
+        enum:
+        - BRING_BY_FINDER
+        - HANDED_TO_SECURITY
+        example: BRING_BY_FINDER
         type: string
       title:
+        example: Blue Wallet
         type: string
-      verification_answer:
-        type: string
-      verification_question:
-        type: string
+      verifications:
+        items:
+          $ref: '#/definitions/dto.VerificationRequest'
+        type: array
     required:
     - category_id
+    - date_found
     - location_id
+    - return_method
     - title
-    - verification_answer
-    - verification_question
+    - verifications
     type: object
   dto.CreateLostItemRequest:
     properties:
       category_id:
+        example: 1bd43cf7-fc4f-4968-bd4f-c45699b03c18
         type: string
+      contacts:
+        items:
+          $ref: '#/definitions/dto.ContactRequest'
+        type: array
       date_lost:
         description: Format YYYY-MM-DD
+        example: "2023-10-26"
         type: string
       description:
+        example: Black case with a sticker
         type: string
       image_url:
+        example: http://example.com/iphone.jpg
         type: string
       location_last_seen:
+        example: Canteen
         type: string
+      offer_reward:
+        example: true
+        type: boolean
+      show_phone:
+        example: false
+        type: boolean
       title:
+        example: iPhone 13
+        type: string
+      urgency:
+        enum:
+        - NORMAL
+        - HIGH
+        - CRITICAL
+        example: HIGH
         type: string
     required:
     - category_id
@@ -145,6 +205,10 @@ definitions:
         type: string
       category_name:
         type: string
+      contacts:
+        items:
+          $ref: '#/definitions/dto.ContactResponse'
+        type: array
       created_at:
         type: string
       id:
@@ -155,18 +219,26 @@ definitions:
         type: string
       location_name:
         type: string
+      offer_reward:
+        type: boolean
       status:
         type: string
       title:
         type: string
-      verification_question:
+      urgency:
         type: string
+      verifications:
+        items:
+          $ref: '#/definitions/dto.VerificationResponse'
+        type: array
     type: object
   dto.LoginRequest:
     properties:
       email:
+        example: john@students.uii.ac.id
         type: string
       password:
+        example: password123
         type: string
     required:
     - email
@@ -182,23 +254,37 @@ definitions:
   dto.RegisterRequest:
     properties:
       email:
+        example: john@students.uii.ac.id
+        type: string
+      faculty:
+        description: Optional, empty for Staff/Dosen
+        example: Fakultas Teknologi Industri
+        type: string
+      identity_number:
+        example: "21523001"
         type: string
       name:
+        example: John Doe
         type: string
       password:
+        example: password123
         minLength: 6
         type: string
       phone:
+        example: "08123456789"
         type: string
       role:
-        description: Optional, default to USER in service if empty
         enum:
-        - USER
+        - PUBLIK
+        - MAHASISWA
+        - STAFF_DOSEN
         - ADMIN
         - SECURITY
+        example: MAHASISWA
         type: string
     required:
     - email
+    - identity_number
     - name
     - password
     - phone
@@ -219,15 +305,62 @@ definitions:
       lost_mode:
         type: boolean
     type: object
+  dto.UpdateUserRequest:
+    properties:
+      name:
+        example: Jane Doe
+        type: string
+      phone:
+        example: "08198765432"
+        type: string
+    type: object
+  dto.UserDetailResponse:
+    properties:
+      email:
+        type: string
+      faculty:
+        type: string
+      id:
+        type: string
+      identity_number:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      role:
+        type: string
+    type: object
   dto.UserResponse:
     properties:
       email:
         type: string
+      faculty:
+        type: string
       id:
+        type: string
+      identity_number:
         type: string
       name:
         type: string
       role:
+        type: string
+    type: object
+  dto.VerificationRequest:
+    properties:
+      answer:
+        example: Blue
+        type: string
+      question:
+        example: What is the color?
+        type: string
+    required:
+    - answer
+    - question
+    type: object
+  dto.VerificationResponse:
+    properties:
+      question:
         type: string
     type: object
   models.Asset:
@@ -329,7 +462,15 @@ definitions:
         $ref: '#/definitions/models.ItemCategory'
       category_id:
         type: string
+      cod:
+        type: boolean
+      contacts:
+        items:
+          $ref: '#/definitions/models.ItemContact'
+        type: array
       created_at:
+        type: string
+      date_found:
         type: string
       date_lost:
         type: string
@@ -350,11 +491,17 @@ definitions:
       location_id:
         description: Nullable for Lost items
         type: string
+      offer_reward:
+        type: boolean
       owner:
         $ref: '#/definitions/models.User'
       owner_id:
         description: Nullable for Found items
         type: string
+      return_method:
+        $ref: '#/definitions/models.ReturnMethod'
+      show_phone:
+        type: boolean
       status:
         $ref: '#/definitions/models.ItemStatus'
       title:
@@ -363,14 +510,33 @@ definitions:
         $ref: '#/definitions/models.ItemType'
       updated_at:
         type: string
-      verification_question:
-        type: string
+      urgency:
+        $ref: '#/definitions/models.ItemUrgency'
+      verifications:
+        items:
+          $ref: '#/definitions/models.ItemVerification'
+        type: array
     type: object
   models.ItemCategory:
     properties:
       id:
         type: string
       name:
+        type: string
+    type: object
+  models.ItemContact:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      item_id:
+        type: string
+      platform:
+        $ref: '#/definitions/models.PlatformType'
+      updated_at:
+        type: string
+      value:
         type: string
     type: object
   models.ItemStatus:
@@ -391,6 +557,29 @@ definitions:
     x-enum-varnames:
     - ItemTypeLost
     - ItemTypeFound
+  models.ItemUrgency:
+    enum:
+    - NORMAL
+    - HIGH
+    - CRITICAL
+    type: string
+    x-enum-varnames:
+    - UrgencyNormal
+    - UrgencyHigh
+    - UrgencyCritical
+  models.ItemVerification:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      item_id:
+        type: string
+      question:
+        type: string
+      updated_at:
+        type: string
+    type: object
   models.Notification:
     properties:
       body:
@@ -411,13 +600,44 @@ definitions:
       user_id:
         type: string
     type: object
+  models.PlatformType:
+    enum:
+    - INSTAGRAM
+    - TELEGRAM
+    - LINE
+    - TWITTER
+    - EMAIL
+    - WHATSAPP
+    - OTHER
+    type: string
+    x-enum-varnames:
+    - PlatformInstagram
+    - PlatformTelegram
+    - PlatformLine
+    - PlatformTwitter
+    - PlatformEmail
+    - PlatformWhatsapp
+    - PlatformOther
+  models.ReturnMethod:
+    enum:
+    - BRING_BY_FINDER
+    - HANDED_TO_SECURITY
+    type: string
+    x-enum-varnames:
+    - ReturnMethodBringByFinder
+    - ReturnMethodHandedToSecurity
   models.User:
     properties:
       created_at:
         type: string
       email:
         type: string
+      faculty:
+        description: Nullable, null for Staff/Dosen
+        type: string
       id:
+        type: string
+      identity_number:
         type: string
       name:
         type: string
@@ -430,19 +650,19 @@ definitions:
     type: object
   models.UserRole:
     enum:
-    - USER
+    - PUBLIK
+    - MAHASISWA
+    - STAFF_DOSEN
     - ADMIN
     - SECURITY
-    - STUDENT
-    - STAFF
     type: string
     x-enum-varnames:
     - RoleUser
-    - RoleAdmin
-    - RoleSecurity
     - RoleStudent
     - RoleStaff
-host: 157.10.161.213:3000
+    - RoleAdmin
+    - RoleSecurity
+host: localhost:8080
 info:
   contact:
     email: support@swagger.io
@@ -1089,6 +1309,102 @@ paths:
       summary: Upload a file
       tags:
       - upload
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.UserDetailResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all users
+      tags:
+      - users
+  /users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a specific user by their ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user by ID
+      tags:
+      - users
+  /users/me:
+    put:
+      consumes:
+      - application/json
+      description: Update authenticated user's name and/or phone
+      parameters:
+      - description: Update User Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - users
 securityDefinitions:
   BearerAuth:
     in: header

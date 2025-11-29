@@ -31,16 +31,32 @@ func NewItemService(itemRepo *repository.ItemRepository, assetRepo *repository.A
 }
 
 func (s *ItemService) ReportFoundItem(req dto.CreateFoundItemRequest, finderID uuid.UUID) (*dto.ItemResponse, error) {
+	dateFound, err := time.Parse("2006-01-02", req.DateFound)
+	if err != nil {
+		return nil, errors.New("invalid date format, use YYYY-MM-DD")
+	}
+
+	// Map Verifications
+	var verifications []models.ItemVerification
+	for _, v := range req.Verifications {
+		verifications = append(verifications, models.ItemVerification{
+			Question: v.Question,
+			Answer:   v.Answer,
+		})
+	}
+
 	item := &models.Item{
-		Title:                req.Title,
-		Type:                 models.ItemTypeFound,
-		CategoryID:           req.CategoryID,
-		LocationID:           &req.LocationID,
-		ImageURL:             req.ImageURL,
-		VerificationQuestion: req.VerificationQuestion,
-		VerificationAnswer:   req.VerificationAnswer,
-		FinderID:             &finderID,
-		Status:               models.ItemStatusOpen,
+		Title:         req.Title,
+		Type:          models.ItemTypeFound,
+		CategoryID:    req.CategoryID,
+		LocationID:    &req.LocationID,
+		ImageURL:      req.ImageURL,
+		Verifications: verifications,
+		FinderID:      &finderID,
+		Status:        models.ItemStatusOpen,
+		DateFound:     &dateFound,
+		ReturnMethod:  models.ReturnMethod(req.ReturnMethod),
+		COD:           req.COD,
 	}
 
 	if err := s.ItemRepo.Create(item); err != nil {
@@ -55,15 +71,23 @@ func (s *ItemService) ReportFoundItem(req dto.CreateFoundItemRequest, finderID u
 		}
 	}()
 
+	// Map response verifications
+	var verifResponses []dto.VerificationResponse
+	for _, v := range item.Verifications {
+		verifResponses = append(verifResponses, dto.VerificationResponse{
+			Question: v.Question,
+		})
+	}
+
 	return &dto.ItemResponse{
-		ID:                   item.ID,
-		Title:                item.Title,
-		CategoryID:           item.CategoryID,
-		LocationID:           *item.LocationID,
-		ImageURL:             item.ImageURL,
-		VerificationQuestion: item.VerificationQuestion,
-		Status:               string(item.Status),
-		CreatedAt:            item.CreatedAt,
+		ID:            item.ID,
+		Title:         item.Title,
+		CategoryID:    item.CategoryID,
+		LocationID:    *item.LocationID,
+		ImageURL:      item.ImageURL,
+		Verifications: verifResponses,
+		Status:        string(item.Status),
+		CreatedAt:     item.CreatedAt,
 	}, nil
 }
 
@@ -71,6 +95,21 @@ func (s *ItemService) ReportLostItem(req dto.CreateLostItemRequest, ownerID uuid
 	dateLost, err := time.Parse("2006-01-02", req.DateLost)
 	if err != nil {
 		return nil, errors.New("invalid date format, use YYYY-MM-DD")
+	}
+
+	// Map Contacts
+	var contacts []models.ItemContact
+	for _, c := range req.Contacts {
+		contacts = append(contacts, models.ItemContact{
+			Platform: models.PlatformType(c.Platform),
+			Value:    c.Value,
+		})
+	}
+
+	// Default urgency if empty
+	urgency := models.UrgencyNormal
+	if req.Urgency != "" {
+		urgency = models.ItemUrgency(req.Urgency)
 	}
 
 	item := &models.Item{
@@ -82,20 +121,36 @@ func (s *ItemService) ReportLostItem(req dto.CreateLostItemRequest, ownerID uuid
 		OwnerID:             &ownerID,
 		DateLost:            &dateLost,
 		Status:              models.ItemStatusOpen,
+		Urgency:             urgency,
+		OfferReward:         req.OfferReward,
+		ShowPhone:           req.ShowPhone,
+		Contacts:            contacts,
 	}
 
 	if err := s.ItemRepo.Create(item); err != nil {
 		return nil, err
 	}
 
+	// Map response contacts
+	var contactResponses []dto.ContactResponse
+	for _, c := range item.Contacts {
+		contactResponses = append(contactResponses, dto.ContactResponse{
+			Platform: string(c.Platform),
+			Value:    c.Value,
+		})
+	}
+
 	return &dto.ItemResponse{
 		ID:           item.ID,
 		Title:        item.Title,
 		CategoryID:   item.CategoryID,
-		LocationName: item.LocationDescription, // Map description to LocationName in response
+		LocationName: item.LocationDescription,
 		ImageURL:     item.ImageURL,
 		Status:       string(item.Status),
 		CreatedAt:    item.CreatedAt,
+		Urgency:      string(item.Urgency),
+		OfferReward:  item.OfferReward,
+		Contacts:     contactResponses,
 	}, nil
 }
 
@@ -113,14 +168,22 @@ func (s *ItemService) GetAllItems(status string, itemType string) ([]dto.ItemRes
 	}
 
 	for _, item := range items {
+		// Map verifications
+		var verifResponses []dto.VerificationResponse
+		for _, v := range item.Verifications {
+			verifResponses = append(verifResponses, dto.VerificationResponse{
+				Question: v.Question,
+			})
+		}
+
 		resp := dto.ItemResponse{
-			ID:                   item.ID,
-			Title:                item.Title,
-			CategoryID:           item.CategoryID,
-			ImageURL:             item.ImageURL,
-			Status:               string(item.Status),
-			CreatedAt:            item.CreatedAt,
-			VerificationQuestion: item.VerificationQuestion,
+			ID:            item.ID,
+			Title:         item.Title,
+			CategoryID:    item.CategoryID,
+			ImageURL:      item.ImageURL,
+			Status:        string(item.Status),
+			CreatedAt:     item.CreatedAt,
+			Verifications: verifResponses,
 		}
 
 		if item.LocationID != nil {

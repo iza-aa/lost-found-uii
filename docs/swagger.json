@@ -15,7 +15,7 @@
         },
         "version": "1.0"
     },
-    "host": "157.10.161.213:3000",
+    "host": "localhost:8080",
     "basePath": "/api/v1",
     "paths": {
         "/assets": {
@@ -1011,6 +1011,158 @@
                     }
                 }
             }
+        },
+        "/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a list of all users",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get all users",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.UserDetailResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update authenticated user's name and/or phone",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update user profile",
+                "parameters": [
+                    {
+                        "description": "Update User Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a specific user by their ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get user by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1114,6 +1266,34 @@
                 }
             }
         },
+        "dto.ContactRequest": {
+            "type": "object",
+            "required": [
+                "platform",
+                "value"
+            ],
+            "properties": {
+                "platform": {
+                    "type": "string",
+                    "example": "WHATSAPP"
+                },
+                "value": {
+                    "type": "string",
+                    "example": "08123456789"
+                }
+            }
+        },
+        "dto.ContactResponse": {
+            "type": "object",
+            "properties": {
+                "platform": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.CreateAssetRequest": {
             "type": "object",
             "required": [
@@ -1150,29 +1330,51 @@
             "type": "object",
             "required": [
                 "category_id",
+                "date_found",
                 "location_id",
+                "return_method",
                 "title",
-                "verification_answer",
-                "verification_question"
+                "verifications"
             ],
             "properties": {
                 "category_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1bd43cf7-fc4f-4968-bd4f-c45699b03c18"
+                },
+                "cod": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "date_found": {
+                    "description": "Format YYYY-MM-DD or RFC3339",
+                    "type": "string",
+                    "example": "2023-10-27"
                 },
                 "image_url": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "http://example.com/image.jpg"
                 },
                 "location_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "e9464495-bfe5-4ed0-8ea4-a2d69afa0b39"
+                },
+                "return_method": {
+                    "type": "string",
+                    "enum": [
+                        "BRING_BY_FINDER",
+                        "HANDED_TO_SECURITY"
+                    ],
+                    "example": "BRING_BY_FINDER"
                 },
                 "title": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Blue Wallet"
                 },
-                "verification_answer": {
-                    "type": "string"
-                },
-                "verification_question": {
-                    "type": "string"
+                "verifications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.VerificationRequest"
+                    }
                 }
             }
         },
@@ -1186,23 +1388,52 @@
             ],
             "properties": {
                 "category_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1bd43cf7-fc4f-4968-bd4f-c45699b03c18"
+                },
+                "contacts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ContactRequest"
+                    }
                 },
                 "date_lost": {
                     "description": "Format YYYY-MM-DD",
-                    "type": "string"
+                    "type": "string",
+                    "example": "2023-10-26"
                 },
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Black case with a sticker"
                 },
                 "image_url": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "http://example.com/iphone.jpg"
                 },
                 "location_last_seen": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Canteen"
+                },
+                "offer_reward": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "show_phone": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "title": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "iPhone 13"
+                },
+                "urgency": {
+                    "type": "string",
+                    "enum": [
+                        "NORMAL",
+                        "HIGH",
+                        "CRITICAL"
+                    ],
+                    "example": "HIGH"
                 }
             }
         },
@@ -1230,6 +1461,12 @@
                 "category_name": {
                     "type": "string"
                 },
+                "contacts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ContactResponse"
+                    }
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -1245,14 +1482,23 @@
                 "location_name": {
                     "type": "string"
                 },
+                "offer_reward": {
+                    "type": "boolean"
+                },
                 "status": {
                     "type": "string"
                 },
                 "title": {
                     "type": "string"
                 },
-                "verification_question": {
+                "urgency": {
                     "type": "string"
+                },
+                "verifications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.VerificationResponse"
+                    }
                 }
             }
         },
@@ -1264,10 +1510,12 @@
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "john@students.uii.ac.id"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "password123"
                 }
             }
         },
@@ -1286,32 +1534,48 @@
             "type": "object",
             "required": [
                 "email",
+                "identity_number",
                 "name",
                 "password",
                 "phone"
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "john@students.uii.ac.id"
+                },
+                "faculty": {
+                    "description": "Optional, empty for Staff/Dosen",
+                    "type": "string",
+                    "example": "Fakultas Teknologi Industri"
+                },
+                "identity_number": {
+                    "type": "string",
+                    "example": "21523001"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "John Doe"
                 },
                 "password": {
                     "type": "string",
-                    "minLength": 6
+                    "minLength": 6,
+                    "example": "password123"
                 },
                 "phone": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "08123456789"
                 },
                 "role": {
-                    "description": "Optional, default to USER in service if empty",
                     "type": "string",
                     "enum": [
-                        "USER",
+                        "PUBLIK",
+                        "MAHASISWA",
+                        "STAFF_DOSEN",
                         "ADMIN",
                         "SECURITY"
-                    ]
+                    ],
+                    "example": "MAHASISWA"
                 }
             }
         },
@@ -1340,19 +1604,89 @@
                 }
             }
         },
+        "dto.UpdateUserRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "Jane Doe"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "08198765432"
+                }
+            }
+        },
+        "dto.UserDetailResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "faculty": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "identity_number": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.UserResponse": {
             "type": "object",
             "properties": {
                 "email": {
                     "type": "string"
                 },
+                "faculty": {
+                    "type": "string"
+                },
                 "id": {
+                    "type": "string"
+                },
+                "identity_number": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
                 "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.VerificationRequest": {
+            "type": "object",
+            "required": [
+                "answer",
+                "question"
+            ],
+            "properties": {
+                "answer": {
+                    "type": "string",
+                    "example": "Blue"
+                },
+                "question": {
+                    "type": "string",
+                    "example": "What is the color?"
+                }
+            }
+        },
+        "dto.VerificationResponse": {
+            "type": "object",
+            "properties": {
+                "question": {
                     "type": "string"
                 }
             }
@@ -1503,7 +1837,19 @@
                 "category_id": {
                     "type": "string"
                 },
+                "cod": {
+                    "type": "boolean"
+                },
+                "contacts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ItemContact"
+                    }
+                },
                 "created_at": {
+                    "type": "string"
+                },
+                "date_found": {
                     "type": "string"
                 },
                 "date_lost": {
@@ -1533,12 +1879,21 @@
                     "description": "Nullable for Lost items",
                     "type": "string"
                 },
+                "offer_reward": {
+                    "type": "boolean"
+                },
                 "owner": {
                     "$ref": "#/definitions/models.User"
                 },
                 "owner_id": {
                     "description": "Nullable for Found items",
                     "type": "string"
+                },
+                "return_method": {
+                    "$ref": "#/definitions/models.ReturnMethod"
+                },
+                "show_phone": {
+                    "type": "boolean"
                 },
                 "status": {
                     "$ref": "#/definitions/models.ItemStatus"
@@ -1552,8 +1907,14 @@
                 "updated_at": {
                     "type": "string"
                 },
-                "verification_question": {
-                    "type": "string"
+                "urgency": {
+                    "$ref": "#/definitions/models.ItemUrgency"
+                },
+                "verifications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ItemVerification"
+                    }
                 }
             }
         },
@@ -1564,6 +1925,29 @@
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ItemContact": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "platform": {
+                    "$ref": "#/definitions/models.PlatformType"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "value": {
                     "type": "string"
                 }
             }
@@ -1591,6 +1975,39 @@
                 "ItemTypeLost",
                 "ItemTypeFound"
             ]
+        },
+        "models.ItemUrgency": {
+            "type": "string",
+            "enum": [
+                "NORMAL",
+                "HIGH",
+                "CRITICAL"
+            ],
+            "x-enum-varnames": [
+                "UrgencyNormal",
+                "UrgencyHigh",
+                "UrgencyCritical"
+            ]
+        },
+        "models.ItemVerification": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "question": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
         },
         "models.Notification": {
             "type": "object",
@@ -1622,6 +2039,38 @@
                 }
             }
         },
+        "models.PlatformType": {
+            "type": "string",
+            "enum": [
+                "INSTAGRAM",
+                "TELEGRAM",
+                "LINE",
+                "TWITTER",
+                "EMAIL",
+                "WHATSAPP",
+                "OTHER"
+            ],
+            "x-enum-varnames": [
+                "PlatformInstagram",
+                "PlatformTelegram",
+                "PlatformLine",
+                "PlatformTwitter",
+                "PlatformEmail",
+                "PlatformWhatsapp",
+                "PlatformOther"
+            ]
+        },
+        "models.ReturnMethod": {
+            "type": "string",
+            "enum": [
+                "BRING_BY_FINDER",
+                "HANDED_TO_SECURITY"
+            ],
+            "x-enum-varnames": [
+                "ReturnMethodBringByFinder",
+                "ReturnMethodHandedToSecurity"
+            ]
+        },
         "models.User": {
             "type": "object",
             "properties": {
@@ -1631,7 +2080,14 @@
                 "email": {
                     "type": "string"
                 },
+                "faculty": {
+                    "description": "Nullable, null for Staff/Dosen",
+                    "type": "string"
+                },
                 "id": {
+                    "type": "string"
+                },
+                "identity_number": {
                     "type": "string"
                 },
                 "name": {
@@ -1651,18 +2107,18 @@
         "models.UserRole": {
             "type": "string",
             "enum": [
-                "USER",
+                "PUBLIK",
+                "MAHASISWA",
+                "STAFF_DOSEN",
                 "ADMIN",
-                "SECURITY",
-                "STUDENT",
-                "STAFF"
+                "SECURITY"
             ],
             "x-enum-varnames": [
                 "RoleUser",
-                "RoleAdmin",
-                "RoleSecurity",
                 "RoleStudent",
-                "RoleStaff"
+                "RoleStaff",
+                "RoleAdmin",
+                "RoleSecurity"
             ]
         }
     },
