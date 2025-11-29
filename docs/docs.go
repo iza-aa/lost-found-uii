@@ -1261,6 +1261,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "image_url": {
+                    "type": "string"
+                },
                 "item_id": {
                     "type": "string"
                 },
@@ -1328,7 +1331,12 @@ const docTemplate = `{
             ],
             "properties": {
                 "answer_input": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Blue wallet with university ID"
+                },
+                "image_url": {
+                    "type": "string",
+                    "example": "http://example.com/proof.jpg"
                 }
             }
         },
@@ -1351,6 +1359,12 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": false
                 },
+                "contacts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ContactRequest"
+                    }
+                },
                 "date_found": {
                     "description": "Format YYYY-MM-DD or RFC3339",
                     "type": "string",
@@ -1371,6 +1385,10 @@ const docTemplate = `{
                         "HANDED_TO_SECURITY"
                     ],
                     "example": "BRING_BY_FINDER"
+                },
+                "show_phone": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "title": {
                     "type": "string",
@@ -1468,6 +1486,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "contacts": {
+                    "description": "For both item types",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.ContactResponse"
@@ -1489,6 +1508,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "offer_reward": {
+                    "description": "For lost items",
+                    "type": "boolean"
+                },
+                "show_phone": {
+                    "description": "For both item types",
                     "type": "boolean"
                 },
                 "status": {
@@ -1498,9 +1522,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "urgency": {
+                    "description": "For lost items",
                     "type": "string"
                 },
                 "verifications": {
+                    "description": "For found items",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.VerificationResponse"
@@ -1739,6 +1765,9 @@ const docTemplate = `{
         "models.CampusLocation": {
             "type": "object",
             "properties": {
+                "description": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -1763,6 +1792,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "description": "Proof image for claim",
                     "type": "string"
                 },
                 "item": {

@@ -59,6 +59,8 @@ definitions:
         type: string
       id:
         type: string
+      image_url:
+        type: string
       item_id:
         type: string
       owner_id:
@@ -102,6 +104,10 @@ definitions:
   dto.CreateClaimRequest:
     properties:
       answer_input:
+        example: Blue wallet with university ID
+        type: string
+      image_url:
+        example: http://example.com/proof.jpg
         type: string
     required:
     - answer_input
@@ -114,6 +120,10 @@ definitions:
       cod:
         example: false
         type: boolean
+      contacts:
+        items:
+          $ref: '#/definitions/dto.ContactRequest'
+        type: array
       date_found:
         description: Format YYYY-MM-DD or RFC3339
         example: "2023-10-27"
@@ -130,6 +140,9 @@ definitions:
         - HANDED_TO_SECURITY
         example: BRING_BY_FINDER
         type: string
+      show_phone:
+        example: false
+        type: boolean
       title:
         example: Blue Wallet
         type: string
@@ -206,6 +219,7 @@ definitions:
       category_name:
         type: string
       contacts:
+        description: For both item types
         items:
           $ref: '#/definitions/dto.ContactResponse'
         type: array
@@ -220,14 +234,20 @@ definitions:
       location_name:
         type: string
       offer_reward:
+        description: For lost items
+        type: boolean
+      show_phone:
+        description: For both item types
         type: boolean
       status:
         type: string
       title:
         type: string
       urgency:
+        description: For lost items
         type: string
       verifications:
+        description: For found items
         items:
           $ref: '#/definitions/dto.VerificationResponse'
         type: array
@@ -391,6 +411,8 @@ definitions:
     type: object
   models.CampusLocation:
     properties:
+      description:
+        type: string
       id:
         type: string
       latitude:
@@ -407,6 +429,9 @@ definitions:
       created_at:
         type: string
       id:
+        type: string
+      image_url:
+        description: Proof image for claim
         type: string
       item:
         $ref: '#/definitions/models.Item'
