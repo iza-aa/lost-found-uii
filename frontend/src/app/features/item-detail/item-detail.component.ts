@@ -8,7 +8,24 @@ import { MOCK_ITEMS } from '../../core/mocks';
 import { UserBadgeComponent } from '../../shared/components/user-badge/user-badge.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { CubeLoaderComponent } from '../../shared/components/cube-loader/cube-loader.component';
+import { ContactButtonsComponent } from '../../shared/components/contact-buttons/contact-buttons.component';
+import { ConfirmModalComponent } from '../../shared/components/confirm-modal/confirm-modal.component';
 import { AuthService } from '../../core/services/auth.service';
+
+// Item Detail Sub-components
+import { 
+  ClaimantListModalComponent, 
+  ClaimantDetailModalComponent 
+} from './components/claimants';
+import { 
+  FinderListModalComponent, 
+  FinderDetailModalComponent 
+} from './components/finders';
+import { 
+  ClaimFormModalComponent, 
+  FinderFormModalComponent 
+} from './components/verification';
+import { RejectReasonModalComponent } from './components/reject-reason-modal/reject-reason-modal.component';
 
 type LeafletModule = typeof LeafletTypes;
 let L: LeafletModule;
@@ -16,7 +33,23 @@ let L: LeafletModule;
 @Component({
   selector: 'app-item-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, UserBadgeComponent, StatusBadgeComponent, CubeLoaderComponent],
+  imports: [
+    CommonModule, 
+    RouterModule, 
+    FormsModule, 
+    UserBadgeComponent, 
+    StatusBadgeComponent, 
+    CubeLoaderComponent,
+    ContactButtonsComponent,
+    ConfirmModalComponent,
+    ClaimantListModalComponent,
+    ClaimantDetailModalComponent,
+    FinderListModalComponent,
+    FinderDetailModalComponent,
+    ClaimFormModalComponent,
+    FinderFormModalComponent,
+    RejectReasonModalComponent
+  ],
   templateUrl: './item-detail.component.html',
   styleUrl: './item-detail.component.css'
 })
@@ -481,6 +514,41 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
     }, 1500);
   }
 
+  // Handler for ClaimFormModalComponent submit event
+  onClaimFormSubmit(data: { description: string; photoUrl?: string; additionalContact?: string; isQrVerified?: boolean }): void {
+    const user = this.currentUser();
+    const item = this.item();
+    
+    // Create new claimant entry
+    const newClaimant: Claimant = {
+      id: `claim-${Date.now()}`,
+      claimerId: user?.id || '',
+      claimerName: user?.name || '',
+      claimerBadge: user?.badge || 'gray',
+      claimerPhone: user?.phone,
+      description: data.description,
+      photoUrl: data.photoUrl,
+      additionalContact: data.additionalContact ? 
+        { other: data.additionalContact } : undefined,
+      status: 'pending',
+      isQrVerified: data.isQrVerified || false,
+      createdAt: new Date()
+    };
+
+    console.log('Claim submitted via ClaimFormModal:', newClaimant);
+
+    // Update item locally with new claimant
+    this.item.update(current => {
+      if (!current) return null;
+      const claimants = current.claimants || [];
+      return { ...current, claimants: [...claimants, newClaimant] };
+    });
+
+    // Close both modals (in case either is open)
+    this.showVerificationModal.set(false);
+    this.showQrVerificationModal.set(false);
+  }
+
   // =====================
   // CLAIMANTS MANAGEMENT METHODS (for Finder)
   // =====================
@@ -877,5 +945,87 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
     const alt = item.alternativeContact;
     // Check new format (contacts array) or legacy format
     return !!(alt.contacts && alt.contacts.length > 0) || !!(alt.instagram || alt.telegram || alt.line || alt.other);
+  }
+
+  // =====================
+  // COMPONENT EVENT HANDLERS
+  // =====================
+
+  // Handler for reject claimant from component (with reason)
+  onRejectClaimantWithReason(reason: string): void {
+    const claimant = this.selectedClaimant();
+    if (!claimant) return;
+
+    this.item.update(current => {
+      if (!current?.claimants) return current;
+      const updatedClaimants = current.claimants.map(c => {
+        if (c.id === claimant.id) {
+          return { 
+            ...c, 
+            status: 'rejected' as ClaimantStatus, 
+            rejectionReason: reason || 'Bukti tidak cukup',
+            updatedAt: new Date() 
+          };
+        }
+        return c;
+      });
+      return { ...current, claimants: updatedClaimants };
+    });
+
+    console.log('Claimant rejected:', claimant, 'Reason:', reason);
+    this.closeRejectReasonModal();
+    this.closeClaimantDetailModal();
+  }
+
+  // Handler for reject finder from component (with reason)
+  onRejectFinderWithReason(reason: string): void {
+    const finder = this.selectedFinder();
+    if (!finder) return;
+
+    this.item.update(current => {
+      if (!current?.finders) return current;
+      const updatedFinders = current.finders.map(f => {
+        if (f.id === finder.id) {
+          return { 
+            ...f, 
+            status: 'rejected' as ClaimantStatus, 
+            rejectionReason: reason || 'Jawaban tidak sesuai',
+            updatedAt: new Date() 
+          };
+        }
+        return f;
+      });
+      return { ...current, finders: updatedFinders };
+    });
+
+    console.log('Finder rejected:', finder, 'Reason:', reason);
+    this.closeFinderRejectReasonModal();
+    this.closeFinderDetailModal();
+  }
+
+  // Handler for finder form submission from component
+  onFinderFormSubmit(data: { answers: VerificationAnswer[]; photoUrl?: string; additionalContact?: string }): void {
+    const user = this.currentUser();
+
+    const newFinder: Finder = {
+      id: `finder-${Date.now()}`,
+      finderId: user?.id || '',
+      finderName: user?.name || '',
+      finderBadge: user?.badge || 'gray',
+      finderPhone: user?.phone,
+      answers: data.answers,
+      photoUrl: data.photoUrl,
+      additionalContact: data.additionalContact ? { other: data.additionalContact } : undefined,
+      status: 'pending',
+      createdAt: new Date()
+    };
+
+    console.log('Finder submitted from component:', newFinder);
+
+    this.item.update(current => {
+      if (!current) return null;
+      const finders = current.finders || [];
+      return { ...current, finders: [...finders, newFinder] };
+    });
   }
 }

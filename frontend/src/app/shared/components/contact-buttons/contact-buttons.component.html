@@ -1,0 +1,69 @@
+@if (hasContacts) {
+  @switch (mode) {
+    @case ('grid') {
+      <!-- Grid Mode - for action buttons -->
+      <div [class]="'grid gap-2 ' + gridColsClass">
+        @for (contact of normalizedContacts; track contact.type) {
+          @if (getContactUrl(contact); as url) {
+            <a 
+              [href]="url"
+              target="_blank"
+              [class]="buttonSizeClass + ' font-medium rounded-lg transition flex items-center justify-center gap-1 ' + getContactColorClass(contact.type)">
+              <i [class]="getContactIcon(contact.type)"></i>
+              @if (showLabels) {
+                <span class="truncate">{{ getContactLabel(contact.type) }}</span>
+              }
+            </a>
+          } @else {
+            <div [class]="buttonSizeClass + ' font-medium rounded-lg flex items-center justify-center gap-1 ' + getContactColorClass(contact.type)">
+              <i [class]="getContactIcon(contact.type)"></i>
+              @if (showLabels) {
+                <span class="truncate">{{ getContactLabel(contact.type) }}</span>
+              }
+            </div>
+          }
+        }
+      </div>
+    }
+
+    @case ('inline') {
+      <!-- Inline Mode - for display with values -->
+      <div class="flex flex-wrap gap-2">
+        @for (contact of normalizedContacts; track contact.type) {
+          @if (getContactUrl(contact); as url) {
+            <a 
+              [href]="url"
+              target="_blank"
+              [class]="buttonSizeClass + ' rounded-lg flex items-center gap-2 transition ' + getContactColorClass(contact.type)">
+              <i [class]="getContactIcon(contact.type)"></i>
+              <span>{{ getDisplayValue(contact) }}</span>
+            </a>
+          } @else {
+            <span [class]="buttonSizeClass + ' rounded-lg flex items-center gap-2 ' + getContactColorClass(contact.type)">
+              <i [class]="getContactIcon(contact.type)"></i>
+              <span>{{ getDisplayValue(contact) }}</span>
+            </span>
+          }
+        }
+      </div>
+    }
+
+    @case ('list') {
+      <!-- List Mode - vertical list with full details -->
+      <div class="space-y-2">
+        @for (contact of normalizedContacts; track contact.type) {
+          <div class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+            <i [class]="getContactIcon(contact.type) + ' text-lg ' + getIconColor(contact.type)"></i>
+            @if (getContactUrl(contact); as url) {
+              <a [href]="url" target="_blank" class="hover:underline">
+                {{ getDisplayValue(contact) }}
+              </a>
+            } @else {
+              <span>{{ getDisplayValue(contact) }}</span>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+}

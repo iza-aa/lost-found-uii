@@ -10,3 +10,4 @@ export * from './leaflet-map/leaflet-map.component';
 export * from './confirm-modal/confirm-modal.component';
 export * from './qr-scanner/qr-scanner.component';
 export * from './qr-display/qr-display.component';
+export * from './contact-buttons/contact-buttons.component';

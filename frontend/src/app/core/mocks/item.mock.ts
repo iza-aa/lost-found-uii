@@ -299,7 +299,7 @@ const RAW_ITEMS: BaseItem[] = [
     description: 'Kehilangan iPhone 14 Pro warna silver dengan case bening di area Masjid Ulil Albab setelah sholat Jumat.',
     category: 'phone',
     status: 'lost',
-    reportStatus: 'resolved',  // Already found
+    reportStatus: 'active',  // Already found
     imageUrl: 'https://images.unsplash.com/photo-1632661674596-df8be59a8056?w=400',
     date: '18 Nov',
     time: '01:30 PM',

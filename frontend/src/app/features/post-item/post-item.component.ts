@@ -27,11 +27,11 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   isQrScanMode = signal(false);
   qrOwner = signal<User | null>(null);
 
-  // Steps: Lost=7 steps (includes suggestions), Found=6 steps (no suggestions), QR=5 steps (no status selection)
+  // Steps: Both Lost and Found now have 7 steps (includes suggestions), QR=5 steps
   currentStep = signal(1);
   get totalSteps(): number {
     if (this.isQrScanMode()) return 5; // QR mode: Image, Detail, Category, Location, Info
-    return this.formData.status === 'found' ? 6 : 7;
+    return 7; // Both Lost and Found now have 7 steps (suggestions step)
   }
   get stepsArray(): number[] {
     return Array.from({ length: this.totalSteps }, (_, i) => i + 1);
@@ -46,7 +46,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Custom location
   customLocationName = '';
-  
+
   // Warning modal for found items
   showWarningModal = signal(false);
   warningAccepted = signal(false);
@@ -79,20 +79,24 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     storageLocation: 'with-me' as StorageLocation,
     entrustedTo: '',
     willingToDeliver: false,        // DEPRECATED
-    willingToCod: false             // NEW: bersedia COD di tengah/kampus
+    willingToCod: false,            // NEW: bersedia COD di tengah/kampus
+    // Found specific - Verification Questions (NEW)
+    verificationQuestions: [
+      { question: '', answer: '' }  // Start with one empty question
+    ] as Array<{ question: string; answer: string }>
   };
 
   // Data
-  categories = MOCK_CATEGORIES.filter(c => c.id !== 'all') as Array<{id: ItemCategory; label: string; icon: string}>;
+  categories = MOCK_CATEGORIES.filter(c => c.id !== 'all') as Array<{ id: ItemCategory; label: string; icon: string }>;
   locations = MOCK_LOCATIONS;
-  
+
   // Urgency options
   urgencyOptions: { value: UrgencyLevel; label: string; icon: string; color: string }[] = [
     { value: 'normal', label: 'Biasa', icon: 'ph-circle', color: 'gray' },
     { value: 'important', label: 'Penting', icon: 'ph-warning', color: 'yellow' },
     { value: 'very-important', label: 'Sangat Penting', icon: 'ph-warning-octagon', color: 'red' }
   ];
-  
+
   // Storage location options
   storageOptions: { value: StorageLocation; label: string; icon: string; description: string }[] = [
     { value: 'with-me', label: 'Saya Bawa', icon: 'ph-hand-grabbing', description: 'Barang ada di tangan saya' },
@@ -121,11 +125,11 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.formData.date = this.getTodayDate();
     this.formData.time = this.getCurrentTime();
-    
+
     // Check if this is a QR scan mode
     const isQr = this.route.snapshot.queryParamMap.get('qr');
     const qrData = this.route.snapshot.queryParamMap.get('qrData');
-    
+
     if (isQr === 'true' && qrData) {
       this.initQrScanMode(qrData);
     }
@@ -136,7 +140,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       const decoded = atob(qrData);
       const userData = JSON.parse(decoded);
-      
+
       if (userData && userData.name && userData.phone) {
         const qrUser: User = {
           id: userData.id || 'qr-user',
@@ -150,7 +154,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
           studentId: userData.studentId,
           employeeId: userData.employeeId
         };
-        
+
         this.qrOwner.set(qrUser);
         this.isQrScanMode.set(true);
         this.formData.status = 'found'; // QR scan is always "found" item
@@ -162,7 +166,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  ngAfterViewInit(): void {}
+  ngAfterViewInit(): void { }
 
   ngOnDestroy(): void {
     this.destroyMap();
@@ -186,30 +190,30 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
         this.submitForm();
         return;
       }
-      
-      // For Found items: submit after step 6 (no suggestions step)
-      if (this.formData.status === 'found' && !this.isQrScanMode() && this.currentStep() === 6) {
+
+      // For Found items: submit after step 7 (now includes suggestions)
+      if (this.formData.status === 'found' && !this.isQrScanMode() && this.currentStep() === 7) {
         this.submitForm();
         return;
       }
-      
+
       if (this.currentStep() < this.totalSteps) {
         // Destroy map before leaving map step
         const mapStep = this.isQrScanMode() ? 4 : 5;
-        if (this.currentStep() === mapStep) {
+        if (this.currentStep() === mapStep && this.isBrowser) {
           this.destroyMap();
         }
-        
+
         this.currentStep.update(v => v + 1);
-        
+
         // Init map on map step
         const nextMapStep = this.isQrScanMode() ? 4 : 5;
         if (this.currentStep() === nextMapStep && this.isBrowser) {
           setTimeout(() => this.initMap(), 100);
         }
-        
-        // Step 7: Check for similar items (only for Lost items, non-QR mode)
-        if (this.currentStep() === 7 && this.formData.status === 'lost' && !this.isQrScanMode()) {
+
+        // Step 7: Check for similar items (for both Lost and Found items, non-QR mode)
+        if (this.currentStep() === 7 && !this.isQrScanMode()) {
           this.checkSimilarItems();
         }
       }
@@ -221,16 +225,16 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.isQrScanMode() && this.currentStep() === 1) {
       return;
     }
-    
+
     if (this.currentStep() > 1) {
       // Destroy map before leaving map step
       const mapStep = this.isQrScanMode() ? 4 : 5;
       if (this.currentStep() === mapStep) {
         this.destroyMap();
       }
-      
+
       this.currentStep.update(v => v - 1);
-      
+
       // Re-init map when going back to map step
       if (this.currentStep() === mapStep && this.isBrowser) {
         setTimeout(() => this.initMap(), 100);
@@ -245,9 +249,9 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       if (this.currentStep() === mapStep && step !== mapStep) {
         this.destroyMap();
       }
-      
+
       this.currentStep.set(step);
-      
+
       // Init map when going to map step
       if (step === mapStep && this.isBrowser) {
         setTimeout(() => this.initMap(), 100);
@@ -261,9 +265,12 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       switch (this.currentStep()) {
         case 1: // Image
           return true;
-        case 2: // Title + Description
-          return this.formData.title.trim().length >= 3 && 
-                 this.formData.description.trim().length >= 10;
+        case 2: // Title + Verification Questions (QR mode is always 'found')
+          const hasTitle = this.formData.title.trim().length >= 3;
+          const hasValidQuestions = this.formData.verificationQuestions.some(
+            q => q.question.trim().length > 0 && q.answer.trim().length > 0
+          );
+          return hasTitle && hasValidQuestions;
         case 3: // Category
           return this.formData.category !== '';
         case 4: // Location
@@ -277,7 +284,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
           return false;
       }
     }
-    
+
     // Normal mode
     switch (this.currentStep()) {
       case 1:
@@ -285,8 +292,17 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       case 2:
         return true;
       case 3:
-        return this.formData.title.trim().length >= 3 && 
-               this.formData.description.trim().length >= 10;
+        if (this.formData.status === 'lost') {
+          return this.formData.title.trim().length >= 3 &&
+            this.formData.description.trim().length >= 10;
+        } else {
+          // Found items: Title + Verification Questions (at least 1 valid Q&A)
+          const hasTitle = this.formData.title.trim().length >= 3;
+          const hasValidQuestions = this.formData.verificationQuestions.some(
+            q => q.question.trim().length > 0 && q.answer.trim().length > 0
+          );
+          return hasTitle && hasValidQuestions;
+        }
       case 4:
         return this.formData.category !== '';
       case 5:
@@ -343,12 +359,12 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     if (input.files && input.files[0]) {
       const file = input.files[0];
       const reader = new FileReader();
-      
+
       reader.onload = (e) => {
         this.formData.imagePreview = e.target?.result as string;
         this.formData.imageUrl = e.target?.result as string;
       };
-      
+
       reader.readAsDataURL(file);
     }
   }
@@ -402,7 +418,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
         }).addTo(this.map!);
 
         circleMarker.bindPopup(`<b>${loc.name}</b>`);
-        
+
         circleMarker.on('click', () => {
           this.selectLocation(loc);
         });
@@ -413,10 +429,10 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     this.map.on('click', (e: LeafletTypes.LeafletMouseEvent) => {
       // DEBUG: Log coordinates for easy copying
       console.log(`📍 Koordinat: { lat: ${e.latlng.lat}, lng: ${e.latlng.lng} }`);
-      
+
       // Reset custom location name when clicking new custom point
       this.customLocationName = '';
-      
+
       const customLocation: CampusLocation = {
         id: 'custom',
         name: 'Lokasi Custom (isi nama lokasi)',
@@ -452,12 +468,12 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
 
   selectLocation(location: CampusLocation): void {
     this.formData.location = location;
-    
+
     // Reset custom name if selecting from predefined list
     if (location.id !== 'custom') {
       this.customLocationName = '';
     }
-    
+
     if (this.map && L) {
       if (this.marker) {
         this.map.removeLayer(this.marker);
@@ -474,7 +490,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
 
       this.marker = L.marker([location.lat, location.lng], { icon: customIcon }).addTo(this.map);
       this.marker.bindPopup(`<b>${location.name}</b>`).openPopup();
-      
+
       this.map.setView([location.lat, location.lng], 17);
     }
   }
@@ -505,24 +521,25 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   private findSimilarItems(): Item[] {
     const { title, description, category } = this.formData;
     const searchTerms = `${title} ${description}`.toLowerCase().split(/\s+/);
-    
-    // Only search for found items (to match against lost reports)
-    const targetStatus = 'found';
-    
+
+    // If status is 'lost', look for 'found' items
+    // If status is 'found', look for 'lost' items
+    const targetStatus = this.formData.status === 'lost' ? 'found' : 'lost';
+
     return MOCK_ITEMS
       .filter(item => {
         // Filter by opposite status
         if (item.status !== targetStatus) return false;
-        
+
         // Filter by same category (higher priority)
         const sameCategory = item.category === category;
-        
+
         // Check for keyword matches in title and description
         const itemText = `${item.title} ${item.description}`.toLowerCase();
-        const matchScore = searchTerms.filter(term => 
+        const matchScore = searchTerms.filter(term =>
           term.length > 2 && itemText.includes(term)
         ).length;
-        
+
         // Return if same category OR has keyword matches
         return sameCategory || matchScore >= 2;
       })
@@ -555,7 +572,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     const user = this.authService.getCurrentUser();
-    
+
     const newItem: Partial<Item> = {
       id: `item_${Date.now()}`,
       title: this.formData.title,
@@ -577,7 +594,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       reporterPhone: user?.phone,
       createdAt: new Date()
     };
-    
+
     // Add QR scan specific fields
     if (this.isQrScanMode() && this.qrOwner()) {
       const owner = this.qrOwner()!;
@@ -586,7 +603,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       newItem.scannedQrOwnerName = owner.name;
       newItem.scannedQrOwnerPhone = owner.phone;
     }
-    
+
     // Add status-specific fields
     if (this.formData.status === 'lost') {
       newItem.reward = this.formData.reward;
@@ -602,7 +619,16 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       if (this.formData.storageLocation === 'entrusted') {
         newItem.entrustedTo = this.formData.entrustedTo;
       }
-      newItem.willingToCod = this.formData.willingToCod;  // Changed from willingToDeliver
+      newItem.willingToCod = this.formData.willingToCod;
+      // Add verification questions
+      newItem.verificationQuestions = this.formData.verificationQuestions
+        .filter(q => q.question.trim().length > 0 && q.answer.trim().length > 0)
+        .map((q, index) => ({
+          id: `vq_${Date.now()}_${index}`,
+          question: q.question,
+          answer: q.answer,
+          isRequired: true
+        }));
     }
 
     console.log('New item created:', newItem);
@@ -653,10 +679,15 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
         line: '',
         other: ''
       },
+      // Found specific
       storageLocation: 'with-me',
       entrustedTo: '',
       willingToDeliver: false,
-      willingToCod: false
+      willingToCod: false,
+      // Found specific - Verification Questions
+      verificationQuestions: [
+        { question: '', answer: '' }
+      ]
     };
     this.customLocationName = '';
     this.currentStep.set(1);
@@ -665,7 +696,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedSuggestion.set(null);
     this.warningAccepted.set(false);
     this.showWarningModal.set(false);
-    
+
     if (this.marker && this.map) {
       this.map.removeLayer(this.marker);
       this.marker = null;
@@ -677,22 +708,22 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.isQrScanMode()) {
       const qrTitles = [
         'Masukkan foto barang',
-        'Masukkan nama dan ciri-ciri barang',
+        'Nama & Pertanyaan Verifikasi',
         'Pilih kategori barang',
         'Pilih lokasi ditemukan',
         'Informasi tambahan penemuan'
       ];
       return qrTitles[this.currentStep() - 1] || '';
     }
-    
+
     const titles = [
       'Kamu kehilangan atau menemukan barang?',
       'Kamu punya bukti foto?',
-      'Masukkan nama dan ciri-ciri barang',
+      this.formData.status === 'lost' ? 'Masukkan nama dan ciri-ciri barang' : 'Nama & Pertanyaan Verifikasi',
       'Pilih kategori barang',
       'Pilih lokasi kejadian',
       this.formData.status === 'lost' ? 'Informasi tambahan kehilangan' : 'Informasi tambahan penemuan',
-      'Apakah ini barang kamu?'
+      this.formData.status === 'lost' ? 'Apakah ini barang kamu?' : 'Apakah ini barang yang dicari?'
     ];
     return titles[this.currentStep() - 1] || '';
   }
@@ -702,59 +733,76 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.isQrScanMode()) {
       const qrSubtitles = [
         'Agar pemilik lebih mengenal barangnya',
-        'Berikan detail agar mudah dikenali',
+        'Buat pertanyaan yang hanya pemilik asli yang tahu jawabannya',
         'Kategori membantu pencarian lebih cepat',
         'Tandai di peta tempat barang ditemukan',
         'Beritahu dimana barang disimpan'
       ];
       return qrSubtitles[this.currentStep() - 1] || '';
     }
-    
+
     const subtitles = [
       'Pilih jenis laporan yang ingin kamu buat',
       'Foto membantu barang lebih mudah dikenali (opsional)',
-      'Berikan detail agar mudah ditemukan',
+      this.formData.status === 'lost' 
+        ? 'Berikan detail agar mudah ditemukan' 
+        : 'Buat pertanyaan yang hanya pemilik asli yang tahu jawabannya',
       'Kategori membantu pencarian lebih cepat',
       'Tandai di peta tempat barang hilang/ditemukan',
-      this.formData.status === 'lost' 
-        ? 'Atur tingkat urgensi dan preferensi kontak' 
+      this.formData.status === 'lost'
+        ? 'Atur tingkat urgensi dan preferensi kontak'
         : 'Beritahu dimana barang disimpan',
-      'Kami menemukan barang serupa, cek dulu sebelum lapor'
+      this.formData.status === 'lost'
+        ? 'Kami menemukan barang serupa, cek dulu sebelum lapor'
+        : 'Ada laporan kehilangan yang mirip, cek dulu ya'
     ];
     return subtitles[this.currentStep() - 1] || '';
   }
-  
+
   // Toggle reward
   toggleReward(): void {
     this.formData.reward = !this.formData.reward;
   }
-  
+
   // Set urgency level
   setUrgency(level: UrgencyLevel): void {
     this.formData.urgency = level;
   }
-  
+
   // Set storage location
   setStorageLocation(location: StorageLocation): void {
     this.formData.storageLocation = location;
   }
-  
+
   // Toggle willing to deliver (DEPRECATED)
   toggleWillingToDeliver(): void {
     this.formData.willingToDeliver = !this.formData.willingToDeliver;
   }
-  
+
   // Toggle willing to COD
   toggleWillingToCod(): void {
     this.formData.willingToCod = !this.formData.willingToCod;
   }
-  
+
   // Toggle expose phone
   toggleExposePhone(): void {
     this.formData.exposePhone = !this.formData.exposePhone;
     // Reset alternative contacts when toggling
     if (this.formData.exposePhone) {
       this.formData.alternativeContacts = [];
+    }
+  }
+
+  // ===========================
+  // Verification Questions (for Found items)
+  // ===========================
+  addVerificationQuestion(): void {
+    this.formData.verificationQuestions.push({ question: '', answer: '' });
+  }
+
+  removeVerificationQuestion(index: number): void {
+    if (this.formData.verificationQuestions.length > 1) {
+      this.formData.verificationQuestions.splice(index, 1);
     }
   }
 
@@ -829,16 +877,16 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       default: return '';
     }
   }
-  
+
   // Warning modal methods for found items
   openWarningModal(): void {
     this.showWarningModal.set(true);
   }
-  
+
   closeWarningModal(): void {
     this.showWarningModal.set(false);
   }
-  
+
   acceptWarning(): void {
     this.warningAccepted.set(true);
     this.showWarningModal.set(false);

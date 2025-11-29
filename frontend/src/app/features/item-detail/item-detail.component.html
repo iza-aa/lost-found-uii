@@ -356,181 +356,26 @@
                         </div>
                       </div>
 
-                      <!-- Contact based on exposePhone or alternativeContact -->
-                      @if (item.exposePhone && item.reporterPhone) {
-                        <!-- Show WhatsApp -->
-                        <div class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                          <i class="ph-fill ph-whatsapp-logo text-green-500"></i>
-                          <span>{{ item.reporterPhone }}</span>
-                        </div>
-                      } @else if (item.alternativeContact?.contacts && item.alternativeContact!.contacts!.length > 0) {
-                        <!-- Show Multiple Contacts in Grid -->
-                        <div [class]="'grid gap-2 ' + (item.alternativeContact!.contacts!.length === 1 ? 'grid-cols-1' : item.alternativeContact!.contacts!.length === 2 ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3')">
-                          @for (contact of item.alternativeContact!.contacts!; track contact.type) {
-                            <div class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm">
-                              @switch (contact.type) {
-                                @case ('instagram') {
-                                  <i class="ph-fill ph-instagram-logo text-pink-500"></i>
-                                  <span class="truncate">&#64;{{ contact.value }}</span>
-                                }
-                                @case ('telegram') {
-                                  <i class="ph-fill ph-telegram-logo text-blue-500"></i>
-                                  <span class="truncate">&#64;{{ contact.value }}</span>
-                                }
-                                @case ('line') {
-                                  <i class="ph ph-chat-circle-text text-green-500"></i>
-                                  <span class="truncate">{{ contact.value }}</span>
-                                }
-                                @case ('whatsapp_other') {
-                                  <i class="ph-fill ph-whatsapp-logo text-green-500"></i>
-                                  <span class="truncate">{{ contact.value }}</span>
-                                }
-                                @case ('email') {
-                                  <i class="ph ph-envelope text-blue-500"></i>
-                                  <span class="truncate">{{ contact.value }}</span>
-                                }
-                                @default {
-                                  <i class="ph ph-link text-gray-500"></i>
-                                  <span class="truncate">{{ contact.value }}</span>
-                                }
-                              }
-                            </div>
-                          }
-                        </div>
-                      } @else if (item.alternativeContact?.type && item.alternativeContact?.value) {
-                        <!-- Show Single Alternative Contact (Legacy) -->
-                        <div class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                          @switch (item.alternativeContact!.type) {
-                            @case ('instagram') {
-                              <i class="ph-fill ph-instagram-logo text-pink-500"></i>
-                              <span>&#64;{{ item.alternativeContact!.value }}</span>
-                            }
-                            @case ('telegram') {
-                              <i class="ph-fill ph-telegram-logo text-blue-500"></i>
-                              <span>&#64;{{ item.alternativeContact!.value }}</span>
-                            }
-                            @case ('line') {
-                              <i class="ph ph-chat-circle-text text-green-500"></i>
-                              <span>LINE: {{ item.alternativeContact!.value }}</span>
-                            }
-                            @case ('whatsapp_other') {
-                              <i class="ph-fill ph-whatsapp-logo text-green-500"></i>
-                              <span>{{ item.alternativeContact!.value }}</span>
-                            }
-                            @case ('email') {
-                              <i class="ph ph-envelope text-blue-500"></i>
-                              <span>{{ item.alternativeContact!.value }}</span>
-                            }
-                            @default {
-                              <i class="ph ph-link text-gray-500"></i>
-                              <span>{{ item.alternativeContact!.value }}</span>
-                            }
-                          }
-                        </div>
-                      } @else if (item.reporterPhone) {
-                        <!-- Fallback to phone -->
-                        <div class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                          <i class="ph-fill ph-whatsapp-logo text-green-500"></i>
-                          <span>{{ item.reporterPhone }}</span>
-                        </div>
-                      }
+                      <!-- Contact Display -->
+                      <app-contact-buttons
+                        [alternativeContact]="item.alternativeContact"
+                        [phone]="item.reporterPhone"
+                        [exposePhone]="item.exposePhone"
+                        mode="list"
+                        size="sm">
+                      </app-contact-buttons>
                     </div>
                     
-                    <!-- Action Buttons based on contact type -->
-                    @if (item.exposePhone && item.reporterPhone) {
-                      <button 
-                        (click)="whatsappReporter()"
-                        class="w-full mt-3 py-3 px-6 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition flex items-center justify-center gap-2">
-                        <i class="ph-fill ph-whatsapp-logo text-xl"></i>
-                        Hubungi via WhatsApp
-                      </button>
-                    } @else if (item.alternativeContact?.contacts && item.alternativeContact!.contacts!.length > 0) {
-                      <!-- Multiple Contact Buttons in Grid -->
-                      <div [class]="'grid gap-2 mt-3 ' + (item.alternativeContact!.contacts!.length === 1 ? 'grid-cols-1' : item.alternativeContact!.contacts!.length === 2 ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3')">
-                        @for (contact of item.alternativeContact!.contacts!; track contact.type) {
-                          @switch (contact.type) {
-                            @case ('instagram') {
-                              <a 
-                                [href]="'https://instagram.com/' + contact.value"
-                                target="_blank"
-                                class="py-2 px-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-medium rounded-lg hover:opacity-90 transition flex items-center justify-center gap-1">
-                                <i class="ph-fill ph-instagram-logo"></i>
-                                <span class="truncate">Instagram</span>
-                              </a>
-                            }
-                            @case ('telegram') {
-                              <a 
-                                [href]="'https://t.me/' + contact.value"
-                                target="_blank"
-                                class="py-2 px-3 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition flex items-center justify-center gap-1">
-                                <i class="ph-fill ph-telegram-logo"></i>
-                                <span class="truncate">Telegram</span>
-                              </a>
-                            }
-                            @case ('line') {
-                              <div class="py-2 px-3 bg-green-500 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-1">
-                                <i class="ph ph-chat-circle-text"></i>
-                                <span class="truncate">LINE</span>
-                              </div>
-                            }
-                            @case ('whatsapp_other') {
-                              <a 
-                                [href]="'https://wa.me/' + (contact.value.startsWith('0') ? '62' + contact.value.slice(1) : contact.value)"
-                                target="_blank"
-                                class="py-2 px-3 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition flex items-center justify-center gap-1">
-                                <i class="ph-fill ph-whatsapp-logo"></i>
-                                <span class="truncate">WhatsApp</span>
-                              </a>
-                            }
-                            @case ('email') {
-                              <a 
-                                [href]="'mailto:' + contact.value"
-                                class="py-2 px-3 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition flex items-center justify-center gap-1">
-                                <i class="ph ph-envelope"></i>
-                                <span class="truncate">Email</span>
-                              </a>
-                            }
-                            @default {
-                              <div class="py-2 px-3 bg-gray-500 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-1">
-                                <i class="ph ph-link"></i>
-                                <span class="truncate">Kontak</span>
-                              </div>
-                            }
-                          }
-                        }
-                      </div>
-                    } @else if (item.alternativeContact?.type === 'instagram' && item.alternativeContact?.value) {
-                      <a 
-                        [href]="'https://instagram.com/' + item.alternativeContact!.value"
-                        target="_blank"
-                        class="w-full mt-3 py-3 px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:opacity-90 transition flex items-center justify-center gap-2">
-                        <i class="ph-fill ph-instagram-logo text-xl"></i>
-                        Buka Instagram
-                      </a>
-                    } @else if (item.alternativeContact?.type === 'telegram' && item.alternativeContact?.value) {
-                      <a 
-                        [href]="'https://t.me/' + item.alternativeContact!.value"
-                        target="_blank"
-                        class="w-full mt-3 py-3 px-6 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition flex items-center justify-center gap-2">
-                        <i class="ph-fill ph-telegram-logo text-xl"></i>
-                        Buka Telegram
-                      </a>
-                    } @else if (item.alternativeContact?.type === 'whatsapp_other' && item.alternativeContact?.value) {
-                      <a 
-                        [href]="'https://wa.me/' + (item.alternativeContact!.value!.startsWith('0') ? '62' + item.alternativeContact!.value!.slice(1) : item.alternativeContact!.value)"
-                        target="_blank"
-                        class="w-full mt-3 py-3 px-6 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition flex items-center justify-center gap-2">
-                        <i class="ph-fill ph-whatsapp-logo text-xl"></i>
-                        Hubungi via WhatsApp
-                      </a>
-                    } @else if (item.alternativeContact?.type === 'email' && item.alternativeContact?.value) {
-                      <a 
-                        [href]="'mailto:' + item.alternativeContact!.value"
-                        class="w-full mt-3 py-3 px-6 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition flex items-center justify-center gap-2">
-                        <i class="ph ph-envelope text-xl"></i>
-                        Kirim Email
-                      </a>
-                    }
+                    <!-- Action Buttons -->
+                    <div class="mt-3">
+                      <app-contact-buttons
+                        [alternativeContact]="item.alternativeContact"
+                        [phone]="item.reporterPhone"
+                        [exposePhone]="item.exposePhone"
+                        mode="grid"
+                        size="md">
+                      </app-contact-buttons>
+                    </div>
                   </div>
                 } @else if (myClaim.status === 'rejected') {
                   <!-- Rejected Status -->
@@ -665,118 +510,26 @@
                         </div>
                       </div>
 
-                      <!-- Contact based on exposePhone or alternativeContact -->
-                      @if (item.exposePhone && item.reporterPhone) {
-                        <div class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                          <i class="ph-fill ph-whatsapp-logo text-green-500"></i>
-                          <span>{{ item.reporterPhone }}</span>
-                        </div>
-                      } @else if (item.alternativeContact?.contacts && item.alternativeContact!.contacts!.length > 0) {
-                        <!-- Show Multiple Contacts in Grid -->
-                        <div [class]="'grid gap-2 ' + (item.alternativeContact!.contacts!.length === 1 ? 'grid-cols-1' : item.alternativeContact!.contacts!.length === 2 ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3')">
-                          @for (contact of item.alternativeContact!.contacts!; track contact.type) {
-                            <div class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm">
-                              @switch (contact.type) {
-                                @case ('instagram') {
-                                  <i class="ph-fill ph-instagram-logo text-pink-500"></i>
-                                  <span class="truncate">&#64;{{ contact.value }}</span>
-                                }
-                                @case ('telegram') {
-                                  <i class="ph-fill ph-telegram-logo text-blue-500"></i>
-                                  <span class="truncate">&#64;{{ contact.value }}</span>
-                                }
-                                @case ('line') {
-                                  <i class="ph ph-chat-circle-text text-green-500"></i>
-                                  <span class="truncate">{{ contact.value }}</span>
-                                }
-                                @case ('whatsapp_other') {
-                                  <i class="ph-fill ph-whatsapp-logo text-green-500"></i>
-                                  <span class="truncate">{{ contact.value }}</span>
-                                }
-                                @case ('email') {
-                                  <i class="ph ph-envelope text-blue-500"></i>
-                                  <span class="truncate">{{ contact.value }}</span>
-                                }
-                                @default {
-                                  <i class="ph ph-link text-gray-500"></i>
-                                  <span class="truncate">{{ contact.value }}</span>
-                                }
-                              }
-                            </div>
-                          }
-                        </div>
-                      } @else if (item.reporterPhone) {
-                        <div class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                          <i class="ph-fill ph-whatsapp-logo text-green-500"></i>
-                          <span>{{ item.reporterPhone }}</span>
-                        </div>
-                      }
+                      <!-- Contact Display -->
+                      <app-contact-buttons
+                        [alternativeContact]="item.alternativeContact"
+                        [phone]="item.reporterPhone"
+                        [exposePhone]="item.exposePhone"
+                        mode="list"
+                        size="sm">
+                      </app-contact-buttons>
                     </div>
                     
-                    <!-- Action Button -->
-                    @if (item.exposePhone && item.reporterPhone) {
-                      <button 
-                        (click)="whatsappReporter()"
-                        class="w-full mt-3 py-3 px-6 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition flex items-center justify-center gap-2">
-                        <i class="ph-fill ph-whatsapp-logo text-xl"></i>
-                        Hubungi via WhatsApp
-                      </button>
-                    } @else if (item.alternativeContact?.contacts && item.alternativeContact!.contacts!.length > 0) {
-                      <!-- Multiple Contact Buttons in Grid -->
-                      <div [class]="'grid gap-2 mt-3 ' + (item.alternativeContact!.contacts!.length === 1 ? 'grid-cols-1' : item.alternativeContact!.contacts!.length === 2 ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3')">
-                        @for (contact of item.alternativeContact!.contacts!; track contact.type) {
-                          @switch (contact.type) {
-                            @case ('instagram') {
-                              <a 
-                                [href]="'https://instagram.com/' + contact.value"
-                                target="_blank"
-                                class="py-2 px-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-medium rounded-lg hover:opacity-90 transition flex items-center justify-center gap-1">
-                                <i class="ph-fill ph-instagram-logo"></i>
-                                <span class="truncate">Instagram</span>
-                              </a>
-                            }
-                            @case ('telegram') {
-                              <a 
-                                [href]="'https://t.me/' + contact.value"
-                                target="_blank"
-                                class="py-2 px-3 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition flex items-center justify-center gap-1">
-                                <i class="ph-fill ph-telegram-logo"></i>
-                                <span class="truncate">Telegram</span>
-                              </a>
-                            }
-                            @case ('line') {
-                              <div class="py-2 px-3 bg-green-500 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-1">
-                                <i class="ph ph-chat-circle-text"></i>
-                                <span class="truncate">LINE</span>
-                              </div>
-                            }
-                            @case ('whatsapp_other') {
-                              <a 
-                                [href]="'https://wa.me/' + (contact.value.startsWith('0') ? '62' + contact.value.slice(1) : contact.value)"
-                                target="_blank"
-                                class="py-2 px-3 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition flex items-center justify-center gap-1">
-                                <i class="ph-fill ph-whatsapp-logo"></i>
-                                <span class="truncate">WhatsApp</span>
-                              </a>
-                            }
-                            @case ('email') {
-                              <a 
-                                [href]="'mailto:' + contact.value"
-                                class="py-2 px-3 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition flex items-center justify-center gap-1">
-                                <i class="ph ph-envelope"></i>
-                                <span class="truncate">Email</span>
-                              </a>
-                            }
-                            @default {
-                              <div class="py-2 px-3 bg-gray-500 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-1">
-                                <i class="ph ph-link"></i>
-                                <span class="truncate">Kontak</span>
-                              </div>
-                            }
-                          }
-                        }
-                      </div>
-                    }
+                    <!-- Action Buttons -->
+                    <div class="mt-3">
+                      <app-contact-buttons
+                        [alternativeContact]="item.alternativeContact"
+                        [phone]="item.reporterPhone"
+                        [exposePhone]="item.exposePhone"
+                        mode="grid"
+                        size="md">
+                      </app-contact-buttons>
+                    </div>
                   </div>
                 } @else if (myFinderClaim.status === 'rejected') {
                   <!-- Rejected Status -->
@@ -830,83 +583,13 @@
                       <p class="text-sm font-medium text-blue-700 dark:text-blue-400 mb-3">
                         <i class="ph ph-address-book"></i> Kontak Alternatif
                       </p>
-                      <div class="flex flex-wrap gap-2">
-                        <!-- New format: contacts array -->
-                        @if (item.alternativeContact?.contacts && item.alternativeContact!.contacts!.length > 0) {
-                          @for (contact of item.alternativeContact!.contacts!; track contact.type) {
-                            @switch (contact.type) {
-                              @case ('instagram') {
-                                <a [href]="'https://instagram.com/' + contact.value" target="_blank"
-                                  class="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm rounded-lg flex items-center gap-2 hover:opacity-90 transition">
-                                  <i class="ph-fill ph-instagram-logo"></i>
-                                  &#64;{{ contact.value }}
-                                </a>
-                              }
-                              @case ('telegram') {
-                                <a [href]="'https://t.me/' + contact.value" target="_blank"
-                                  class="px-3 py-2 bg-blue-500 text-white text-sm rounded-lg flex items-center gap-2 hover:opacity-90 transition">
-                                  <i class="ph-fill ph-telegram-logo"></i>
-                                  &#64;{{ contact.value }}
-                                </a>
-                              }
-                              @case ('line') {
-                                <span class="px-3 py-2 bg-green-500 text-white text-sm rounded-lg flex items-center gap-2">
-                                  <i class="ph ph-chat-circle-text"></i>
-                                  LINE: {{ contact.value }}
-                                </span>
-                              }
-                              @case ('whatsapp_other') {
-                                <a [href]="'https://wa.me/' + (contact.value.startsWith('0') ? '62' + contact.value.slice(1) : contact.value)" target="_blank"
-                                  class="px-3 py-2 bg-green-500 text-white text-sm rounded-lg flex items-center gap-2 hover:opacity-90 transition">
-                                  <i class="ph-fill ph-whatsapp-logo"></i>
-                                  {{ contact.value }}
-                                </a>
-                              }
-                              @case ('email') {
-                                <a [href]="'mailto:' + contact.value"
-                                  class="px-3 py-2 bg-blue-600 text-white text-sm rounded-lg flex items-center gap-2 hover:opacity-90 transition">
-                                  <i class="ph ph-envelope"></i>
-                                  {{ contact.value }}
-                                </a>
-                              }
-                              @default {
-                                <span class="px-3 py-2 bg-gray-500 text-white text-sm rounded-lg flex items-center gap-2">
-                                  <i class="ph ph-link"></i>
-                                  {{ contact.value }}
-                                </span>
-                              }
-                            }
-                          }
-                        } @else {
-                          <!-- Legacy format -->
-                          @if (item.alternativeContact?.instagram; as ig) {
-                            <a [href]="'https://instagram.com/' + ig" target="_blank"
-                              class="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm rounded-lg flex items-center gap-2 hover:opacity-90 transition">
-                              <i class="ph-fill ph-instagram-logo"></i>
-                              &#64;{{ ig }}
-                            </a>
-                          }
-                          @if (item.alternativeContact?.telegram; as tg) {
-                            <a [href]="'https://t.me/' + tg" target="_blank"
-                              class="px-3 py-2 bg-blue-500 text-white text-sm rounded-lg flex items-center gap-2 hover:opacity-90 transition">
-                              <i class="ph-fill ph-telegram-logo"></i>
-                              &#64;{{ tg }}
-                            </a>
-                          }
-                          @if (item.alternativeContact?.line; as lineId) {
-                            <span class="px-3 py-2 bg-green-500 text-white text-sm rounded-lg flex items-center gap-2">
-                              <i class="ph ph-chat-circle-text"></i>
-                              LINE: {{ lineId }}
-                            </span>
-                          }
-                          @if (item.alternativeContact?.other; as otherContact) {
-                            <span class="px-3 py-2 bg-gray-500 text-white text-sm rounded-lg flex items-center gap-2">
-                              <i class="ph ph-link"></i>
-                              {{ otherContact }}
-                            </span>
-                          }
-                        }
-                      </div>
+                      <app-contact-buttons
+                        [alternativeContact]="item.alternativeContact"
+                        [phone]="item.reporterPhone"
+                        [exposePhone]="item.exposePhone"
+                        mode="inline"
+                        size="sm">
+                      </app-contact-buttons>
                     </div>
                   } @else {
                     <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-xl text-center">
@@ -1082,879 +765,115 @@
     </div>
   }
 
-  <!-- Verification Modal (for Found items) -->
-  @if (showVerificationModal()) {
-    <div class="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
-      <!-- Backdrop -->
-      <div 
-        class="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        (click)="closeVerificationModal()"></div>
-      
-      <!-- Modal Content -->
-      <div class="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-t-3xl lg:rounded-2xl p-6 pb-8 max-h-[90vh] overflow-y-auto animate-slide-up">
-        <!-- Handle - Mobile only -->
-        <div class="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-6 lg:hidden"></div>
-        
-        <!-- Close button - Desktop -->
-        <button 
-          (click)="closeVerificationModal()"
-          class="hidden lg:flex absolute top-4 right-4 w-8 h-8 items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
-          <i class="ph ph-x text-xl"></i>
-        </button>
-
-        @if (!verificationSuccess()) {
-          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">
-            <i class="ph ph-identification-badge text-uii-blue"></i> Klaim Barang Ini
-          </h3>
-          <p class="text-gray-500 dark:text-gray-400 text-center mb-6 text-sm">
-            Buktikan bahwa barang ini milikmu. Penemu akan meninjau permintaanmu.
-          </p>
-
-          <div class="space-y-4">
-            <!-- Auto-filled User Info -->
-            <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-              <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Data Pemohon (otomatis)</p>
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-uii-blue/10 rounded-full flex items-center justify-center">
-                  <i class="ph-fill ph-user text-uii-blue"></i>
-                </div>
-                <div>
-                  <p class="font-medium text-gray-900 dark:text-white">{{ currentUser()?.name }}</p>
-                  <p class="text-xs text-gray-500">{{ currentUser()?.phone }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Description (Required) -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Ciri-ciri Barang <span class="text-red-500">*</span>
-              </label>
-              <textarea
-                [(ngModel)]="verificationForm.description"
-                rows="4"
-                placeholder="Jelaskan ciri-ciri spesifik barangmu yang tidak terlihat di foto. Contoh: ada goresan di pojok kanan, isi dompet ada KTP dan SIM..."
-                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent resize-none"></textarea>
-              <p class="text-xs text-gray-500 mt-1">Minimal 10 karakter</p>
-            </div>
-
-            <!-- Photo (Optional) -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Foto Bukti <span class="text-gray-400">(opsional)</span>
-              </label>
-              @if (!verificationForm.photoPreview) {
-                <label class="block w-full p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-uii-blue transition text-center">
-                  <i class="ph ph-camera text-3xl text-gray-400 mb-2"></i>
-                  <p class="text-sm text-gray-500">Upload foto bukti kepemilikan</p>
-                  <input type="file" accept="image/*" class="hidden" (change)="onVerificationPhotoSelect($event)">
-                </label>
-              } @else {
-                <div class="relative">
-                  <img [src]="verificationForm.photoPreview" class="w-full h-32 object-cover rounded-xl">
-                  <button 
-                    (click)="removeVerificationPhoto()"
-                    class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600">
-                    <i class="ph ph-x"></i>
-                  </button>
-                </div>
-              }
-            </div>
-
-            <!-- Additional Contact (Optional) -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Kontak Tambahan <span class="text-gray-400">(opsional)</span>
-              </label>
-              <input 
-                type="text"
-                [(ngModel)]="verificationForm.additionalContact"
-                placeholder="Instagram, Line, Email, dll"
-                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
-            </div>
-
-            <!-- Info Box -->
-            <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-              <p class="text-xs text-blue-700 dark:text-blue-400">
-                <i class="ph ph-info"></i> Penemu akan melihat bukti yang Anda kirim dan memverifikasi kepemilikan. 
-                Jika disetujui, Anda akan mendapatkan kontak penemu.
-              </p>
-            </div>
-
-            <!-- Submit Button -->
-            <button 
-              (click)="submitVerification()"
-              [disabled]="!canSubmitVerification() || isSubmittingVerification()"
-              class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-              @if (isSubmittingVerification()) {
-                <i class="ph ph-spinner animate-spin"></i>
-                Mengirim...
-              } @else {
-                <i class="ph ph-paper-plane-tilt"></i>
-                Kirim Verifikasi
-              }
-            </button>
-
-            <button 
-              (click)="closeVerificationModal()"
-              class="w-full py-3 px-6 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-              Batal
-            </button>
-          </div>
-        } @else {
-          <!-- Success State -->
-          <div class="text-center py-6">
-            <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i class="ph-fill ph-check-circle text-5xl text-green-500"></i>
-            </div>
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Klaim Terkirim!</h3>
-            <p class="text-gray-500 dark:text-gray-400 mb-6">
-              Permintaan klaim sudah dikirim ke penemu. 
-              Anda akan mendapatkan notifikasi setelah penemu memverifikasi.
-            </p>
-            <button 
-              (click)="closeVerificationModal()"
-              class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 transition">
-              Tutup
-            </button>
-          </div>
-        }
-      </div>
-    </div>
-  }
+  <!-- Verification Modal (for Found items) - Using Component -->
+  <app-claim-form-modal
+    [isOpen]="showVerificationModal()"
+    [currentUser]="currentUser()"
+    [isQrScanned]="false"
+    [isQrVerified]="false"
+    (close)="closeVerificationModal()"
+    (submit)="onClaimFormSubmit($event)">
+  </app-claim-form-modal>
 
   <!-- Delete Confirmation Modal -->
-  @if (showDeleteConfirm()) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeDeleteConfirm()"></div>
-      <div class="relative bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full">
-        <div class="text-center">
-          <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="ph ph-trash text-3xl text-red-500"></i>
-          </div>
-          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Hapus Laporan?</h3>
-          <p class="text-gray-500 dark:text-gray-400 mb-6">Laporan akan dihapus permanen dan tidak bisa dikembalikan.</p>
-          <div class="flex gap-3">
-            <button 
-              (click)="closeDeleteConfirm()"
-              class="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-              Batal
-            </button>
-            <button 
-              (click)="confirmDelete()"
-              class="flex-1 py-3 px-4 bg-red-500 text-white font-medium rounded-xl hover:bg-red-600 transition">
-              Hapus
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  }
+  <app-confirm-modal
+    [isOpen]="showDeleteConfirm()"
+    type="danger"
+    icon="ph ph-trash"
+    title="Hapus Laporan?"
+    message="Laporan akan dihapus permanen dan tidak bisa dikembalikan."
+    confirmText="Hapus"
+    cancelText="Batal"
+    (confirm)="confirmDelete()"
+    (cancel)="closeDeleteConfirm()">
+  </app-confirm-modal>
 
   <!-- Complete Confirmation Modal -->
-  @if (showCompleteConfirm()) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeCompleteConfirm()"></div>
-      <div class="relative bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full">
-        <div class="text-center">
-          <div class="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="ph ph-check-circle text-3xl text-green-500"></i>
-          </div>
-          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
-            {{ item()?.status === 'found' ? 'Tandai Diklaim?' : 'Tandai Selesai?' }}
-          </h3>
-          <p class="text-gray-500 dark:text-gray-400 mb-6">
-            @if (item()?.status === 'found') {
-              Barang sudah diserahkan ke pemiliknya? Laporan akan ditandai sebagai "Diklaim".
-            } @else {
-              Barangmu sudah ditemukan? Laporan akan ditandai sebagai "Selesai".
-            }
-          </p>
-          <div class="flex gap-3">
-            <button 
-              (click)="closeCompleteConfirm()"
-              class="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-              Batal
-            </button>
-            <button 
-              (click)="confirmComplete()"
-              class="flex-1 py-3 px-4 bg-green-500 text-white font-medium rounded-xl hover:bg-green-600 transition">
-              {{ item()?.status === 'found' ? 'Diklaim' : 'Selesai' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  }
+  <app-confirm-modal
+    [isOpen]="showCompleteConfirm()"
+    type="success"
+    icon="ph ph-check-circle"
+    [title]="item()?.status === 'found' ? 'Tandai Diklaim?' : 'Tandai Selesai?'"
+    [message]="item()?.status === 'found' 
+      ? 'Barang sudah diserahkan ke pemiliknya? Laporan akan ditandai sebagai Diklaim.' 
+      : 'Barangmu sudah ditemukan? Laporan akan ditandai sebagai Selesai.'"
+    [confirmText]="item()?.status === 'found' ? 'Diklaim' : 'Selesai'"
+    cancelText="Batal"
+    (confirm)="confirmComplete()"
+    (cancel)="closeCompleteConfirm()">
+  </app-confirm-modal>
 
-  <!-- QR Verification Modal -->
-  @if (showQrVerificationModal()) {
-    <div class="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeQrVerificationModal()"></div>
-      <div class="relative bg-white dark:bg-gray-800 rounded-t-3xl lg:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
-        <!-- Header -->
-        <div class="sticky top-0 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 class="text-lg font-bold text-gray-900 dark:text-white">Verifikasi QR Berhasil</h2>
-          <button 
-            (click)="closeQrVerificationModal()"
-            class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-            <i class="ph ph-x text-xl text-gray-500"></i>
-          </button>
-        </div>
+  <!-- QR Verification Modal - Using Component -->
+  <app-claim-form-modal
+    [isOpen]="showQrVerificationModal()"
+    [currentUser]="currentUser()"
+    [isQrScanned]="true"
+    [isQrVerified]="isQrOwnerVerified()"
+    (close)="closeQrVerificationModal()"
+    (submit)="onClaimFormSubmit($event)">
+  </app-claim-form-modal>
 
-        <div class="p-6 space-y-4">
-          @if (!verificationSuccess()) {
-            <!-- Success QR Verification -->
-            <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-center">
-              <div class="w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="ph-fill ph-seal-check text-3xl text-green-500"></i>
-              </div>
-              <h3 class="font-bold text-green-800 dark:text-green-400 mb-1">QR Terverifikasi!</h3>
-              <p class="text-sm text-green-700 dark:text-green-400">
-                Sistem telah memverifikasi bahwa Anda adalah pemilik barang berdasarkan QR Code.
-              </p>
-            </div>
+  <!-- Claimants List Modal (for Finder) - Using Component -->
+  <app-claimant-list-modal
+    [isOpen]="showClaimantsModal()"
+    [claimants]="item()?.claimants || []"
+    (close)="closeClaimantsModal()"
+    (viewDetail)="viewClaimantDetail($event)">
+  </app-claimant-list-modal>
 
-            <!-- User Info Display -->
-            <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-              <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Data yang akan dikirim ke penemu:</p>
-              <div class="space-y-2">
-                <div class="flex items-center gap-2">
-                  <i class="ph ph-user text-gray-400"></i>
-                  <span class="text-gray-900 dark:text-white font-medium">{{ currentUser()?.name }}</span>
-                </div>
-                @if (currentUser()?.studentId) {
-                  <div class="flex items-center gap-2">
-                    <i class="ph ph-identification-card text-gray-400"></i>
-                    <span class="text-gray-600 dark:text-gray-400">NIM: {{ currentUser()?.studentId }}</span>
-                  </div>
-                }
-                @if (currentUser()?.employeeId) {
-                  <div class="flex items-center gap-2">
-                    <i class="ph ph-identification-badge text-gray-400"></i>
-                    <span class="text-gray-600 dark:text-gray-400">NIP: {{ currentUser()?.employeeId }}</span>
-                  </div>
-                }
-              </div>
-            </div>
+  <!-- Claimant Detail Modal (for Finder to review) - Using Component -->
+  <app-claimant-detail-modal
+    [isOpen]="showClaimantDetailModal()"
+    [claimant]="selectedClaimant()"
+    (close)="closeClaimantDetailModal()"
+    (approve)="approveClaimant($event)"
+    (reject)="openRejectReasonModal($event)">
+  </app-claimant-detail-modal>
 
-            <!-- Additional Contact -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <i class="ph ph-address-book"></i> Kontak Tambahan (Opsional)
-              </label>
-              <input 
-                type="text"
-                [(ngModel)]="verificationForm.additionalContact"
-                placeholder="Instagram, Line, Email, dll"
-                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
-            </div>
+  <!-- Reject Reason Modal - Using Component -->
+  <app-reject-reason-modal
+    [isOpen]="showRejectReasonModal()"
+    [title]="'Tolak Klaim?'"
+    [subtitle]="'Berikan alasan mengapa klaim ini ditolak (opsional)'"
+    [placeholder]="'Contoh: Bukti tidak cukup, ciri-ciri tidak cocok...'"
+    [confirmText]="'Tolak Klaim'"
+    (close)="closeRejectReasonModal()"
+    (confirm)="onRejectClaimantWithReason($event)">
+  </app-reject-reason-modal>
 
-            <!-- Info Box -->
-            <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-              <p class="text-xs text-blue-700 dark:text-blue-400">
-                <i class="ph ph-info"></i> Karena QR sudah terverifikasi, penemu akan langsung melihat Anda sebagai pemilik yang sah.
-              </p>
-            </div>
+  <!-- Finder Verification Modal (for someone who found a lost item) - Using Component -->
+  <app-finder-form-modal
+    [isOpen]="showFinderVerificationModal()"
+    [questions]="item()?.verificationQuestions || []"
+    (close)="closeFinderVerificationModal()"
+    (submit)="onFinderFormSubmit($event)">
+  </app-finder-form-modal>
 
-            <!-- Submit Button -->
-            <button 
-              (click)="submitQrVerification()"
-              [disabled]="isSubmittingVerification()"
-              class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-              @if (isSubmittingVerification()) {
-                <i class="ph ph-spinner animate-spin"></i>
-                Mengirim...
-              } @else {
-                <i class="ph ph-paper-plane-tilt"></i>
-                Kirim Klaim
-              }
-            </button>
-          } @else {
-            <!-- Success State -->
-            <div class="text-center py-6">
-              <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="ph-fill ph-check-circle text-5xl text-green-500"></i>
-              </div>
-              <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Klaim Terkirim!</h3>
-              <p class="text-gray-500 dark:text-gray-400 mb-6">
-                Penemu akan melihat klaim Anda dengan status QR terverifikasi.
-              </p>
-              <button 
-                (click)="closeQrVerificationModal()"
-                class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 transition">
-                Tutup
-              </button>
-            </div>
-          }
-        </div>
-      </div>
-    </div>
-  }
+  <!-- Finders List Modal (for Lost item owner) - Using Component -->
+  <app-finder-list-modal
+    [isOpen]="showFindersModal()"
+    [finders]="item()?.finders || []"
+    (close)="closeFindersModal()"
+    (viewDetail)="viewFinderDetail($event)">
+  </app-finder-list-modal>
 
-  <!-- Claimants List Modal (for Finder) -->
-  @if (showClaimantsModal()) {
-    <div class="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeClaimantsModal()"></div>
-      <div class="relative bg-white dark:bg-gray-800 rounded-t-3xl lg:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
-        <!-- Header -->
-        <div class="sticky top-0 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <div>
-            <h2 class="text-lg font-bold text-gray-900 dark:text-white">Daftar Pemohon</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ item()?.claimants?.length || 0 }} orang mengklaim barang ini</p>
-          </div>
-          <button 
-            (click)="closeClaimantsModal()"
-            class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-            <i class="ph ph-x text-xl text-gray-500"></i>
-          </button>
-        </div>
+  <!-- Finder Detail Modal (for Lost item owner to review) - Using Component -->
+  <app-finder-detail-modal
+    [isOpen]="showFinderDetailModal()"
+    [finder]="selectedFinder()"
+    (close)="closeFinderDetailModal()"
+    (approve)="approveFinder($event)"
+    (reject)="openFinderRejectReasonModal($event)">
+  </app-finder-detail-modal>
 
-        <div class="p-4 space-y-3">
-          @if (item()?.claimants && item()!.claimants!.length > 0) {
-            @for (claimant of item()!.claimants; track claimant.id) {
-              <div 
-                (click)="viewClaimantDetail(claimant)"
-                class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                    <i class="ph-fill ph-user text-xl text-gray-500 dark:text-gray-400"></i>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 flex-wrap">
-                      <span class="font-semibold text-gray-900 dark:text-white">{{ claimant.claimerName }}</span>
-                      <app-user-badge [badge]="claimant.claimerBadge" size="sm"></app-user-badge>
-                      @if (claimant.isQrVerified) {
-                        <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-full flex items-center gap-1">
-                          <i class="ph ph-qr-code"></i> QR ✓
-                        </span>
-                      }
-                    </div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ claimant.description }}</p>
-                    <p class="text-xs text-gray-400 mt-1">
-                      {{ claimant.createdAt | date:'dd MMM yyyy, HH:mm' }}
-                    </p>
-                  </div>
-                  <div class="flex flex-col items-end gap-2">
-                    <span [class]="'px-2 py-1 text-xs font-medium rounded-full ' + 
-                      (claimant.status === 'pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400' :
-                       claimant.status === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' :
-                       'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400')">
-                      {{ getClaimantStatusLabel(claimant.status) }}
-                    </span>
-                    <i class="ph ph-caret-right text-gray-400"></i>
-                  </div>
-                </div>
-              </div>
-            }
-          } @else {
-            <div class="py-8 text-center">
-              <i class="ph ph-users text-5xl text-gray-300 dark:text-gray-600 mb-3"></i>
-              <p class="text-gray-500 dark:text-gray-400">Belum ada yang mengklaim barang ini</p>
-            </div>
-          }
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- Claimant Detail Modal (for Finder to review) -->
-  @if (showClaimantDetailModal() && selectedClaimant(); as claimant) {
-    <div class="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeClaimantDetailModal()"></div>
-      <div class="relative bg-white dark:bg-gray-800 rounded-t-3xl lg:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
-        <!-- Header -->
-        <div class="sticky top-0 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 class="text-lg font-bold text-gray-900 dark:text-white">Detail Pemohon</h2>
-          <button 
-            (click)="closeClaimantDetailModal()"
-            class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-            <i class="ph ph-x text-xl text-gray-500"></i>
-          </button>
-        </div>
-
-        <div class="p-6 space-y-4">
-          <!-- QR Verified Badge -->
-          @if (claimant.isQrVerified) {
-            <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl flex items-center gap-3">
-              <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center">
-                <i class="ph-fill ph-seal-check text-xl text-blue-600"></i>
-              </div>
-              <div>
-                <p class="font-semibold text-blue-700 dark:text-blue-400">Terverifikasi QR</p>
-                <p class="text-xs text-blue-600 dark:text-blue-400">Kepemilikan diverifikasi via QR Code</p>
-              </div>
-            </div>
-          }
-
-          <!-- Claimant Info -->
-          <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Info Pemohon</p>
-            <div class="flex items-center gap-3">
-              <div class="w-14 h-14 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                <i class="ph-fill ph-user text-2xl text-gray-500 dark:text-gray-400"></i>
-              </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-lg text-gray-900 dark:text-white">{{ claimant.claimerName }}</span>
-                  <app-user-badge [badge]="claimant.claimerBadge" size="sm"></app-user-badge>
-                </div>
-                @if (claimant.claimerPhone) {
-                  <p class="text-sm text-gray-600 dark:text-gray-400">{{ claimant.claimerPhone }}</p>
-                }
-              </div>
-            </div>
-          </div>
-
-          <!-- Description/Proof -->
-          <div>
-            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bukti/Ciri-ciri yang disebutkan:</p>
-            <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-              <p class="text-gray-700 dark:text-gray-300">{{ claimant.description }}</p>
-            </div>
-          </div>
-
-          <!-- Photo Evidence -->
-          @if (claimant.photoUrl) {
-            <div>
-              <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Foto Bukti:</p>
-              <img [src]="claimant.photoUrl" alt="Bukti" class="w-full h-48 object-cover rounded-xl">
-            </div>
-          }
-
-          <!-- Additional Contact -->
-          @if (claimant.additionalContact) {
-            <div>
-              <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Kontak Tambahan:</p>
-              <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                @if (claimant.additionalContact.instagram) {
-                  <p class="text-sm"><i class="ph-fill ph-instagram-logo text-pink-500"></i> &#64;{{ claimant.additionalContact.instagram }}</p>
-                }
-                @if (claimant.additionalContact.telegram) {
-                  <p class="text-sm"><i class="ph-fill ph-telegram-logo text-blue-500"></i> &#64;{{ claimant.additionalContact.telegram }}</p>
-                }
-                @if (claimant.additionalContact.line) {
-                  <p class="text-sm"><i class="ph ph-chat-circle-text text-green-500"></i> {{ claimant.additionalContact.line }}</p>
-                }
-                @if (claimant.additionalContact.other) {
-                  <p class="text-sm text-gray-600 dark:text-gray-400">{{ claimant.additionalContact.other }}</p>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- Submitted Time -->
-          <p class="text-xs text-gray-400 text-center">
-            Dikirim: {{ claimant.createdAt | date:'dd MMM yyyy, HH:mm' }}
-          </p>
-
-          <!-- Action Buttons (only for pending claims) -->
-          @if (claimant.status === 'pending') {
-            <div class="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <button 
-                (click)="openRejectReasonModal(claimant)"
-                class="flex-1 py-3 px-4 border border-red-300 text-red-600 font-medium rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition flex items-center justify-center gap-2">
-                <i class="ph ph-x-circle"></i>
-                Tolak
-              </button>
-              <button 
-                (click)="approveClaimant(claimant)"
-                class="flex-1 py-3 px-4 bg-green-500 text-white font-medium rounded-xl hover:bg-green-600 transition flex items-center justify-center gap-2">
-                <i class="ph ph-check-circle"></i>
-                Setujui
-              </button>
-            </div>
-          } @else {
-            <!-- Status display for already processed claims -->
-            <div [class]="'p-4 rounded-xl text-center ' + 
-              (claimant.status === 'approved' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20')">
-              <p [class]="'font-medium ' + 
-                (claimant.status === 'approved' ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400')">
-                @if (claimant.status === 'approved') {
-                  <i class="ph-fill ph-check-circle"></i> Sudah Disetujui
-                } @else {
-                  <i class="ph-fill ph-x-circle"></i> Ditolak
-                }
-              </p>
-              @if (claimant.status === 'rejected' && claimant.rejectionReason) {
-                <p class="text-sm text-gray-500 mt-1">Alasan: {{ claimant.rejectionReason }}</p>
-              }
-            </div>
-          }
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- Reject Reason Modal -->
-  @if (showRejectReasonModal()) {
-    <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeRejectReasonModal()"></div>
-      <div class="relative bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full">
-        <div class="text-center mb-4">
-          <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="ph ph-x-circle text-3xl text-red-500"></i>
-          </div>
-          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Tolak Klaim?</h3>
-          <p class="text-gray-500 dark:text-gray-400 text-sm">Berikan alasan mengapa klaim ini ditolak (opsional)</p>
-        </div>
-        
-        <textarea
-          [(ngModel)]="rejectReason"
-          rows="3"
-          placeholder="Contoh: Bukti tidak cukup, ciri-ciri tidak cocok..."
-          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none mb-4"></textarea>
-
-        <div class="flex gap-3">
-          <button 
-            (click)="closeRejectReasonModal()"
-            class="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-            Batal
-          </button>
-          <button 
-            (click)="rejectClaimant()"
-            class="flex-1 py-3 px-4 bg-red-500 text-white font-medium rounded-xl hover:bg-red-600 transition">
-            Tolak Klaim
-          </button>
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- Finder Verification Modal (for someone who found a lost item) -->
-  @if (showFinderVerificationModal()) {
-    <div class="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeFinderVerificationModal()"></div>
-      <div class="relative bg-white dark:bg-gray-800 rounded-t-3xl lg:rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        @if (!finderVerificationSuccess()) {
-          <!-- Header -->
-          <div class="sticky top-0 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <div class="flex items-center justify-between">
-              <div>
-                <h2 class="text-lg font-bold text-gray-900 dark:text-white">Saya Menemukan Barang Ini</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Jawab pertanyaan untuk verifikasi</p>
-              </div>
-              <button 
-                (click)="closeFinderVerificationModal()"
-                class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                <i class="ph ph-x text-xl text-gray-500"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- Form -->
-          <div class="p-6 space-y-5">
-            <div class="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl">
-              <p class="text-sm text-orange-700 dark:text-orange-400">
-                <i class="ph ph-info"></i> Jawab pertanyaan dari pemilik dengan jujur. Kontak pemilik akan ditampilkan setelah diverifikasi.
-              </p>
-            </div>
-
-            <!-- Verification Questions -->
-            <div class="space-y-4">
-              @for (answer of finderVerificationForm.answers; track answer.questionId; let i = $index) {
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {{ answer.question }}
-                    @if (item()?.verificationQuestions?.[i]?.isRequired) {
-                      <span class="text-red-500">*</span>
-                    }
-                  </label>
-                  <textarea
-                    [(ngModel)]="answer.answer"
-                    rows="2"
-                    [placeholder]="'Jawab pertanyaan ini...'"
-                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-orange focus:border-transparent resize-none"></textarea>
-                </div>
-              }
-            </div>
-
-            <!-- Photo Evidence (Optional) -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Foto Bukti <span class="text-gray-400 font-normal">(Opsional)</span>
-              </label>
-              @if (!finderVerificationForm.photoPreview) {
-                <label class="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
-                  <i class="ph ph-camera text-3xl text-gray-400 mb-2"></i>
-                  <span class="text-sm text-gray-500">Upload foto barang yang ditemukan</span>
-                  <input type="file" accept="image/*" class="hidden" (change)="onFinderPhotoSelect($event)">
-                </label>
-              } @else {
-                <div class="relative">
-                  <img [src]="finderVerificationForm.photoPreview" alt="Preview" class="w-full h-48 object-cover rounded-xl">
-                  <button 
-                    type="button"
-                    (click)="removeFinderPhoto()"
-                    class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition">
-                    <i class="ph ph-x"></i>
-                  </button>
-                </div>
-              }
-            </div>
-
-            <!-- Additional Contact (Optional) -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Kontak Tambahan <span class="text-gray-400 font-normal">(Opsional)</span>
-              </label>
-              <input
-                type="text"
-                [(ngModel)]="finderVerificationForm.additionalContact"
-                placeholder="IG, email, atau kontak lainnya"
-                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-orange focus:border-transparent">
-            </div>
-
-            <!-- Submit Button -->
-            <button 
-              (click)="submitFinderVerification()"
-              [disabled]="!canSubmitFinderVerification() || isSubmittingFinderVerification()"
-              class="w-full py-4 px-6 bg-uii-orange text-white font-semibold rounded-xl hover:bg-uii-orange/90 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-              @if (isSubmittingFinderVerification()) {
-                <i class="ph ph-spinner animate-spin text-xl"></i>
-                Mengirim...
-              } @else {
-                <i class="ph ph-paper-plane-right text-xl"></i>
-                Kirim Verifikasi
-              }
-            </button>
-          </div>
-        } @else {
-          <!-- Success State -->
-          <div class="p-8 text-center">
-            <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i class="ph-fill ph-check-circle text-5xl text-green-500"></i>
-            </div>
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Verifikasi Terkirim!</h3>
-            <p class="text-gray-500 dark:text-gray-400 mb-6">
-              Pemilik akan meninjau jawaban Anda. Jika disetujui, kontak pemilik akan ditampilkan.
-            </p>
-            <button 
-              (click)="closeFinderVerificationModal()"
-              class="px-6 py-3 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition">
-              Tutup
-            </button>
-          </div>
-        }
-      </div>
-    </div>
-  }
-
-  <!-- Finders List Modal (for Lost item owner) -->
-  @if (showFindersModal()) {
-    <div class="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeFindersModal()"></div>
-      <div class="relative bg-white dark:bg-gray-800 rounded-t-3xl lg:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
-        <!-- Header -->
-        <div class="sticky top-0 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <div>
-            <h2 class="text-lg font-bold text-gray-900 dark:text-white">Mengaku Menemukan</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ item()?.finders?.length || 0 }} orang mengaku menemukan barang Anda</p>
-          </div>
-          <button 
-            (click)="closeFindersModal()"
-            class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-            <i class="ph ph-x text-xl text-gray-500"></i>
-          </button>
-        </div>
-
-        <div class="p-4 space-y-3">
-          @if (item()?.finders && item()!.finders!.length > 0) {
-            @for (finder of item()!.finders; track finder.id) {
-              <div 
-                (click)="viewFinderDetail(finder)"
-                class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                    <i class="ph-fill ph-user text-xl text-gray-500 dark:text-gray-400"></i>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 flex-wrap">
-                      <span class="font-semibold text-gray-900 dark:text-white">{{ finder.finderName }}</span>
-                      <app-user-badge [badge]="finder.finderBadge" size="sm"></app-user-badge>
-                    </div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
-                      {{ finder.answers.length > 0 ? finder.answers[0].answer : 'Tidak ada jawaban' }}
-                    </p>
-                    <p class="text-xs text-gray-400 mt-1">
-                      {{ finder.createdAt | date:'dd MMM yyyy, HH:mm' }}
-                    </p>
-                  </div>
-                  <div class="flex flex-col items-end gap-2">
-                    <span [class]="'px-2 py-1 text-xs font-medium rounded-full ' + 
-                      (finder.status === 'pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400' :
-                       finder.status === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' :
-                       'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400')">
-                      {{ getFinderStatusLabel(finder.status) }}
-                    </span>
-                    <i class="ph ph-caret-right text-gray-400"></i>
-                  </div>
-                </div>
-              </div>
-            }
-          } @else {
-            <div class="py-8 text-center">
-              <i class="ph ph-magnifying-glass text-5xl text-gray-300 dark:text-gray-600 mb-3"></i>
-              <p class="text-gray-500 dark:text-gray-400">Belum ada yang mengaku menemukan barang ini</p>
-            </div>
-          }
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- Finder Detail Modal (for Lost item owner to review) -->
-  @if (showFinderDetailModal() && selectedFinder(); as finder) {
-    <div class="fixed inset-0 z-50 flex items-end lg:items-center justify-center">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeFinderDetailModal()"></div>
-      <div class="relative bg-white dark:bg-gray-800 rounded-t-3xl lg:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
-        <!-- Header -->
-        <div class="sticky top-0 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 class="text-lg font-bold text-gray-900 dark:text-white">Detail Penemu</h2>
-          <button 
-            (click)="closeFinderDetailModal()"
-            class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-            <i class="ph ph-x text-xl text-gray-500"></i>
-          </button>
-        </div>
-
-        <div class="p-6 space-y-4">
-          <!-- Finder Info -->
-          <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Info Penemu</p>
-            <div class="flex items-center gap-3">
-              <div class="w-14 h-14 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                <i class="ph-fill ph-user text-2xl text-gray-500 dark:text-gray-400"></i>
-              </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-lg text-gray-900 dark:text-white">{{ finder.finderName }}</span>
-                  <app-user-badge [badge]="finder.finderBadge" size="sm"></app-user-badge>
-                </div>
-                @if (finder.finderPhone) {
-                  <p class="text-sm text-gray-600 dark:text-gray-400">{{ finder.finderPhone }}</p>
-                }
-              </div>
-            </div>
-          </div>
-
-          <!-- Verification Answers -->
-          <div>
-            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Jawaban Verifikasi:</p>
-            <div class="space-y-3">
-              @for (answer of finder.answers; track answer.questionId) {
-                <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                  <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">{{ answer.question }}</p>
-                  <p class="text-gray-700 dark:text-gray-300 font-medium">{{ answer.answer }}</p>
-                </div>
-              }
-            </div>
-          </div>
-
-          <!-- Photo Evidence -->
-          @if (finder.photoUrl) {
-            <div>
-              <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Foto Bukti:</p>
-              <img [src]="finder.photoUrl" alt="Bukti" class="w-full h-48 object-cover rounded-xl">
-            </div>
-          }
-
-          <!-- Additional Contact -->
-          @if (finder.additionalContact) {
-            <div>
-              <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Kontak Tambahan:</p>
-              <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                @if (finder.additionalContact.instagram) {
-                  <p class="text-sm"><i class="ph-fill ph-instagram-logo text-pink-500"></i> &#64;{{ finder.additionalContact.instagram }}</p>
-                }
-                @if (finder.additionalContact.telegram) {
-                  <p class="text-sm"><i class="ph-fill ph-telegram-logo text-blue-500"></i> &#64;{{ finder.additionalContact.telegram }}</p>
-                }
-                @if (finder.additionalContact.line) {
-                  <p class="text-sm"><i class="ph ph-chat-circle-text text-green-500"></i> {{ finder.additionalContact.line }}</p>
-                }
-                @if (finder.additionalContact.other) {
-                  <p class="text-sm text-gray-600 dark:text-gray-400">{{ finder.additionalContact.other }}</p>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- Submitted Time -->
-          <p class="text-xs text-gray-400 text-center">
-            Dikirim: {{ finder.createdAt | date:'dd MMM yyyy, HH:mm' }}
-          </p>
-
-          <!-- Action Buttons (only for pending finders) -->
-          @if (finder.status === 'pending') {
-            <div class="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <button 
-                (click)="openFinderRejectReasonModal(finder)"
-                class="flex-1 py-3 px-4 border border-red-300 text-red-600 font-medium rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition flex items-center justify-center gap-2">
-                <i class="ph ph-x-circle"></i>
-                Tolak
-              </button>
-              <button 
-                (click)="approveFinder(finder)"
-                class="flex-1 py-3 px-4 bg-green-500 text-white font-medium rounded-xl hover:bg-green-600 transition flex items-center justify-center gap-2">
-                <i class="ph ph-check-circle"></i>
-                Setujui
-              </button>
-            </div>
-          } @else {
-            <!-- Status display for already processed finders -->
-            <div [class]="'p-4 rounded-xl text-center ' + 
-              (finder.status === 'approved' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20')">
-              <p [class]="'font-medium ' + 
-                (finder.status === 'approved' ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400')">
-                @if (finder.status === 'approved') {
-                  <i class="ph-fill ph-check-circle"></i> Sudah Disetujui
-                } @else {
-                  <i class="ph-fill ph-x-circle"></i> Ditolak
-                }
-              </p>
-              @if (finder.status === 'rejected' && finder.rejectionReason) {
-                <p class="text-sm text-gray-500 mt-1">Alasan: {{ finder.rejectionReason }}</p>
-              }
-            </div>
-          }
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- Finder Reject Reason Modal -->
-  @if (showFinderRejectReasonModal()) {
-    <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeFinderRejectReasonModal()"></div>
-      <div class="relative bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full">
-        <div class="text-center mb-4">
-          <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="ph ph-x-circle text-3xl text-red-500"></i>
-          </div>
-          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Tolak Penemu?</h3>
-          <p class="text-gray-500 dark:text-gray-400 text-sm">Berikan alasan mengapa klaim ini ditolak (opsional)</p>
-        </div>
-        
-        <textarea
-          [(ngModel)]="finderRejectReason"
-          rows="3"
-          placeholder="Contoh: Jawaban tidak sesuai, bukan barang yang sama..."
-          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none mb-4"></textarea>
-
-        <div class="flex gap-3">
-          <button 
-            (click)="closeFinderRejectReasonModal()"
-            class="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-            Batal
-          </button>
-          <button 
-            (click)="rejectFinder()"
-            class="flex-1 py-3 px-4 bg-red-500 text-white font-medium rounded-xl hover:bg-red-600 transition">
-            Tolak
-          </button>
-        </div>
-      </div>
-    </div>
-  }
+  <!-- Finder Reject Reason Modal - Using Component -->
+  <app-reject-reason-modal
+    [isOpen]="showFinderRejectReasonModal()"
+    [title]="'Tolak Penemu?'"
+    [subtitle]="'Berikan alasan mengapa ini ditolak (opsional)'"
+    [placeholder]="'Contoh: Jawaban tidak sesuai, bukan barang yang sama...'"
+    [confirmText]="'Tolak'"
+    (close)="closeFinderRejectReasonModal()"
+    (confirm)="onRejectFinderWithReason($event)">
+  </app-reject-reason-modal>
 </div>

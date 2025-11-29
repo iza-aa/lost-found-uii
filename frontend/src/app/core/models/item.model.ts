@@ -47,10 +47,11 @@ export interface AlternativeContact {
 // Claimant status for verification flow
 export type ClaimantStatus = 'pending' | 'approved' | 'rejected';
 
-// Verification question for lost items
+// Verification question for lost items and found items
 export interface VerificationQuestion {
   id: string;
   question: string;
+  answer?: string;        // The correct answer (only for found items, stored by finder)
   isRequired: boolean;
 }
 
@@ -106,40 +107,40 @@ export interface Item {
   date: string;        // Tanggal hilang/ditemukan
   time?: string;       // Jam hilang/ditemukan
   location: ItemLocation | string;  // Support both formats
-  
+
   // Reporter info
   reporterId: string;
   reporterName: string;
   reporterBadge: UserBadge;
   reporterPhone?: string;
-  
+
   // Privacy & Contact settings (NEW)
   exposePhone?: boolean;                  // Mau ekspos no WA? (for lost items)
   alternativeContact?: AlternativeContact; // Kontak alternatif jika tidak ekspos phone
   willingToCod?: boolean;                 // Bersedia COD di tengah/kampus dengan pengawasan
-  
+
   // Lost item specific fields
   reward?: boolean;           // Tawarkan imbalan?
   urgency?: UrgencyLevel;     // Tingkat urgensi
   verificationQuestions?: VerificationQuestion[];  // Pertanyaan verifikasi untuk penemu
-  
+
   // Found item specific fields
   storageLocation?: StorageLocation;  // Barang disimpan di mana
   entrustedTo?: string;               // Dititipkan ke siapa (jika storageLocation = 'entrusted')
   willingToDeliver?: boolean;         // DEPRECATED: replaced by willingToCod
-  
+
   // QR Scan specific fields (NEW)
   isScannedByQr?: boolean;            // Item was reported via QR scan
   scannedQrOwnerId?: string;          // User ID of the QR owner (claimed owner)
   scannedQrOwnerName?: string;        // Name of the QR owner
   scannedQrOwnerPhone?: string;       // Phone of the QR owner (private, not exposed)
-  
+
   // Claimants/Pemohon (NEW) - List of people claiming this item
   claimants?: Claimant[];             // Array of claimants for found items
-  
+
   // Finders (NEW) - List of people who claim to have found this lost item
   finders?: Finder[];                 // Array of finders for lost items
-  
+
   createdAt: Date;
   updatedAt?: Date;
 }

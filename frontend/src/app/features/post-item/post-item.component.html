@@ -1,712 +1,736 @@
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-4">
   <div class="max-w-lg mx-auto">
-    
+
     <!-- Success State -->
     @if (isSuccess()) {
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center">
-        <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-          <i class="ph-fill ph-check-circle text-green-500 text-5xl"></i>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center">
+      <div
+        class="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+        <i class="ph-fill ph-check-circle text-green-500 text-5xl"></i>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Berhasil!</h2>
+      <p class="text-gray-500 dark:text-gray-400 mb-8">
+        Laporan kamu sudah dibuat.<br>
+        Semoga barangnya segera ketemu ya! 🙏
+      </p>
+      <div class="space-y-3">
+        <button (click)="goToHome()"
+          class="w-full py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition flex items-center justify-center gap-2">
+          <i class="ph ph-house"></i>
+          Kembali ke Beranda
+        </button>
+        <button (click)="createAnother()"
+          class="w-full py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center justify-center gap-2">
+          <i class="ph ph-plus"></i>
+          Buat Laporan Lagi
+        </button>
+      </div>
+    </div>
+    } @else {
+    <!-- QR Scan Mode Banner -->
+    @if (isQrScanMode() && qrOwner()) {
+    <div class="mb-6 p-4 bg-gradient-to-r from-uii-blue to-blue-600 rounded-2xl text-white">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+          <i class="ph ph-qr-code text-xl"></i>
         </div>
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Berhasil!</h2>
-        <p class="text-gray-500 dark:text-gray-400 mb-8">
-          Laporan kamu sudah dibuat.<br>
-          Semoga barangnya segera ketemu ya! 🙏
-        </p>
-        <div class="space-y-3">
-          <button 
-            (click)="goToHome()"
-            class="w-full py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition flex items-center justify-center gap-2">
-            <i class="ph ph-house"></i>
-            Kembali ke Beranda
-          </button>
-          <button 
-            (click)="createAnother()"
-            class="w-full py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center justify-center gap-2">
-            <i class="ph ph-plus"></i>
-            Buat Laporan Lagi
-          </button>
+        <div>
+          <p class="text-xs text-white/80">Penemuan via QR Scan</p>
+          <p class="font-semibold">{{ qrOwner()?.name }}</p>
         </div>
       </div>
-    } @else {
-      <!-- QR Scan Mode Banner -->
-      @if (isQrScanMode() && qrOwner()) {
-        <div class="mb-6 p-4 bg-gradient-to-r from-uii-blue to-blue-600 rounded-2xl text-white">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-              <i class="ph ph-qr-code text-xl"></i>
-            </div>
-            <div>
-              <p class="text-xs text-white/80">Penemuan via QR Scan</p>
-              <p class="font-semibold">{{ qrOwner()?.name }}</p>
-            </div>
-          </div>
-          <div class="p-3 bg-white/10 rounded-lg">
-            <p class="text-xs text-white/90">
-              <i class="ph ph-info"></i> Barang ini akan otomatis terhubung dengan pemilik QR. Verifikasi kepemilikan akan dilakukan oleh sistem.
-            </p>
-          </div>
-        </div>
-      }
-      
-      <!-- Progress Bar -->
-      <div class="mb-8">
-        <div class="flex items-center justify-between mb-2">
-          @for (step of stepsArray; track step) {
-            <button 
-              (click)="goToStep(step)"
-              [class]="step <= currentStep() 
+      <div class="p-3 bg-white/10 rounded-lg">
+        <p class="text-xs text-white/90">
+          <i class="ph ph-info"></i> Barang ini akan otomatis terhubung dengan pemilik QR. Verifikasi kepemilikan akan
+          dilakukan oleh sistem.
+        </p>
+      </div>
+    </div>
+    }
+
+    <!-- Progress Bar -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between mb-2">
+        @for (step of stepsArray; track step) {
+        <button (click)="goToStep(step)"
+          [class]="step <= currentStep() 
                 ? 'w-7 h-7 rounded-full bg-uii-blue text-white text-xs font-semibold flex items-center justify-center transition' 
                 : 'w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 text-xs font-semibold flex items-center justify-center'"
-              [disabled]="step > currentStep()">
-              {{ step }}
-            </button>
-            @if (step < totalSteps) {
-              <div [class]="step < currentStep() 
+          [disabled]="step > currentStep()">
+          {{ step }}
+        </button>
+        @if (step < totalSteps) { <div [class]="step < currentStep() 
                 ? 'flex-1 h-1 bg-uii-blue mx-0.5' 
-                : 'flex-1 h-1 bg-gray-200 dark:bg-gray-700 mx-0.5'"></div>
-            }
-          }
-        </div>
-        <p class="text-center text-sm text-gray-500 dark:text-gray-400">
-          Langkah {{ currentStep() }} dari {{ totalSteps }}
-        </p>
+                : 'flex-1 h-1 bg-gray-200 dark:bg-gray-700 mx-0.5'">
       </div>
+      }
+      }
+    </div>
+    <p class="text-center text-sm text-gray-500 dark:text-gray-400">
+      Langkah {{ currentStep() }} dari {{ totalSteps }}
+    </p>
+  </div>
 
-      <!-- Step Content Card -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
-        <!-- Step Header -->
-        <div class="text-center mb-6">
-          <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ getStepTitle() }}</h2>
-          <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">{{ getStepSubtitle() }}</p>
-        </div>
+  <!-- Step Content Card -->
+  <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+    <!-- Step Header -->
+    <div class="text-center mb-6">
+      <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ getStepTitle() }}</h2>
+      <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">{{ getStepSubtitle() }}</p>
+    </div>
 
-        <!-- Step 1: Status (only for non-QR mode) -->
-        @if (currentStep() === 1 && !isQrScanMode()) {
-          <div class="grid grid-cols-2 gap-4">
-            <button 
-              (click)="selectStatus('lost')"
-              [class]="formData.status === 'lost' 
+    <!-- Step 1: Status (only for non-QR mode) -->
+    @if (currentStep() === 1 && !isQrScanMode()) {
+    <div class="grid grid-cols-2 gap-4">
+      <button (click)="selectStatus('lost')" [class]="formData.status === 'lost' 
                 ? 'p-6 rounded-2xl border-2 border-red-500 bg-red-50 dark:bg-red-900/20 transition-all' 
                 : 'p-6 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-red-300 transition-all'">
-              <div class="text-5xl mb-3">😢</div>
-              <h3 class="font-semibold text-gray-900 dark:text-white">KEHILANGAN</h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Saya kehilangan barang</p>
-            </button>
-            <button 
-              (click)="selectStatus('found')"
-              [class]="formData.status === 'found' 
+        <div class="text-5xl mb-3">😢</div>
+        <h3 class="font-semibold text-gray-900 dark:text-white">KEHILANGAN</h3>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Saya kehilangan barang</p>
+      </button>
+      <button (click)="selectStatus('found')"
+        [class]="formData.status === 'found' 
                 ? 'p-6 rounded-2xl border-2 border-green-500 bg-green-50 dark:bg-green-900/20 transition-all' 
                 : 'p-6 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-green-300 transition-all'">
-              <div class="text-5xl mb-3">🎉</div>
-              <h3 class="font-semibold text-gray-900 dark:text-white">MENEMUKAN</h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Saya menemukan barang</p>
-            </button>
+        <div class="text-5xl mb-3">🎉</div>
+        <h3 class="font-semibold text-gray-900 dark:text-white">MENEMUKAN</h3>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Saya menemukan barang</p>
+      </button>
+    </div>
+    }
+
+    <!-- QR Mode Step 1: Image Upload (same as normal Step 2) -->
+    @if (currentStep() === 1 && isQrScanMode()) {
+    <div class="space-y-4">
+      @if (formData.imagePreview) {
+      <div class="relative">
+        <img [src]="formData.imagePreview" alt="Preview" class="w-full h-64 object-cover rounded-xl">
+        <button (click)="removeImage()"
+          class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition">
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+      } @else {
+      <label
+        class="block w-full h-64 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-uii-blue transition flex flex-col items-center justify-center">
+        <i class="ph ph-camera text-4xl text-gray-400 mb-2"></i>
+        <span class="text-gray-500 dark:text-gray-400 text-sm">Klik untuk upload foto</span>
+        <span class="text-gray-400 text-xs mt-1">atau drag & drop</span>
+        <input type="file" accept="image/*" class="hidden" (change)="onImageSelect($event)">
+      </label>
+      }
+      <p class="text-xs text-gray-500 dark:text-gray-400 text-center">
+        Foto barang membantu pemilik mengenali barangnya
+      </p>
+    </div>
+    }
+
+    <!-- Step 2: Image Upload (for non-QR mode) -->
+    @if (currentStep() === 2 && !isQrScanMode()) {
+    <div class="space-y-4">
+      @if (formData.imagePreview) {
+      <div class="relative">
+        <img [src]="formData.imagePreview" alt="Preview" class="w-full h-64 object-cover rounded-xl">
+        <button (click)="removeImage()"
+          class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition">
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+      } @else {
+      <label
+        class="block w-full h-64 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-uii-blue transition flex flex-col items-center justify-center">
+        <i class="ph ph-camera text-5xl text-gray-400 mb-3"></i>
+        <span class="text-gray-500 dark:text-gray-400 font-medium">Klik untuk upload foto</span>
+        <span class="text-gray-400 text-sm mt-1">JPG, PNG (max 5MB)</span>
+        <input type="file" accept="image/*" (change)="onImageSelect($event)" class="hidden">
+      </label>
+      }
+      <p class="text-center text-sm text-gray-400">
+        <i class="ph ph-info"></i> Foto bersifat opsional tapi sangat membantu
+      </p>
+    </div>
+    }
+
+    <!-- Step 3: Title & Description/Verification Questions (or QR Step 2) -->
+    @if ((currentStep() === 3 && !isQrScanMode()) || (currentStep() === 2 && isQrScanMode())) {
+    <div class="space-y-5">
+      <!-- Nama Barang -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Nama Barang <span class="text-red-500">*</span>
+        </label>
+        <input type="text" [(ngModel)]="formData.title" placeholder="Contoh: Dompet Hitam, Kunci Motor, dll"
+          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent transition">
+      </div>
+
+      <!-- LOST: Deskripsi Biasa -->
+      @if (formData.status === 'lost') {
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Deskripsi <span class="text-red-500">*</span>
+        </label>
+        <textarea [(ngModel)]="formData.description" rows="4"
+          placeholder="Jelaskan ciri-ciri barang kamu secara detail. Contoh: warna, merk, ukuran, tanda khusus, dll"
+          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent resize-none transition"></textarea>
+        <p class="text-xs text-gray-400 mt-1">Minimal 10 karakter</p>
+      </div>
+      }
+
+      <!-- FOUND: Verification Questions & Answers -->
+      @if (formData.status === 'found' || isQrScanMode()) {
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <i class="ph ph-shield-check text-green-500"></i> Pertanyaan Verifikasi <span class="text-red-500">*</span>
+        </label>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
+          Buat pertanyaan untuk memverifikasi pemilik asli. Hanya pemilik sebenarnya yang tahu jawabannya.
+        </p>
+
+        <!-- Questions List -->
+        <div class="space-y-4">
+          @for (q of formData.verificationQuestions; track $index) {
+          <div class="relative pb-4 border-b border-gray-200 dark:border-gray-700 last:border-0">
+            <!-- Question Number Badge -->
+            <div class="flex items-center gap-2 mb-3">
+              <span class="w-6 h-6 rounded-full bg-uii-blue text-white text-xs font-bold flex items-center justify-center">
+                {{ $index + 1 }}
+              </span>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Pertanyaan {{ $index + 1 }}</span>
+              @if (formData.verificationQuestions.length > 1) {
+              <button type="button" (click)="removeVerificationQuestion($index)"
+                class="ml-auto text-red-500 hover:text-red-600 text-sm flex items-center gap-1">
+                <i class="ph ph-trash"></i>
+                <span class="text-xs">Hapus</span>
+              </button>
+              }
+            </div>
+
+            <!-- Question Input -->
+            <div class="mb-3">
+              <input type="text" [(ngModel)]="formData.verificationQuestions[$index].question"
+                placeholder="Contoh: Apa warna tali gantungan kunci?"
+                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent transition">
+            </div>
+
+            <!-- Answer Input -->
+            <div class="flex items-center gap-2">
+              <i class="ph ph-key text-gray-400"></i>
+              <input type="text" [(ngModel)]="formData.verificationQuestions[$index].answer"
+                placeholder="Jawaban yang benar (hanya kamu yang tahu)"
+                class="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-sm">
+            </div>
           </div>
-        }
-        
-        <!-- QR Mode Step 1: Image Upload (same as normal Step 2) -->
-        @if (currentStep() === 1 && isQrScanMode()) {
-          <div class="space-y-4">
-            @if (formData.imagePreview) {
-              <div class="relative">
-                <img [src]="formData.imagePreview" alt="Preview" class="w-full h-64 object-cover rounded-xl">
-                <button 
-                  (click)="removeImage()"
-                  class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition">
-                  <i class="ph ph-x"></i>
-                </button>
-              </div>
-            } @else {
-              <label class="block w-full h-64 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-uii-blue transition flex flex-col items-center justify-center">
-                <i class="ph ph-camera text-4xl text-gray-400 mb-2"></i>
-                <span class="text-gray-500 dark:text-gray-400 text-sm">Klik untuk upload foto</span>
-                <span class="text-gray-400 text-xs mt-1">atau drag & drop</span>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  class="hidden" 
-                  (change)="onImageSelect($event)">
-              </label>
-            }
-            <p class="text-xs text-gray-500 dark:text-gray-400 text-center">
-              Foto barang membantu pemilik mengenali barangnya
-            </p>
-          </div>
+          }
+        </div>
+
+        <!-- Add Question Button -->
+        @if (formData.verificationQuestions.length < 5) {
+        <button type="button" (click)="addVerificationQuestion()"
+          class="w-full mt-4 py-3 px-4 border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 font-medium rounded-xl hover:border-uii-blue hover:text-uii-blue dark:hover:border-uii-blue dark:hover:text-uii-blue transition flex items-center justify-center gap-2">
+          <i class="ph ph-plus-circle text-xl"></i>
+          Tambah Pertanyaan Verifikasi
+        </button>
         }
 
-        <!-- Step 2: Image Upload (for non-QR mode) -->
-        @if (currentStep() === 2 && !isQrScanMode()) {
-          <div class="space-y-4">
-            @if (formData.imagePreview) {
-              <div class="relative">
-                <img [src]="formData.imagePreview" alt="Preview" class="w-full h-64 object-cover rounded-xl">
-                <button 
-                  (click)="removeImage()"
-                  class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition">
-                  <i class="ph ph-x"></i>
-                </button>
-              </div>
-            } @else {
-              <label class="block w-full h-64 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-uii-blue transition flex flex-col items-center justify-center">
-                <i class="ph ph-camera text-5xl text-gray-400 mb-3"></i>
-                <span class="text-gray-500 dark:text-gray-400 font-medium">Klik untuk upload foto</span>
-                <span class="text-gray-400 text-sm mt-1">JPG, PNG (max 5MB)</span>
-                <input type="file" accept="image/*" (change)="onImageSelect($event)" class="hidden">
-              </label>
-            }
-            <p class="text-center text-sm text-gray-400">
-              <i class="ph ph-info"></i> Foto bersifat opsional tapi sangat membantu
-            </p>
-          </div>
-        }
+        <!-- Info Box -->
+        <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+          <p class="text-xs text-blue-700 dark:text-blue-400">
+            <i class="ph ph-lightbulb"></i> <strong>Tips:</strong> Buat pertanyaan spesifik yang hanya pemilik asli yang tahu jawabannya. 
+            Contoh: warna dalam dompet, stiker di laptop, gantungan kunci, dll.
+          </p>
+        </div>
+      </div>
+      }
 
-        <!-- Step 3: Title & Description (or QR Step 2) -->
-        @if ((currentStep() === 3 && !isQrScanMode()) || (currentStep() === 2 && isQrScanMode())) {
-          <div class="space-y-5">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Nama Barang <span class="text-red-500">*</span>
-              </label>
-              <input 
-                type="text" 
-                [(ngModel)]="formData.title"
-                placeholder="Contoh: Dompet kulit warna coklat"
-                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition"
-              >
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Ciri-ciri / Deskripsi <span class="text-red-500">*</span>
-              </label>
-              <textarea 
-                [(ngModel)]="formData.description"
-                rows="4"
-                placeholder="Contoh: Berisi KTP, SIM, dan kartu ATM BCA. Ada gantungan kunci berbentuk kucing."
-                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition resize-none"
-              ></textarea>
-              <p class="text-xs text-gray-400 mt-1">Minimal 10 karakter</p>
-            </div>
-            <!-- Date & Time -->
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Tanggal
-                </label>
-                <input 
-                  type="date" 
-                  [(ngModel)]="formData.date"
-                  class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition"
-                >
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Waktu
-                </label>
-                <input 
-                  type="time" 
-                  [(ngModel)]="formData.time"
-                  class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition"
-                >
-              </div>
-            </div>
-          </div>
-        }
+      <!-- Tanggal -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Tanggal {{ formData.status === 'lost' ? 'Hilang' : 'Ditemukan' }}
+        </label>
+        <input type="date" [(ngModel)]="formData.date"
+          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition">
+      </div>
 
-        <!-- Step 4: Category (or QR Step 3) -->
-        @if ((currentStep() === 4 && !isQrScanMode()) || (currentStep() === 3 && isQrScanMode())) {
-          <div class="grid grid-cols-3 gap-3">
-            @for (category of categories; track category.id) {
-              <button 
-                (click)="selectCategory(category.id)"
-                [class]="formData.category === category.id 
+      <!-- Waktu -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Waktu (opsional)
+        </label>
+        <input type="time" [(ngModel)]="formData.time"
+          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition">
+      </div>
+    </div>
+    }
+
+  <!-- Step 4: Category (or QR Step 3) -->
+  @if ((currentStep() === 4 && !isQrScanMode()) || (currentStep() === 3 && isQrScanMode())) {
+  <div class="grid grid-cols-3 gap-3">
+    @for (category of categories; track category.id) {
+    <button (click)="selectCategory(category.id)"
+      [class]="formData.category === category.id 
                   ? 'p-4 rounded-xl border-2 border-uii-blue bg-blue-50 dark:bg-blue-900/20 transition-all' 
                   : 'p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 transition-all'">
-                <i [class]="'ph ' + category.icon + ' text-2xl ' + (formData.category === category.id ? 'text-uii-blue' : 'text-gray-500')"></i>
-                <p [class]="'text-xs mt-2 font-medium ' + (formData.category === category.id ? 'text-uii-blue' : 'text-gray-600 dark:text-gray-400')">
-                  {{ category.label }}
-                </p>
-              </button>
-            }
-          </div>
+      <i
+        [class]="'ph ' + category.icon + ' text-2xl ' + (formData.category === category.id ? 'text-uii-blue' : 'text-gray-500')"></i>
+      <p
+        [class]="'text-xs mt-2 font-medium ' + (formData.category === category.id ? 'text-uii-blue' : 'text-gray-600 dark:text-gray-400')">
+        {{ category.label }}
+      </p>
+    </button>
+    }
+  </div>
+  }
+
+  <!-- Step 5: Map (or QR Step 4) -->
+  @if ((currentStep() === 5 && !isQrScanMode()) || (currentStep() === 4 && isQrScanMode())) {
+  <div class="space-y-4">
+    <!-- Location Dropdown -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Pilih lokasi:
+      </label>
+      <select [value]="formData.location?.id || ''" (change)="selectLocationFromDropdown($event)"
+        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition">
+        <option value="">-- Pilih Lokasi --</option>
+        @for (loc of locations; track loc.id) {
+        <option [value]="loc.id" [selected]="formData.location?.id === loc.id">{{ loc.name }}</option>
         }
+      </select>
+    </div>
 
-        <!-- Step 5: Map (or QR Step 4) -->
-        @if ((currentStep() === 5 && !isQrScanMode()) || (currentStep() === 4 && isQrScanMode())) {
-          <div class="space-y-4">
-            <!-- Location Dropdown -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Pilih lokasi:
-              </label>
-              <select 
-                [value]="formData.location?.id || ''"
-                (change)="selectLocationFromDropdown($event)"
-                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition">
-                <option value="">-- Pilih Lokasi --</option>
-                @for (loc of locations; track loc.id) {
-                  <option [value]="loc.id" [selected]="formData.location?.id === loc.id">{{ loc.name }}</option>
-                }
-              </select>
-            </div>
+    <!-- Map Container -->
+    <div id="map" class="w-full h-64 rounded-xl border border-gray-200 dark:border-gray-700 z-0"></div>
 
-            <!-- Map Container -->
-            <div id="map" class="w-full h-64 rounded-xl border border-gray-200 dark:border-gray-700 z-0"></div>
-            
-            <!-- Custom Location Name Input (when clicking custom point on map) -->
-            @if (isCustomLocation()) {
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Nama Lokasi <span class="text-red-500">*</span>
-                </label>
-                <input 
-                  type="text"
-                  [(ngModel)]="customLocationName"
-                  (input)="updateCustomLocationName()"
-                  placeholder="Contoh: Depan Gedung A, Toilet Lt. 2, dll"
-                  class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition"
-                >
-                <p class="text-xs text-gray-400">
-                  <i class="ph ph-info"></i> Lokasi tidak ada di daftar, silakan tulis nama lokasi
-                </p>
-              </div>
-            }
-            
-            <!-- Selected Location -->
-            @if (formData.location) {
-              <div class="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
-                <i class="ph-fill ph-map-pin text-green-500 text-xl"></i>
-                <div class="flex-1">
-                  <p class="font-medium text-green-700 dark:text-green-400">{{ formData.location.name }}</p>
-                  @if (formData.location.description) {
-                    <p class="text-xs text-green-600 dark:text-green-500">{{ formData.location.description }}</p>
-                  }
-                </div>
-                @if (isCustomLocation()) {
-                  <span class="px-2 py-1 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full">
-                    Custom
-                  </span>
-                }
-              </div>
-            } @else {
-              <p class="text-center text-sm text-gray-400">
-                <i class="ph ph-hand-tap"></i> Klik pada peta atau pilih dari dropdown
-              </p>
-            }
-          </div>
+    <!-- Custom Location Name Input (when clicking custom point on map) -->
+    @if (isCustomLocation()) {
+    <div class="space-y-2">
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        Nama Lokasi <span class="text-red-500">*</span>
+      </label>
+      <input type="text" [(ngModel)]="customLocationName" (input)="updateCustomLocationName()"
+        placeholder="Contoh: Depan Gedung A, Toilet Lt. 2, dll"
+        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent transition">
+      <p class="text-xs text-gray-400">
+        <i class="ph ph-info"></i> Lokasi tidak ada di daftar, silakan tulis nama lokasi
+      </p>
+    </div>
+    }
+
+    <!-- Selected Location -->
+    @if (formData.location) {
+    <div
+      class="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+      <i class="ph-fill ph-map-pin text-green-500 text-xl"></i>
+      <div class="flex-1">
+        <p class="font-medium text-green-700 dark:text-green-400">{{ formData.location.name }}</p>
+        @if (formData.location.description) {
+        <p class="text-xs text-green-600 dark:text-green-500">{{ formData.location.description }}</p>
         }
+      </div>
+      @if (isCustomLocation()) {
+      <span
+        class="px-2 py-1 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full">
+        Custom
+      </span>
+      }
+    </div>
+    } @else {
+    <p class="text-center text-sm text-gray-400">
+      <i class="ph ph-hand-tap"></i> Klik pada peta atau pilih dari dropdown
+    </p>
+    }
+  </div>
+  }
 
-        <!-- Step 6: Status-Specific Options (or QR Step 5) -->
-        @if ((currentStep() === 6 && !isQrScanMode()) || (currentStep() === 5 && isQrScanMode())) {
-          <div class="space-y-6">
-            <!-- LOST: Kehilangan Options (not shown in QR mode) -->
-            @if (formData.status === 'lost' && !isQrScanMode()) {
-              <!-- Urgency Level -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  <i class="ph ph-warning-circle"></i> Tingkat Urgensi
-                </label>
-                <div class="grid grid-cols-3 gap-3">
-                  @for (opt of urgencyOptions; track opt.value) {
-                    <button 
-                      type="button"
-                      (click)="setUrgency(opt.value)"
-                      [class]="formData.urgency === opt.value 
+  <!-- Step 6: Status-Specific Options (or QR Step 5) -->
+  @if ((currentStep() === 6 && !isQrScanMode()) || (currentStep() === 5 && isQrScanMode())) {
+  <div class="space-y-6">
+    <!-- LOST: Kehilangan Options (not shown in QR mode) -->
+    @if (formData.status === 'lost' && !isQrScanMode()) {
+    <!-- Urgency Level -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+        <i class="ph ph-warning-circle"></i> Tingkat Urgensi
+      </label>
+      <div class="grid grid-cols-3 gap-3">
+        @for (opt of urgencyOptions; track opt.value) {
+        <button type="button" (click)="setUrgency(opt.value)"
+          [class]="formData.urgency === opt.value 
                         ? 'p-3 rounded-xl border-2 transition-all ' + 
                           (opt.color === 'gray' ? 'border-gray-500 bg-gray-50 dark:bg-gray-700' : '') +
                           (opt.color === 'yellow' ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' : '') +
                           (opt.color === 'red' ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : '')
                         : 'p-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 transition-all'">
-                      <i [class]="'ph ' + opt.icon + ' text-xl mb-1 ' + 
+          <i [class]="'ph ' + opt.icon + ' text-xl mb-1 ' + 
                         (opt.color === 'gray' ? 'text-gray-500' : '') +
                         (opt.color === 'yellow' ? 'text-yellow-500' : '') +
                         (opt.color === 'red' ? 'text-red-500' : '')"></i>
-                      <p class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ opt.label }}</p>
-                    </button>
-                  }
-                </div>
-              </div>
-
-              <!-- Reward Toggle -->
-              <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-uii-gold/20 flex items-center justify-center">
-                    <i class="ph ph-gift text-xl text-uii-gold"></i>
-                  </div>
-                  <div>
-                    <p class="font-medium text-gray-900 dark:text-white">Tawarkan Imbalan?</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Beri tahu jika ada imbalan bagi penemu</p>
-                  </div>
-                </div>
-                <button 
-                  type="button"
-                  (click)="toggleReward()"
-                  [class]="formData.reward 
-                    ? 'w-12 h-7 bg-uii-gold rounded-full relative transition-colors' 
-                    : 'w-12 h-7 bg-gray-300 dark:bg-gray-600 rounded-full relative transition-colors'">
-                  <span [class]="formData.reward 
-                    ? 'absolute top-0.5 right-0.5 w-6 h-6 bg-white rounded-full shadow transition-all' 
-                    : 'absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-all'"></span>
-                </button>
-              </div>
-
-              @if (formData.reward) {
-                <div class="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
-                  <p class="text-sm text-yellow-700 dark:text-yellow-400">
-                    <i class="ph ph-info"></i> Imbalan akan ditampilkan di laporan. Negosiasi langsung dengan penemu.
-                  </p>
-                </div>
-              }
-
-              <!-- Expose Phone Toggle -->
-              <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                    <i class="ph ph-whatsapp-logo text-xl text-green-600"></i>
-                  </div>
-                  <div>
-                    <p class="font-medium text-gray-900 dark:text-white">Tampilkan No. WhatsApp?</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Penemu bisa langsung menghubungi Anda</p>
-                  </div>
-                </div>
-                <button 
-                  type="button"
-                  (click)="toggleExposePhone()"
-                  [class]="formData.exposePhone 
-                    ? 'w-12 h-7 bg-green-500 rounded-full relative transition-colors' 
-                    : 'w-12 h-7 bg-gray-300 dark:bg-gray-600 rounded-full relative transition-colors'">
-                  <span [class]="formData.exposePhone 
-                    ? 'absolute top-0.5 right-0.5 w-6 h-6 bg-white rounded-full shadow transition-all' 
-                    : 'absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-all'"></span>
-                </button>
-              </div>
-
-              <!-- Alternative Contact (shown when phone not exposed) -->
-              @if (!formData.exposePhone) {
-                <div class="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl space-y-3">
-                  <p class="text-sm text-orange-700 dark:text-orange-400 font-medium">
-                    <i class="ph ph-info"></i> Tambahkan kontak alternatif agar penemu bisa menghubungi Anda
-                  </p>
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Instagram</label>
-                      <div class="relative">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">&#64;</span>
-                        <input 
-                          type="text" 
-                          [(ngModel)]="formData.alternativeContact.instagram"
-                          placeholder="username"
-                          class="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                      </div>
-                    </div>
-                    <div>
-                      <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Telegram</label>
-                      <div class="relative">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">&#64;</span>
-                        <input 
-                          type="text" 
-                          [(ngModel)]="formData.alternativeContact.telegram"
-                          placeholder="username"
-                          class="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                      </div>
-                    </div>
-                    <div>
-                      <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">LINE</label>
-                      <input 
-                        type="text" 
-                        [(ngModel)]="formData.alternativeContact.line"
-                        placeholder="Line ID"
-                        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                    </div>
-                    <div>
-                      <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Lainnya</label>
-                      <input 
-                        type="text" 
-                        [(ngModel)]="formData.alternativeContact.other"
-                        placeholder="Email, dll"
-                        class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                    </div>
-                  </div>
-                </div>
-              }
-
-              <!-- Willing to COD Toggle (for Lost) -->
-              <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                    <i class="ph ph-handshake text-xl text-blue-600"></i>
-                  </div>
-                  <div>
-                    <p class="font-medium text-gray-900 dark:text-white">Bersedia COD di Kampus?</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Dengan pengawasan satpam untuk keamanan</p>
-                  </div>
-                </div>
-                <button 
-                  type="button"
-                  (click)="toggleWillingToCod()"
-                  [class]="formData.willingToCod 
-                    ? 'w-12 h-7 bg-blue-500 rounded-full relative transition-colors' 
-                    : 'w-12 h-7 bg-gray-300 dark:bg-gray-600 rounded-full relative transition-colors'">
-                  <span [class]="formData.willingToCod 
-                    ? 'absolute top-0.5 right-0.5 w-6 h-6 bg-white rounded-full shadow transition-all' 
-                    : 'absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-all'"></span>
-                </button>
-              </div>
-
-              @if (formData.willingToCod) {
-                <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-                  <p class="text-sm text-blue-700 dark:text-blue-400">
-                    <i class="ph ph-shield-check"></i> Penyerahan barang akan dilakukan di kampus dengan pengawasan satpam untuk keamanan kedua pihak.
-                  </p>
-                </div>
-              }
-            }
-
-            <!-- FOUND: Menemukan Options (or QR mode options) -->
-            @if (formData.status === 'found' || isQrScanMode()) {
-              <!-- Warning Banner (not shown in QR mode since already auto-accepted) -->
-              @if (!warningAccepted() && !isQrScanMode()) {
-                <div class="p-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-700 rounded-xl">
-                  <div class="flex items-start gap-3">
-                    <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center flex-shrink-0">
-                      <i class="ph ph-warning text-xl text-orange-600"></i>
-                    </div>
-                    <div class="flex-1">
-                      <h4 class="font-semibold text-orange-800 dark:text-orange-300 mb-1">Peringatan Keamanan</h4>
-                      <p class="text-sm text-orange-700 dark:text-orange-400 mb-3">
-                        Dengan membuat laporan penemuan, Anda setuju untuk menerima risiko terkait penyerahan barang. 
-                        Disarankan untuk menggunakan pihak ketiga seperti <strong>satpam</strong> sebagai penengah demi keamanan.
-                      </p>
-                      <button 
-                        type="button"
-                        (click)="acceptWarning()"
-                        class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition">
-                        <i class="ph ph-check"></i> Saya Mengerti & Setuju
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              }
-
-              @if (warningAccepted() || isQrScanMode()) {
-                <!-- Storage Location -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    <i class="ph ph-package"></i> Barang Disimpan Di
-                  </label>
-                  <div class="space-y-3">
-                    @for (opt of storageOptions; track opt.value) {
-                      <button 
-                        type="button"
-                        (click)="setStorageLocation(opt.value)"
-                        [class]="formData.storageLocation === opt.value 
-                          ? 'w-full p-4 rounded-xl border-2 border-uii-blue bg-blue-50 dark:bg-blue-900/20 transition-all text-left flex items-center gap-4' 
-                          : 'w-full p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 transition-all text-left flex items-center gap-4'">
-                        <div [class]="formData.storageLocation === opt.value 
-                          ? 'w-12 h-12 rounded-full bg-uii-blue/20 flex items-center justify-center flex-shrink-0' 
-                          : 'w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0'">
-                          <i [class]="'ph ' + opt.icon + ' text-2xl ' + (formData.storageLocation === opt.value ? 'text-uii-blue' : 'text-gray-500')"></i>
-                        </div>
-                        <div>
-                          <p [class]="formData.storageLocation === opt.value ? 'font-semibold text-uii-blue' : 'font-semibold text-gray-900 dark:text-white'">{{ opt.label }}</p>
-                          <p class="text-xs text-gray-500 dark:text-gray-400">{{ opt.description }}</p>
-                        </div>
-                        @if (formData.storageLocation === opt.value) {
-                          <i class="ph-fill ph-check-circle text-uii-blue text-xl ml-auto"></i>
-                        }
-                      </button>
-                    }
-                  </div>
-                </div>
-
-                <!-- Entrusted Info (only when 'entrusted' is selected) -->
-                @if (formData.storageLocation === 'entrusted') {
-                  <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-                    <p class="text-sm text-blue-700 dark:text-blue-400">
-                      <i class="ph ph-info"></i> Informasi penitipan akan diberikan ke pemilik setelah verifikasi kepemilikan berhasil.
-                    </p>
-                  </div>
-                }
-
-                <!-- Willing to COD Toggle (for Found) - Only show when 'with-me' is selected -->
-                @if (formData.storageLocation === 'with-me') {
-                  <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                    <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                        <i class="ph ph-handshake text-xl text-blue-600"></i>
-                      </div>
-                      <div>
-                        <p class="font-medium text-gray-900 dark:text-white">Bersedia COD Sesuai Kesepakatan?</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Bertemu di tengah sesuai kesepakatan dengan pemilik</p>
-                      </div>
-                    </div>
-                    <button 
-                      type="button"
-                      (click)="toggleWillingToCod()"
-                      [class]="formData.willingToCod 
-                        ? 'w-12 h-7 bg-blue-500 rounded-full relative transition-colors' 
-                        : 'w-12 h-7 bg-gray-300 dark:bg-gray-600 rounded-full relative transition-colors'">
-                      <span [class]="formData.willingToCod 
-                        ? 'absolute top-0.5 right-0.5 w-6 h-6 bg-white rounded-full shadow transition-all' 
-                        : 'absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-all'"></span>
-                    </button>
-                  </div>
-
-                  @if (formData.willingToCod) {
-                    <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-                      <p class="text-sm text-blue-700 dark:text-blue-400">
-                        <i class="ph ph-shield-check"></i> Disarankan bertemu di tempat ramai atau dengan pengawasan satpam untuk keamanan.
-                      </p>
-                    </div>
-                  }
-                }
-
-                <!-- Security Recommendation Info -->
-                <div class="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
-                  <p class="text-sm text-green-700 dark:text-green-400">
-                    <i class="ph ph-shield-check"></i> <strong>Tips Aman:</strong> Gunakan satpam kampus sebagai penengah saat menyerahkan barang. 
-                    No. WhatsApp Anda tidak akan ditampilkan ke publik.
-                  </p>
-                </div>
-              }
-            }
-          </div>
+          <p class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ opt.label }}</p>
+        </button>
         }
+      </div>
+    </div>
 
-        <!-- Step 7: Suggestions (only for Lost items, not in QR mode) -->
-        @if (currentStep() === 7 && !isQrScanMode()) {
-          <div class="space-y-4">
-            @if (isCheckingSuggestions()) {
-              <!-- Loading State -->
-              <div class="text-center py-8">
-                <i class="ph ph-spinner animate-spin text-4xl text-uii-blue mb-3"></i>
-                <p class="text-gray-500 dark:text-gray-400">Mencari barang serupa...</p>
-              </div>
-            } @else if (similarItems().length > 0) {
-              <!-- Similar Items Found -->
-              <div class="space-y-3">
-                @for (item of similarItems(); track item.id) {
-                  <button 
-                    (click)="selectSuggestion(item)"
-                    [class]="selectedSuggestion()?.id === item.id 
-                      ? 'w-full p-4 rounded-xl border-2 border-uii-blue bg-blue-50 dark:bg-blue-900/20 transition-all text-left' 
-                      : 'w-full p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 transition-all text-left'">
-                    <div class="flex gap-4">
-                      @if (item.imageUrl) {
-                        <img [src]="item.imageUrl" [alt]="item.title" class="w-20 h-20 rounded-lg object-cover flex-shrink-0">
-                      } @else {
-                        <div class="w-20 h-20 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                          <i class="ph ph-image text-2xl text-gray-400"></i>
-                        </div>
-                      }
-                      <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2 mb-1">
-                          <span [class]="item.status === 'found' 
-                            ? 'px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                            : 'px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'">
-                            {{ item.status === 'found' ? 'Ditemukan' : 'Hilang' }}
-                          </span>
-                          <span class="text-xs text-gray-400">{{ item.date }}</span>
-                        </div>
-                        <h4 class="font-semibold text-gray-900 dark:text-white truncate">{{ item.title }}</h4>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{{ item.description }}</p>
-                        <p class="text-xs text-gray-400 mt-1">
-                          <i class="ph ph-map-pin"></i> {{ item.location }}
-                        </p>
-                      </div>
-                      @if (selectedSuggestion()?.id === item.id) {
-                        <div class="flex-shrink-0">
-                          <i class="ph-fill ph-check-circle text-uii-blue text-2xl"></i>
-                        </div>
-                      }
-                    </div>
-                  </button>
-                }
-              </div>
-
-              <!-- Selected Suggestion Actions -->
-              @if (selectedSuggestion()) {
-                <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-                  <p class="text-sm text-blue-700 dark:text-blue-400 mb-3">
-                    <i class="ph ph-info"></i> Jika ini barang kamu, klik tombol di bawah untuk melihat detail dan menghubungi pelapor.
-                  </p>
-                  <button 
-                    (click)="confirmSuggestion()"
-                    class="w-full py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition flex items-center justify-center gap-2">
-                    <i class="ph ph-eye"></i>
-                    Lihat Detail Barang Ini
-                  </button>
-                </div>
-              }
-            } @else {
-              <!-- No Similar Items -->
-              <div class="text-center py-8">
-                <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <i class="ph ph-magnifying-glass text-3xl text-gray-400"></i>
-                </div>
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-1">Tidak ada barang serupa</h4>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  Kami tidak menemukan barang yang cocok.<br>
-                  Silakan lanjut buat laporan baru.
-                </p>
-              </div>
-            }
-          </div>
-        }
-
-        <!-- Navigation Buttons -->
-        <div class="flex gap-3 mt-8">
-          @if (currentStep() > 1 || (isQrScanMode() && currentStep() > 1)) {
-            <button 
-              (click)="prevStep()"
-              class="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center justify-center gap-2">
-              <i class="ph ph-arrow-left"></i>
-              Kembali
-            </button>
-          }
-          
-          @if (currentStep() < totalSteps) {
-            <button 
-              (click)="nextStep()"
-              [disabled]="!canProceed()"
-              class="flex-1 py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-              @if ((currentStep() === 2 && !isQrScanMode() && !formData.imageUrl) || (currentStep() === 1 && isQrScanMode() && !formData.imageUrl)) {
-                Lewati
-              } @else if (currentStep() === 6 && formData.status === 'lost' && !isQrScanMode()) {
-                Cek Barang Serupa
-              } @else if ((currentStep() === 6 && formData.status === 'found' && !isQrScanMode()) || (currentStep() === 5 && isQrScanMode())) {
-                @if (isSubmitting()) {
-                  <i class="ph ph-spinner animate-spin text-xl mr-1"></i>
-                  Mengirim...
-                } @else {
-                  Kirim Laporan
-                }
-              } @else {
-                Lanjut
-              }
-              <i class="ph ph-arrow-right"></i>
-            </button>
-          } @else {
-            <!-- Step 7: Final Submit -->
-            <button 
-              (click)="skipSuggestions()"
-              [disabled]="isSubmitting() || isCheckingSuggestions()"
-              class="flex-1 py-3 px-4 bg-uii-gold text-uii-blue font-semibold rounded-xl hover:bg-yellow-400 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-              @if (isSubmitting()) {
-                <i class="ph ph-spinner animate-spin text-xl"></i>
-                Mengirim...
-              } @else {
-                <i class="ph ph-paper-plane-tilt"></i>
-                @if (similarItems().length > 0) {
-                  Bukan, Buat Laporan Baru
-                } @else {
-                  Kirim Laporan
-                }
-              }
-            </button>
-          }
+    <!-- Reward Toggle -->
+    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-uii-gold/20 flex items-center justify-center">
+          <i class="ph ph-gift text-xl text-uii-gold"></i>
+        </div>
+        <div>
+          <p class="font-medium text-gray-900 dark:text-white">Tawarkan Imbalan?</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Beri tahu jika ada imbalan bagi penemu</p>
         </div>
       </div>
+      <button type="button" (click)="toggleReward()" [class]="formData.reward 
+                    ? 'w-12 h-7 bg-uii-gold rounded-full relative transition-colors' 
+                    : 'w-12 h-7 bg-gray-300 dark:bg-gray-600 rounded-full relative transition-colors'">
+        <span [class]="formData.reward 
+                    ? 'absolute top-0.5 right-0.5 w-6 h-6 bg-white rounded-full shadow transition-all' 
+                    : 'absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-all'"></span>
+      </button>
+    </div>
+
+    @if (formData.reward) {
+    <div class="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
+      <p class="text-sm text-yellow-700 dark:text-yellow-400">
+        <i class="ph ph-info"></i> Imbalan akan ditampilkan di laporan. Negosiasi langsung dengan penemu.
+      </p>
+    </div>
     }
 
+    <!-- Expose Phone Toggle -->
+    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+          <i class="ph ph-whatsapp-logo text-xl text-green-600"></i>
+        </div>
+        <div>
+          <p class="font-medium text-gray-900 dark:text-white">Tampilkan No. WhatsApp?</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Penemu bisa langsung menghubungi Anda</p>
+        </div>
+      </div>
+      <button type="button" (click)="toggleExposePhone()" [class]="formData.exposePhone 
+                    ? 'w-12 h-7 bg-green-500 rounded-full relative transition-colors' 
+                    : 'w-12 h-7 bg-gray-300 dark:bg-gray-600 rounded-full relative transition-colors'">
+        <span [class]="formData.exposePhone 
+                    ? 'absolute top-0.5 right-0.5 w-6 h-6 bg-white rounded-full shadow transition-all' 
+                    : 'absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-all'"></span>
+      </button>
+    </div>
+
+    <!-- Alternative Contact (shown when phone not exposed) -->
+    @if (!formData.exposePhone) {
+    <div
+      class="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl space-y-3">
+      <p class="text-sm text-orange-700 dark:text-orange-400 font-medium">
+        <i class="ph ph-info"></i> Tambahkan kontak alternatif agar penemu bisa menghubungi Anda
+      </p>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Instagram</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">&#64;</span>
+            <input type="text" [(ngModel)]="formData.alternativeContact.instagram" placeholder="username"
+              class="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Telegram</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">&#64;</span>
+            <input type="text" [(ngModel)]="formData.alternativeContact.telegram" placeholder="username"
+              class="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">LINE</label>
+          <input type="text" [(ngModel)]="formData.alternativeContact.line" placeholder="Line ID"
+            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Lainnya</label>
+          <input type="text" [(ngModel)]="formData.alternativeContact.other" placeholder="Email, dll"
+            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Willing to COD Toggle (for Lost) -->
+    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+          <i class="ph ph-handshake text-xl text-blue-600"></i>
+        </div>
+        <div>
+          <p class="font-medium text-gray-900 dark:text-white">Bersedia COD di Kampus?</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Dengan pengawasan satpam untuk keamanan</p>
+        </div>
+      </div>
+      <button type="button" (click)="toggleWillingToCod()" [class]="formData.willingToCod 
+                    ? 'w-12 h-7 bg-blue-500 rounded-full relative transition-colors' 
+                    : 'w-12 h-7 bg-gray-300 dark:bg-gray-600 rounded-full relative transition-colors'">
+        <span [class]="formData.willingToCod 
+                    ? 'absolute top-0.5 right-0.5 w-6 h-6 bg-white rounded-full shadow transition-all' 
+                    : 'absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-all'"></span>
+      </button>
+    </div>
+
+    @if (formData.willingToCod) {
+    <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+      <p class="text-sm text-blue-700 dark:text-blue-400">
+        <i class="ph ph-shield-check"></i> Penyerahan barang akan dilakukan di kampus dengan pengawasan satpam untuk
+        keamanan kedua pihak.
+      </p>
+    </div>
+    }
+    }
+
+    <!-- FOUND: Menemukan Options (or QR mode options) -->
+    @if (formData.status === 'found' || isQrScanMode()) {
+    <!-- Warning Banner (not shown in QR mode since already auto-accepted) -->
+    @if (!warningAccepted() && !isQrScanMode()) {
+    <div class="p-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-700 rounded-xl">
+      <div class="flex items-start gap-3">
+        <div
+          class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center flex-shrink-0">
+          <i class="ph ph-warning text-xl text-orange-600"></i>
+        </div>
+        <div class="flex-1">
+          <h4 class="font-semibold text-orange-800 dark:text-orange-300 mb-1">Peringatan Keamanan</h4>
+          <p class="text-sm text-orange-700 dark:text-orange-400 mb-3">
+            Dengan membuat laporan penemuan, Anda setuju untuk menerima risiko terkait penyerahan barang.
+            Disarankan untuk menggunakan pihak ketiga seperti <strong>satpam</strong> sebagai penengah demi keamanan.
+          </p>
+          <button type="button" (click)="acceptWarning()"
+            class="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition">
+            <i class="ph ph-check"></i> Saya Mengerti & Setuju
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+
+    @if (warningAccepted() || isQrScanMode()) {
+    <!-- Storage Location -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+        <i class="ph ph-package"></i> Barang Disimpan Di
+      </label>
+      <div class="space-y-3">
+        @for (opt of storageOptions; track opt.value) {
+        <button type="button" (click)="setStorageLocation(opt.value)"
+          [class]="formData.storageLocation === opt.value 
+                          ? 'w-full p-4 rounded-xl border-2 border-uii-blue bg-blue-50 dark:bg-blue-900/20 transition-all text-left flex items-center gap-4' 
+                          : 'w-full p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 transition-all text-left flex items-center gap-4'">
+          <div
+            [class]="formData.storageLocation === opt.value 
+                          ? 'w-12 h-12 rounded-full bg-uii-blue/20 flex items-center justify-center flex-shrink-0' 
+                          : 'w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0'">
+            <i
+              [class]="'ph ' + opt.icon + ' text-2xl ' + (formData.storageLocation === opt.value ? 'text-uii-blue' : 'text-gray-500')"></i>
+          </div>
+          <div>
+            <p
+              [class]="formData.storageLocation === opt.value ? 'font-semibold text-uii-blue' : 'font-semibold text-gray-900 dark:text-white'">
+              {{ opt.label }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ opt.description }}</p>
+          </div>
+          @if (formData.storageLocation === opt.value) {
+          <i class="ph-fill ph-check-circle text-uii-blue text-xl ml-auto"></i>
+          }
+        </button>
+        }
+      </div>
+    </div>
+
+    <!-- Entrusted Info (only when 'entrusted' is selected) -->
+    @if (formData.storageLocation === 'entrusted') {
+    <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+      <p class="text-sm text-blue-700 dark:text-blue-400">
+        <i class="ph ph-info"></i> Informasi penitipan akan diberikan ke pemilik setelah verifikasi kepemilikan
+        berhasil.
+      </p>
+    </div>
+    }
+
+    <!-- Willing to COD Toggle (for Found) - Only show when 'with-me' is selected -->
+    @if (formData.storageLocation === 'with-me') {
+    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+          <i class="ph ph-handshake text-xl text-blue-600"></i>
+        </div>
+        <div>
+          <p class="font-medium text-gray-900 dark:text-white">Bersedia COD Sesuai Kesepakatan?</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Bertemu di tengah sesuai kesepakatan dengan pemilik</p>
+        </div>
+      </div>
+      <button type="button" (click)="toggleWillingToCod()" [class]="formData.willingToCod 
+                        ? 'w-12 h-7 bg-blue-500 rounded-full relative transition-colors' 
+                        : 'w-12 h-7 bg-gray-300 dark:bg-gray-600 rounded-full relative transition-colors'">
+        <span [class]="formData.willingToCod 
+                        ? 'absolute top-0.5 right-0.5 w-6 h-6 bg-white rounded-full shadow transition-all' 
+                        : 'absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-all'"></span>
+      </button>
+    </div>
+
+    @if (formData.willingToCod) {
+    <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+      <p class="text-sm text-blue-700 dark:text-blue-400">
+        <i class="ph ph-shield-check"></i> Disarankan bertemu di tempat ramai atau dengan pengawasan satpam untuk
+        keamanan.
+      </p>
+    </div>
+    }
+    }
+
+    <!-- Security Recommendation Info -->
+    <div class="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+      <p class="text-sm text-green-700 dark:text-green-400">
+        <i class="ph ph-shield-check"></i> <strong>Tips Aman:</strong> Gunakan satpam kampus sebagai penengah saat
+        menyerahkan barang.
+        No. WhatsApp Anda tidak akan ditampilkan ke publik.
+      </p>
+    </div>
+    }
+    }
   </div>
+  }
+
+  <!-- Step 7: Suggestions (only for Lost items, not in QR mode) -->
+  @if (currentStep() === 7 && !isQrScanMode()) {
+  <div class="space-y-4">
+    @if (isCheckingSuggestions()) {
+    <!-- Loading State -->
+    <div class="text-center py-8">
+      <i class="ph ph-spinner animate-spin text-4xl text-uii-blue mb-3"></i>
+      <p class="text-gray-500 dark:text-gray-400">Mencari barang serupa...</p>
+    </div>
+    } @else if (similarItems().length > 0) {
+    <!-- Similar Items Found -->
+    <div class="space-y-3">
+      @for (item of similarItems(); track item.id) {
+      <button (click)="selectSuggestion(item)"
+        [class]="selectedSuggestion()?.id === item.id 
+                      ? 'w-full p-4 rounded-xl border-2 border-uii-blue bg-blue-50 dark:bg-blue-900/20 transition-all text-left' 
+                      : 'w-full p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 transition-all text-left'">
+        <div class="flex gap-4">
+          @if (item.imageUrl) {
+          <img [src]="item.imageUrl" [alt]="item.title" class="w-20 h-20 rounded-lg object-cover flex-shrink-0">
+          } @else {
+          <div class="w-20 h-20 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+            <i class="ph ph-image text-2xl text-gray-400"></i>
+          </div>
+          }
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span
+                [class]="item.status === 'found' 
+                            ? 'px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                            : 'px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'">
+                {{ item.status === 'found' ? 'Ditemukan' : 'Hilang' }}
+              </span>
+              <span class="text-xs text-gray-400">{{ item.date }}</span>
+            </div>
+            <h4 class="font-semibold text-gray-900 dark:text-white truncate">{{ item.title }}</h4>
+            <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{{ item.description }}</p>
+            <p class="text-xs text-gray-400 mt-1">
+              <i class="ph ph-map-pin"></i> {{ item.location }}
+            </p>
+          </div>
+          @if (selectedSuggestion()?.id === item.id) {
+          <div class="flex-shrink-0">
+            <i class="ph-fill ph-check-circle text-uii-blue text-2xl"></i>
+          </div>
+          }
+        </div>
+      </button>
+      }
+    </div>
+
+    <!-- Selected Suggestion Actions -->
+    @if (selectedSuggestion()) {
+    <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+      <p class="text-sm text-blue-700 dark:text-blue-400 mb-3">
+        <i class="ph ph-info"></i> Jika ini barang kamu, klik tombol di bawah untuk melihat detail dan menghubungi
+        pelapor.
+      </p>
+      <button (click)="confirmSuggestion()"
+        class="w-full py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition flex items-center justify-center gap-2">
+        <i class="ph ph-eye"></i>
+        Lihat Detail Barang Ini
+      </button>
+    </div>
+    }
+    } @else {
+    <!-- No Similar Items -->
+    <div class="text-center py-8">
+      <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="ph ph-magnifying-glass text-3xl text-gray-400"></i>
+      </div>
+      <h4 class="font-semibold text-gray-900 dark:text-white mb-1">Tidak ada barang serupa</h4>
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        Kami tidak menemukan barang yang cocok.<br>
+        Silakan lanjut buat laporan baru.
+      </p>
+    </div>
+    }
+  </div>
+  }
+
+  <!-- Navigation Buttons -->
+  <div class="flex gap-3 mt-8">
+    @if (currentStep() > 1 || (isQrScanMode() && currentStep() > 1)) {
+    <button (click)="prevStep()"
+      class="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center justify-center gap-2">
+      <i class="ph ph-arrow-left"></i>
+      Kembali
+    </button>
+    }
+
+    @if (currentStep() < totalSteps) { <button (click)="nextStep()" [disabled]="!canProceed()"
+      class="flex-1 py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+      @if ((currentStep() === 2 && !isQrScanMode() && !formData.imageUrl) || (currentStep() === 1 && isQrScanMode() &&
+      !formData.imageUrl)) {
+      Lewati
+      } @else if (currentStep() === 6 && formData.status === 'lost' && !isQrScanMode()) {
+      Cek Barang Serupa
+      } @else if ((currentStep() === 6 && formData.status === 'found' && !isQrScanMode()) || (currentStep() === 5 &&
+      isQrScanMode())) {
+      @if (isSubmitting()) {
+      <i class="ph ph-spinner animate-spin text-xl mr-1"></i>
+      Mengirim...
+      } @else {
+      Kirim Laporan
+      }
+      } @else {
+      Lanjut
+      }
+      <i class="ph ph-arrow-right"></i>
+      </button>
+      } @else {
+      <!-- Step 7: Final Submit -->
+      <button (click)="skipSuggestions()" [disabled]="isSubmitting() || isCheckingSuggestions()"
+        class="flex-1 py-3 px-4 bg-uii-gold text-uii-blue font-semibold rounded-xl hover:bg-yellow-400 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+        @if (isSubmitting()) {
+        <i class="ph ph-spinner animate-spin text-xl"></i>
+        Mengirim...
+        } @else {
+        <i class="ph ph-paper-plane-tilt"></i>
+        @if (similarItems().length > 0) {
+        Bukan, Buat Laporan Baru
+        } @else {
+        Kirim Laporan
+        }
+        }
+      </button>
+      }
+  </div>
+</div>
+}
+
+</div>
 </div>
