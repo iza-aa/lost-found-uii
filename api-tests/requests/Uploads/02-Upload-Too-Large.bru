@@ -1,0 +1,29 @@
+meta {
+  name: TC-UPLOAD-002 Upload Too Large
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/upload
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  file: @file(path/to/large/file.jpg)
+}
+
+tests {
+  test("Status is 400", function() {
+    expect(res.status).to.equal(400);
+  });
+}
+
+docs {
+  Select a file larger than 5MB to test this scenario.
+}

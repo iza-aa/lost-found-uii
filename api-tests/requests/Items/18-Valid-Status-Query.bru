@@ -1,0 +1,21 @@
+meta {
+  name: TC-ITEM-18 Valid Status Query
+  type: http
+  seq: 18
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/items?status=CLAIMED
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+}

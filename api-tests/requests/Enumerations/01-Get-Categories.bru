@@ -1,0 +1,17 @@
+meta {
+  name: TC-ENUM-001 Get All Categories
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/enumerations/categories
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+}

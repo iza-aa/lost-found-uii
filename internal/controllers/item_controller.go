@@ -89,6 +89,16 @@ func (ctrl *ItemController) GetAllItems(c *gin.Context) {
 	status := c.Query("status")
 	itemType := c.Query("type")
 
+	// Validate query parameters
+	if itemType != "" && itemType != "FOUND" && itemType != "LOST" {
+		c.JSON(400, gin.H{"error": "invalid type: must be FOUND or LOST"})
+		return
+	}
+	if status != "" && status != "OPEN" && status != "CLAIMED" && status != "RESOLVED" {
+		c.JSON(400, gin.H{"error": "invalid status: must be OPEN, CLAIMED, or RESOLVED"})
+		return
+	}
+
 	items, err := ctrl.Service.GetAllItems(status, itemType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -178,4 +188,53 @@ func (ctrl *ItemController) DecideClaim(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Claim status updated"})
+}
+
+// GetItem godoc
+// @Summary Get item by ID
+// @Description Get detailed information about a specific item
+// @Tags items
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Item ID"
+// @Success 200 {object} models.Item
+// @Failure 404 {object} map[string]string
+// @Router /items/{id} [get]
+func (ctrl *ItemController) GetItem(c *gin.Context) {
+	id := c.Param("id")
+	item, err := ctrl.Service.GetItem(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "item not found"})
+		return
+	}
+	c.JSON(http.StatusOK, item)
+}
+
+// DeleteItem godoc
+// @Summary Delete an item
+// @Description Delete an item (Finder or Owner only)
+// @Tags items
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Item ID"
+// @Success 200 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /items/{id} [delete]
+func (ctrl *ItemController) DeleteItem(c *gin.Context) {
+	id := c.Param("id")
+	userID := middleware.GetUserID(c)
+	err := ctrl.Service.DeleteItem(id, userID)
+	if err != nil {
+		if err.Error() == "item not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Item deleted successfully"})
 }

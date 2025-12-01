@@ -23,9 +23,23 @@ func (s *AuthService) Register(req dto.RegisterRequest) (*dto.AuthResponse, erro
 		return nil, errors.New("Email validation failed. Your email must start with your NIM/NIP.")
 	}
 
+	// Check if identity number already exists
+	existingByIdentity, _ := s.UserRepo.FindByIdentityNumber(req.IdentityNumber)
+	if existingByIdentity != nil {
+		return nil, errors.New("identity number already registered")
+	}
+
 	existingUser, _ := s.UserRepo.FindByEmail(req.Email)
 	if existingUser != nil {
 		return nil, errors.New("email already registered")
+	}
+
+	// Validate phone format (Indonesian phone numbers)
+	if len(req.Phone) < 10 || len(req.Phone) > 15 {
+		return nil, errors.New("invalid phone number format: must be between 10-15 digits")
+	}
+	if !strings.HasPrefix(req.Phone, "08") && !strings.HasPrefix(req.Phone, "+62") {
+		return nil, errors.New("invalid phone number format: must start with 08 or +62")
 	}
 
 	hashedPassword, err := utils.HashPassword(req.Password)

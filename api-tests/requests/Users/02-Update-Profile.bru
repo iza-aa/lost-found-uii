@@ -1,0 +1,32 @@
+meta {
+  name: TC-USER-004 Update User Profile
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{base_url}}/api/{{api_version}}/users/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "Wildan Ahmad Updated",
+    "phone": "089876543210"
+  }
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("Name updated", function() {
+    expect(res.body.name).to.equal("Wildan Ahmad Updated");
+  });
+}

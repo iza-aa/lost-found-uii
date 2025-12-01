@@ -1,0 +1,21 @@
+meta {
+  name: TC-ITEM-13 Get Non-existent Item
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/items/00000000-0000-0000-0000-000000000000
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("Status is 404", function() {
+    expect(res.status).to.equal(404);
+  });
+}

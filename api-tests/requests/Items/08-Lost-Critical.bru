@@ -1,0 +1,32 @@
+meta {
+  name: TC-ITEM-008 Create Lost Item Critical
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/items/lost
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "Lost Keys",
+    "category_id": "{{category_id}}",
+    "description": "Car keys",
+    "location_last_seen": "Parking",
+    "date_lost": "2023-11-20",
+    "urgency": "CRITICAL"
+  }
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+}

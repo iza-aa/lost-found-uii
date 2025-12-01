@@ -1,0 +1,41 @@
+meta {
+  name: TC-CLAIM-005 CRITICAL - Unauthorized Decide
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{base_url}}/api/{{api_version}}/claims/{{claim_id}}/decide
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "status": "APPROVED"
+  }
+}
+
+tests {
+  test("Status is 403 or 401", function() {
+    expect([400, 401, 403]).to.include(res.status);
+  });
+  
+  test("CRITICAL: Returns authorization error", function() {
+    expect(res.body.error).to.include("only the finder");
+  });
+}
+
+docs {
+  **CRITICAL SECURITY TEST**
+  
+  This test verifies that only the item finder can approve/reject claims.
+  The current user is the CLAIMANT, not the finder.
+  
+  Expected: Authorization error
+  Impact: Prevents unauthorized claim approvals
+}

@@ -49,3 +49,12 @@ func (r *UserRepository) FindAll() ([]models.User, error) {
 func (r *UserRepository) Update(user *models.User) error {
 	return r.DB.Save(user).Error
 }
+
+func (r *UserRepository) FindByIdentityNumber(identityNumber string) (*models.User, error) {
+	var user models.User
+	err := r.DB.Where("identity_number = ?", identityNumber).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}

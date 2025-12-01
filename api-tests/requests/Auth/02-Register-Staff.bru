@@ -1,0 +1,28 @@
+meta {
+  name: TC-AUTH-002 Register STAFF_DOSEN
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Bambang Santoso",
+    "email": "243111202@uii.ac.id",
+    "password": "password123",
+    "phone": "081234567890",
+    "identity_number": "243111202",
+    "role": "STAFF_DOSEN"
+  }
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+}

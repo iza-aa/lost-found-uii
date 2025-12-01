@@ -1,0 +1,29 @@
+meta {
+  name: TC-UPLOAD-003 Invalid File Type
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/upload
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  file: @file(path/to/document.pdf)
+}
+
+tests {
+  test("Status is 400", function() {
+    expect(res.status).to.equal(400);
+  });
+}
+
+docs {
+  Select a non-image file (like a PDF or TXT) to test this scenario.
+}

@@ -1,0 +1,33 @@
+meta {
+  name: TC-AUTH-006 Login
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "21523120@students.uii.ac.id",
+    "password": "makanbang354"
+  }
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("Returns token", function() {
+    expect(res.body.token).to.be.a('string');
+  });
+  
+  // Update token
+  if (res.body.token) {
+    bru.setEnvVar("token", res.body.token);
+  }
+}

@@ -1,0 +1,29 @@
+meta {
+  name: TC-ITEM-009 Invalid Category ID
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/items/lost
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "Test",
+    "category_id": "11111111-1111-1111-1111-111111111111",
+    "urgency": "NORMAL"
+  }
+}
+
+tests {
+  test("Status is 400", function() {
+    expect(res.status).to.equal(400);
+  });
+}

@@ -1,0 +1,23 @@
+meta {
+  name: TC-AUTH-003 Register Missing Fields
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "test@uii.ac.id"
+  }
+}
+
+tests {
+  test("Status is 400", function() {
+    expect(res.status).to.equal(400);
+  });
+}

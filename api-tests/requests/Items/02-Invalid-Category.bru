@@ -1,0 +1,37 @@
+meta {
+  name: TC-ITEM-002 Invalid Category ID
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/items/found
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "Test Item",
+    "category_id": "11111111-1111-1111-1111-111111111111",
+    "location_id": "{{location_id}}",
+    "date_found": "2023-11-25",
+    "return_method": "BRING_BY_FINDER",
+    "cod": false,
+    "verifications": [{"question": "Color?", "answer": "Blue"}]
+  }
+}
+
+tests {
+  test("Status is 400 or 500", function() {
+    expect([400, 500]).to.include(res.status);
+  });
+  
+  test("Returns error", function() {
+    expect(res.body.error).to.include("category");
+  });
+}

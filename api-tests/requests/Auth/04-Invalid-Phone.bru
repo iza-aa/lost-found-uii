@@ -1,0 +1,32 @@
+meta {
+  name: TC-AUTH-006 Invalid Phone Format
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Test User",
+    "email": "21523099@students.uii.ac.id",
+    "password": "test123",
+    "phone": "081234",
+    "identity_number": "21523099",
+    "role": "MAHASISWA"
+  }
+}
+
+tests {
+  test("Status is 400", function() {
+    expect(res.status).to.equal(400);
+  });
+  
+  test("Returns phone validation error", function() {
+    expect(res.body.error).to.include("phone number format");
+  });
+}

@@ -1,0 +1,9 @@
+{
+    "version": "1",
+    "name": "Campus Lost & Found API",
+    "type": "collection",
+    "ignore": [
+        "node_modules",
+        ".git"
+    ]
+}

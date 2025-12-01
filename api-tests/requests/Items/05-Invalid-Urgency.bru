@@ -1,0 +1,36 @@
+meta {
+  name: TC-ITEM-010 Invalid Urgency
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/items/lost
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "Test Item",
+    "category_id": "{{category_id}}",
+    "description": "Test",
+    "location_last_seen": "Test",
+    "date_lost": "2023-11-20",
+    "urgency": "SUPER_URGENT"
+  }
+}
+
+tests {
+  test("Status is 400 or 500", function() {
+    expect([400, 500]).to.include(res.status);
+  });
+  
+  test("Returns urgency error", function() {
+    expect(res.body.error).to.include("Urgency");
+  });
+}

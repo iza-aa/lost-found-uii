@@ -1,0 +1,21 @@
+meta {
+  name: TC-ITEM-14 Filter by Status
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/items?status=OPEN
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+}

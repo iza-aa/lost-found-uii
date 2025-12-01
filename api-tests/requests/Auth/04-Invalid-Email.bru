@@ -1,0 +1,28 @@
+meta {
+  name: TC-AUTH-004 Register Invalid Email Domain
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Test",
+    "email": "test@gmail.com",
+    "password": "pass",
+    "phone": "08123456789",
+    "identity_number": "123",
+    "role": "MAHASISWA"
+  }
+}
+
+tests {
+  test("Status is 400", function() {
+    expect(res.status).to.equal(400);
+  });
+}

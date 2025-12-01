@@ -73,7 +73,7 @@ func main() {
 	uploadService := services.NewUploadService()
 	assetService := services.NewAssetService(assetRepo, uploadService, notifService)
 	matchingEngine := matching.NewMatchingEngine(notifService)
-	itemService := services.NewItemService(itemRepo, assetRepo, claimRepo, matchingEngine, notifService)
+	itemService := services.NewItemService(itemRepo, assetRepo, claimRepo, enumRepo, matchingEngine, notifService)
 
 	// 5. Init Controllers
 	authController := controllers.NewAuthController(authService)

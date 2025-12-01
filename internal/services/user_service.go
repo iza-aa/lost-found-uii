@@ -4,6 +4,7 @@ import (
 	"campus-lost-and-found/internal/dto"
 	"campus-lost-and-found/internal/repository"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -84,11 +85,23 @@ func (s *UserService) UpdateUser(userID string, req dto.UpdateUserRequest) (*dto
 		return nil, errors.New("user not found")
 	}
 
+	// Validate at least one field is provided
+	if req.Name == "" && req.Phone == "" {
+		return nil, errors.New("at least one field (name or phone) must be provided")
+	}
+
 	// Update fields if provided
 	if req.Name != "" {
 		user.Name = req.Name
 	}
 	if req.Phone != "" {
+		// Validate phone format
+		if len(req.Phone) < 10 || len(req.Phone) > 15 {
+			return nil, errors.New("invalid phone number format: must be between 10-15 digits")
+		}
+		if !strings.HasPrefix(req.Phone, "08") && !strings.HasPrefix(req.Phone, "+62") {
+			return nil, errors.New("invalid phone number format: must start with 08 or +62")
+		}
 		user.Phone = req.Phone
 	}
 

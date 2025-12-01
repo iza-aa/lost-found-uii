@@ -1,0 +1,33 @@
+meta {
+  name: TC-ITEM-003 Invalid Location ID
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/items/found
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "Test Item",
+    "category_id": "{{category_id}}",
+    "location_id": "00000000-0000-0000-0000-000000000000",
+    "date_found": "2023-11-25",
+    "return_method": "BRING_BY_FINDER",
+    "cod": false,
+    "verifications": [{"question": "Color?", "answer": "Blue"}]
+  }
+}
+
+tests {
+  test("Status is 400 or 500", function() {
+    expect([400, 500]).to.include(res.status);
+  });
+}

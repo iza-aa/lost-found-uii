@@ -1,0 +1,24 @@
+meta {
+  name: TC-AUTH-008 Login Invalid Password
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "21523120@students.uii.ac.id",
+    "password": "wrong"
+  }
+}
+
+tests {
+  test("Status is 401", function() {
+    expect(res.status).to.equal(401);
+  });
+}

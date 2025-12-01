@@ -1,0 +1,24 @@
+meta {
+  name: TC-AUTH-009 Login Unregistered Email
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "unknown@uii.ac.id",
+    "password": "pass"
+  }
+}
+
+tests {
+  test("Status is 401", function() {
+    expect(res.status).to.equal(401);
+  });
+}

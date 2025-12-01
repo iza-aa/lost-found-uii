@@ -43,3 +43,7 @@ func (r *ItemRepository) FindAll(status string, itemType string) ([]models.Item,
 func (r *ItemRepository) Update(item *models.Item) error {
 	return r.DB.Save(item).Error
 }
+
+func (r *ItemRepository) Delete(id string) error {
+	return r.DB.Delete(&models.Item{}, "id = ?", id).Error
+}

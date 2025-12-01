@@ -1,0 +1,36 @@
+meta {
+  name: TC-CLAIM-001 Submit Claim
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/items/{{found_item_id}}/claim
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "answer_input": "Blue Nike wallet with university ID card inside",
+    "image_url": "http://example.com/proof.jpg"
+  }
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("Claim created", function() {
+    expect(res.body.status).to.equal("PENDING");
+  });
+  
+  if (res.body.id) {
+    bru.setEnvVar("claim_id", res.body.id);
+  }
+}

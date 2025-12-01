@@ -1,0 +1,31 @@
+meta {
+  name: TC-CLAIM-006 Invalid Decision Value
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{base_url}}/api/{{api_version}}/claims/{{claim_id}}/decide
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "status": "MAYBE"
+  }
+}
+
+tests {
+  test("Status is 400", function() {
+    expect(res.status).to.equal(400);
+  });
+  
+  test("Returns decision error", function() {
+    expect(res.body.error).to.include("APPROVED or REJECTED");
+  });
+}

@@ -1,0 +1,21 @@
+meta {
+  name: TC-CLAIM-010 Get Claims Unauthorized
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/items/{{found_item_id}}/claims
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("Status is 403", function() {
+    expect(res.status).to.equal(403);
+  });
+}

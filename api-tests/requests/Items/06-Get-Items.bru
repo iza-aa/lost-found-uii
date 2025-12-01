@@ -1,0 +1,25 @@
+meta {
+  name: TC-ITEM-015 Get All Items
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/items
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("Returns array", function() {
+    expect(res.body).to.be.an('array');
+  });
+}

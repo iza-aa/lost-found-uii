@@ -48,6 +48,33 @@ func (r *EnumerationRepository) CreateLocation(name string, lat, long float64) (
 	return location, nil
 }
 
+func (r *EnumerationRepository) FindCategoryByID(id string) (*models.ItemCategory, error) {
+	var category models.ItemCategory
+	err := r.DB.Where("id = ?", id).First(&category).Error
+	if err != nil {
+		return nil, err
+	}
+	return &category, nil
+}
+
+func (r *EnumerationRepository) FindLocationByID(id string) (*models.CampusLocation, error) {
+	var location models.CampusLocation
+	err := r.DB.Where("id = ?", id).First(&location).Error
+	if err != nil {
+		return nil, err
+	}
+	return &location, nil
+}
+
+func (r *EnumerationRepository) FindCategoryByName(name string) (*models.ItemCategory, error) {
+	var category models.ItemCategory
+	err := r.DB.Where("name = ?", name).First(&category).Error
+	if err != nil {
+		return nil, err
+	}
+	return &category, nil
+}
+
 func (r *EnumerationRepository) Seed() {
 	// Simple seed check
 	var count int64

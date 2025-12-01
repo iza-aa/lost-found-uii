@@ -16,15 +16,17 @@ type ItemService struct {
 	ItemRepo       *repository.ItemRepository
 	AssetRepo      *repository.AssetRepository
 	ClaimRepo      *repository.ClaimRepository
+	EnumRepo       *repository.EnumerationRepository
 	MatchingEngine *matching.MatchingEngine
 	NotifService   *NotificationService
 }
 
-func NewItemService(itemRepo *repository.ItemRepository, assetRepo *repository.AssetRepository, claimRepo *repository.ClaimRepository, matchingEngine *matching.MatchingEngine, notifService *NotificationService) *ItemService {
+func NewItemService(itemRepo *repository.ItemRepository, assetRepo *repository.AssetRepository, claimRepo *repository.ClaimRepository, enumRepo *repository.EnumerationRepository, matchingEngine *matching.MatchingEngine, notifService *NotificationService) *ItemService {
 	return &ItemService{
 		ItemRepo:       itemRepo,
 		AssetRepo:      assetRepo,
 		ClaimRepo:      claimRepo,
+		EnumRepo:       enumRepo,
 		MatchingEngine: matchingEngine,
 		NotifService:   notifService,
 	}
@@ -114,6 +116,12 @@ func (s *ItemService) ReportFoundItem(req dto.CreateFoundItemRequest, finderID u
 }
 
 func (s *ItemService) ReportLostItem(req dto.CreateLostItemRequest, ownerID uuid.UUID) (*dto.ItemResponse, error) {
+	// Validate category exists
+	_, err := s.EnumRepo.FindCategoryByID(req.CategoryID.String())
+	if err != nil {
+		return nil, errors.New("invalid category_id: category does not exist")
+	}
+
 	dateLost, err := time.Parse("2006-01-02", req.DateLost)
 	if err != nil {
 		return nil, errors.New("invalid date format, use YYYY-MM-DD")
@@ -128,10 +136,22 @@ func (s *ItemService) ReportLostItem(req dto.CreateLostItemRequest, ownerID uuid
 		})
 	}
 
-	// Default urgency if empty
+	// Validate and default urgency
 	urgency := models.UrgencyNormal
 	if req.Urgency != "" {
-		urgency = models.ItemUrgency(req.Urgency)
+		validUrgencies := []models.ItemUrgency{models.UrgencyNormal, models.UrgencyHigh, models.UrgencyCritical}
+		requestedUrgency := models.ItemUrgency(req.Urgency)
+		valid := false
+		for _, validUrg := range validUrgencies {
+			if requestedUrgency == validUrg {
+				valid = true
+				urgency = requestedUrgency
+				break
+			}
+		}
+		if !valid {
+			return nil, errors.New("invalid urgency: must be NORMAL, HIGH, or CRITICAL")
+		}
 	}
 
 	item := &models.Item{
@@ -316,19 +336,29 @@ func (s *ItemService) GetClaims(itemID string, userID uuid.UUID) ([]models.Claim
 }
 
 func (s *ItemService) DecideClaim(claimID string, status string, userID uuid.UUID) error {
-	claim, err := s.ClaimRepo.FindByID(claimID)
-	if err != nil {
-		return err
+	// Validate decision
+	if status != "APPROVED" && status != "REJECTED" {
+		return errors.New("invalid decision: must be APPROVED or REJECTED")
 	}
 
-	// Verify Finder
+	claim, err := s.ClaimRepo.FindByID(claimID)
+	if err != nil {
+		return errors.New("claim not found")
+	}
+
+	// Check if claim is already decided
+	if claim.Status != models.ClaimStatusPending {
+		return errors.New("claim has already been decided")
+	}
+
+	// CRITICAL: Verify user is the finder
 	item, err := s.ItemRepo.FindByID(claim.ItemID.String())
 	if err != nil {
-		return err
+		return errors.New("item not found")
 	}
 
 	if item.FinderID == nil || *item.FinderID != userID {
-		return errors.New("unauthorized")
+		return errors.New("only the finder can decide on claims")
 	}
 
 	claim.Status = models.ClaimStatus(status)
@@ -359,4 +389,21 @@ func (s *ItemService) DecideClaim(claimID string, status string, userID uuid.UUI
 	}
 
 	return nil
+}
+
+func (s *ItemService) DeleteItem(id string, userID uuid.UUID) error {
+	item, err := s.ItemRepo.FindByID(id)
+	if err != nil {
+		return errors.New("item not found")
+	}
+
+	// Authorization: Only Finder or Owner can delete
+	isFinder := item.FinderID != nil && *item.FinderID == userID
+	isOwner := item.OwnerID != nil && *item.OwnerID == userID
+
+	if !isFinder && !isOwner {
+		return errors.New("unauthorized: you are not the owner or finder of this item")
+	}
+
+	return s.ItemRepo.Delete(id)
 }

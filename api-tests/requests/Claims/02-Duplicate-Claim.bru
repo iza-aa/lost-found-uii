@@ -1,0 +1,32 @@
+meta {
+  name: TC-CLAIM-002 Duplicate Claim
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/items/{{found_item_id}}/claim
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "answer_input": "Another attempt",
+    "image_url": "http://example.com/proof2.jpg"
+  }
+}
+
+tests {
+  test("Status is 400", function() {
+    expect(res.status).to.equal(400);
+  });
+  
+  test("Returns duplicate error", function() {
+    expect(res.body.error).to.include("already have a pending claim");
+  });
+}

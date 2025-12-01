@@ -1,0 +1,28 @@
+meta {
+  name: TC-CLAIM-003 Claim Own Item
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/api/{{api_version}}/items/{{found_item_id}}/claim
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "answer_input": "My own item",
+    "image_url": "http://example.com/proof.jpg"
+  }
+}
+
+tests {
+  test("Status is 400", function() {
+    expect(res.status).to.equal(400);
+  });
+}

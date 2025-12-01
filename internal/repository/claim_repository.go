@@ -36,3 +36,12 @@ func (r *ClaimRepository) FindByItemID(itemID string) ([]models.Claim, error) {
 func (r *ClaimRepository) Update(claim *models.Claim) error {
 	return r.DB.Save(claim).Error
 }
+
+func (r *ClaimRepository) FindPendingClaimByUserAndItem(userID, itemID string) (*models.Claim, error) {
+	var claim models.Claim
+	err := r.DB.Where("owner_id = ? AND item_id = ? AND status = ?", userID, itemID, models.ClaimStatusPending).First(&claim).Error
+	if err != nil {
+		return nil, err
+	}
+	return &claim, nil
+}

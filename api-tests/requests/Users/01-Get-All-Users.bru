@@ -1,0 +1,25 @@
+meta {
+  name: TC-USER-001 Get All Users
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/api/{{api_version}}/users
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("Returns array", function() {
+    expect(res.body).to.be.an('array');
+  });
+}
