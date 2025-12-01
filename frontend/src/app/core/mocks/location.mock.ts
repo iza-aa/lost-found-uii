@@ -7,10 +7,10 @@ export interface CampusLocation {
   description?: string;
 }
 
-// Koordinat pusat kampus UII Yogyakarta
+// Koordinat pusat kampus UII Yogyakarta (Kampus Terpadu Jl. Kaliurang)
 export const UII_CENTER = {
-  lat: -7.6875,
-  lng: 110.4095
+  lat: -7.68402735479403,
+  lng: 110.41371304295868
 };
 
 // Lokasi-lokasi di kampus UII

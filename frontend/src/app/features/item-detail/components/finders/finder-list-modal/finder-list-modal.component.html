@@ -29,7 +29,9 @@
                 <span class="font-semibold text-gray-900 dark:text-white truncate">{{ finder.finderName }}</span>
                 <app-user-badge [badge]="finder.finderBadge" size="sm"></app-user-badge>
               </div>
-              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ getFirstAnswer(finder) }}</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                <i class="ph ph-question text-uii-blue"></i> {{ getQuestionsCount(finder) }} pertanyaan verifikasi
+              </p>
             </div>
             <div class="flex flex-col items-end gap-1 shrink-0">
               <span [class]="'px-2 py-1 text-xs font-medium rounded-full ' + getStatusColorClass(finder.status)">

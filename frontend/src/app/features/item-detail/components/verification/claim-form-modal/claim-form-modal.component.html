@@ -97,16 +97,47 @@
             </div>
           }
 
-          <!-- Additional Contact -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              <i class="ph ph-address-book"></i> Kontak Tambahan <span class="text-gray-400 font-normal">(Opsional)</span>
-            </label>
-            <input 
-              type="text"
-              [(ngModel)]="form.additionalContact"
-              placeholder="Instagram, Line, Email, dll"
-              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+          <!-- WhatsApp Toggle & Alternative Contact -->
+          <div class="space-y-4">
+            <!-- WhatsApp Toggle -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                  <i class="ph-fill ph-whatsapp-logo text-xl text-green-600"></i>
+                </div>
+                <div>
+                  <p class="font-medium text-gray-900 dark:text-white">Gunakan WhatsApp</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Penemu akan menghubungi via WA</p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                (click)="form.showWhatsApp = !form.showWhatsApp"
+                [class]="form.showWhatsApp 
+                  ? 'relative w-12 h-6 bg-green-500 rounded-full transition-colors' 
+                  : 'relative w-12 h-6 bg-gray-300 dark:bg-gray-600 rounded-full transition-colors'">
+                <span 
+                  [class]="form.showWhatsApp 
+                    ? 'absolute right-1 top-1 w-4 h-4 bg-white rounded-full transition-all' 
+                    : 'absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all'">
+                </span>
+              </button>
+            </div>
+
+            <!-- Alternative Contact (shown when WhatsApp is OFF) -->
+            @if (!form.showWhatsApp) {
+              <div class="animate-fadeIn">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <i class="ph ph-address-book"></i> Kontak Alternatif <span class="text-red-500">*</span>
+                </label>
+                <input 
+                  type="text"
+                  [(ngModel)]="form.alternativeContact"
+                  placeholder="Instagram, Line, Email, dll"
+                  class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+                <p class="text-xs text-gray-400 mt-1">Wajib diisi jika WhatsApp dinonaktifkan</p>
+              </div>
+            }
           </div>
 
           <!-- Info Box -->

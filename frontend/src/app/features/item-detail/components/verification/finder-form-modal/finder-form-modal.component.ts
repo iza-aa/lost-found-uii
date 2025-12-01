@@ -1,11 +1,13 @@
 import { Component, Input, Output, EventEmitter, signal, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { VerificationQuestion, VerificationAnswer } from '../../../../../core/models';
 
 export interface FinderFormData {
-  answers: VerificationAnswer[];
+  // Verification questions created by finder (REQUIRED for Lost items)
+  verificationQuestions: Array<{ question: string; answer: string }>;
   photoUrl?: string;
+  // Contact preferences
+  exposePhone: boolean;
   additionalContact?: string;
 }
 
@@ -18,33 +20,31 @@ export interface FinderFormData {
 })
 export class FinderFormModalComponent implements OnChanges {
   @Input() isOpen: boolean = false;
-  @Input() questions: VerificationQuestion[] = [];
   
   @Output() close = new EventEmitter<void>();
   @Output() submit = new EventEmitter<FinderFormData>();
 
-  answers: { questionId: string; question: string; answer: string }[] = [];
+  // Verification questions created by finder (for Lost items)
+  verificationQuestions: Array<{ question: string; answer: string }> = [
+    { question: '', answer: '' }
+  ];
+  
   photoUrl: string = '';
   photoPreview: string = '';
+  
+  // Contact preferences
+  exposePhone: boolean = true;
   additionalContact: string = '';
 
   isSubmitting = signal(false);
   isSuccess = signal(false);
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['questions'] || changes['isOpen']) {
-      if (this.isOpen && this.questions) {
-        this.initializeAnswers();
-      }
+    if (changes['isOpen'] && this.isOpen) {
+      this.resetForm();
+      // Initialize with one empty question
+      this.verificationQuestions = [{ question: '', answer: '' }];
     }
-  }
-
-  initializeAnswers(): void {
-    this.answers = this.questions.map(q => ({
-      questionId: q.id,
-      question: q.question,
-      answer: ''
-    }));
   }
 
   onClose(): void {
@@ -58,14 +58,29 @@ export class FinderFormModalComponent implements OnChanges {
   }
 
   resetForm(): void {
-    this.answers = [];
+    this.verificationQuestions = [{ question: '', answer: '' }];
     this.photoUrl = '';
     this.photoPreview = '';
+    this.exposePhone = true;
     this.additionalContact = '';
     this.isSuccess.set(false);
     this.isSubmitting.set(false);
   }
 
+  // Question management
+  addQuestion(): void {
+    if (this.verificationQuestions.length < 3) {
+      this.verificationQuestions.push({ question: '', answer: '' });
+    }
+  }
+
+  removeQuestion(index: number): void {
+    if (this.verificationQuestions.length > 1) {
+      this.verificationQuestions.splice(index, 1);
+    }
+  }
+
+  // Photo handling
   onPhotoSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
@@ -84,21 +99,26 @@ export class FinderFormModalComponent implements OnChanges {
     this.photoPreview = '';
   }
 
-  isQuestionRequired(index: number): boolean {
-    return this.questions[index]?.isRequired ?? false;
+  // Toggle phone exposure
+  toggleExposePhone(): void {
+    this.exposePhone = !this.exposePhone;
+    if (this.exposePhone) {
+      this.additionalContact = '';
+    }
   }
 
   canSubmit(): boolean {
-    // Check that all required questions are answered
-    for (let i = 0; i < this.questions.length; i++) {
-      if (this.questions[i].isRequired) {
-        const answer = this.answers[i];
-        if (!answer || answer.answer.trim().length < 3) {
-          return false;
-        }
-      }
+    // Must have at least 1 valid verification question with answer
+    const hasValidQuestion = this.verificationQuestions.some(
+      q => q.question.trim().length >= 5 && q.answer.trim().length >= 1
+    );
+    
+    // If not exposing phone, must have alternative contact
+    if (!this.exposePhone && this.additionalContact.trim().length < 3) {
+      return false;
     }
-    return true;
+    
+    return hasValidQuestion;
   }
 
   onSubmit(): void {
@@ -106,11 +126,17 @@ export class FinderFormModalComponent implements OnChanges {
 
     this.isSubmitting.set(true);
 
+    // Filter out empty questions
+    const validQuestions = this.verificationQuestions.filter(
+      q => q.question.trim().length > 0 && q.answer.trim().length > 0
+    );
+
     // Simulate submission delay
     setTimeout(() => {
       this.submit.emit({
-        answers: this.answers as VerificationAnswer[],
+        verificationQuestions: validQuestions,
         photoUrl: this.photoUrl || undefined,
+        exposePhone: this.exposePhone,
         additionalContact: this.additionalContact || undefined
       });
       this.isSubmitting.set(false);

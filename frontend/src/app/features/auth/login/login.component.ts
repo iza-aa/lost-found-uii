@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { ApiService } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-login',
@@ -22,6 +23,7 @@ export class LoginComponent {
 
   constructor(
     private authService: AuthService,
+    private apiService: ApiService,
     private router: Router,
     private route: ActivatedRoute
   ) {
@@ -54,29 +56,19 @@ export class LoginComponent {
 
     this.isLoading = true;
 
-    // Simulate loading
-    setTimeout(() => {
-      const result = this.authService.login(this.email, this.password);
-      
-      if (result.success) {
+    // Call API untuk login
+    this.apiService.login({ email: this.email, password: this.password }).subscribe({
+      next: (response) => {
+        // Sync user ke AuthService
+        this.authService.setUserFromApi(response.user);
+        
+        this.isLoading = false;
         this.router.navigateByUrl(this.returnUrl);
-      } else {
-        this.errorMessage = result.message;
+      },
+      error: (error: Error) => {
+        this.errorMessage = error.message || 'Login gagal, silakan coba lagi.';
+        this.isLoading = false;
       }
-      
-      this.isLoading = false;
-    }, 1000);
-  }
-
-  // Quick login untuk demo
-  quickLogin(type: 'student' | 'staff' | 'public'): void {
-    const emails = {
-      student: 'demo@students.uii.ac.id',
-      staff: 'demo@uii.ac.id',
-      public: 'demo@gmail.com'
-    };
-    
-    this.email = emails[type];
-    this.password = 'demo123';
+    });
   }
 }

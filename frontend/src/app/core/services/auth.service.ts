@@ -1,8 +1,7 @@
 import { Injectable, PLATFORM_ID, Inject, signal, computed } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { User, getBadgeFromEmail } from '../models/user.model';
-import { getMockUserByEmail, MOCK_USERS, addMockUser } from '../mocks/user.mock';
+import { User, UserRole, UserBadge } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root'
@@ -29,7 +28,6 @@ export class AuthService {
 
   /**
    * Load user from localStorage (if browser)
-   * If user exists in mock data, use mock data (more up-to-date)
    */
   private loadUserFromStorage(): void {
     if (!this.isBrowser) return;
@@ -38,21 +36,7 @@ export class AuthService {
     if (stored) {
       try {
         const storedUser = JSON.parse(stored) as User;
-        
-        // Check if this user exists in mock data (by email)
-        // If yes, use mock data to get updated info
-        const mockUser = getMockUserByEmail(storedUser.email);
-        
-        if (mockUser) {
-          // Use mock user data (more up-to-date)
-          this.currentUserSignal.set(mockUser);
-          this.saveUserToStorage(mockUser);
-        } else {
-          // Use stored user data
-          this.currentUserSignal.set(storedUser);
-          // Also add to MOCK_USERS so public profile can find them
-          addMockUser(storedUser);
-        }
+        this.currentUserSignal.set(storedUser);
       } catch {
         localStorage.removeItem(this.STORAGE_KEY);
       }
@@ -76,68 +60,17 @@ export class AuthService {
   }
 
   /**
-   * Mock SSO Login
-   * Simulates SSO UII login by checking email domain
-   */
-  login(email: string, password: string): { success: boolean; message: string } {
-    // Validate email format
-    if (!email || !email.includes('@')) {
-      return { success: false, message: 'Email tidak valid' };
-    }
-
-    // Check if user exists in mock data
-    let user = getMockUserByEmail(email);
-
-    if (user) {
-      // User exists, login directly
-      this.currentUserSignal.set(user);
-      this.saveUserToStorage(user);
-      return { success: true, message: 'Login berhasil!' };
-    }
-
-    // Create new user based on email domain
-    const { role, badge } = getBadgeFromEmail(email);
-    const namePart = email.split('@')[0].replace(/[._]/g, ' ');
-    const capitalizedName = namePart
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-
-    const newUser: User = {
-      id: `user_${Date.now()}`,
-      name: capitalizedName,
-      email: email.toLowerCase(),
-      role,
-      badge,
-      avatar: `https://i.pravatar.cc/150?u=${email}`
-    };
-
-    // Add student ID if student
-    if (role === 'student') {
-      newUser.studentId = `205${Math.floor(10000 + Math.random() * 90000)}`;
-      newUser.faculty = 'Fakultas Teknologi Industri';
-    }
-
-    // Add employee ID if staff
-    if (role === 'staff') {
-      newUser.employeeId = `19${Math.floor(100000 + Math.random() * 900000)}`;
-    }
-
-    // Add new user to MOCK_USERS so public profile can find them
-    addMockUser(newUser);
-
-    this.currentUserSignal.set(newUser);
-    this.saveUserToStorage(newUser);
-    
-    return { success: true, message: 'Login berhasil!' };
-  }
-
-  /**
    * Logout current user
    */
   logout(): void {
     this.currentUserSignal.set(null);
     this.removeUserFromStorage();
+    // Also clear API tokens
+    if (this.isBrowser) {
+      localStorage.removeItem('lf_token');
+      localStorage.removeItem('lf_refresh_token');
+      localStorage.removeItem('lf_api_user');
+    }
     this.router.navigate(['/']);
   }
 
@@ -156,6 +89,52 @@ export class AuthService {
   }
 
   /**
+   * Set user from API response (after login/register via ApiService)
+   * This syncs AuthService state with ApiService
+   */
+  setUserFromApi(apiUser: { 
+    id: string; 
+    name: string; 
+    email: string; 
+    identity_number: string;
+    role: string; 
+    faculty?: string;
+  }): void {
+    // Map backend role to frontend role
+    const roleMap: Record<string, UserRole> = {
+      'MAHASISWA': 'student',
+      'STAFF_DOSEN': 'staff',
+      'PUBLIK': 'public',
+      'ADMIN': 'staff',
+      'SECURITY': 'staff'
+    };
+    
+    // Map role to badge
+    const badgeMap: Record<string, UserBadge> = {
+      'MAHASISWA': 'blue',
+      'STAFF_DOSEN': 'gold',
+      'PUBLIK': 'gray',
+      'ADMIN': 'gold',
+      'SECURITY': 'gold'
+    };
+
+    const user: User = {
+      id: apiUser.id,
+      name: apiUser.name,
+      email: apiUser.email,
+      role: roleMap[apiUser.role] || 'public',
+      badge: badgeMap[apiUser.role] || 'gray',
+      faculty: apiUser.faculty,
+      studentId: apiUser.role === 'MAHASISWA' ? apiUser.identity_number : undefined,
+      employeeId: apiUser.role === 'STAFF_DOSEN' ? apiUser.identity_number : undefined,
+      avatar: `https://i.pravatar.cc/150?u=${apiUser.email}`
+    };
+
+    this.currentUserSignal.set(user);
+    this.saveUserToStorage(user);
+  }
+
+  /**
    * Update user profile
    */
   updateProfile(updates: Partial<User>): void {
@@ -165,49 +144,5 @@ export class AuthService {
       this.currentUserSignal.set(updated);
       this.saveUserToStorage(updated);
     }
-  }
-
-  /**
-   * Register new user
-   */
-  register(data: {
-    name: string;
-    email: string;
-    phone?: string;
-    password: string;
-    role: 'student' | 'staff' | 'public';
-    badge: 'gold' | 'blue' | 'gray';
-    faculty?: string;
-    studentId?: string;
-    employeeId?: string;
-  }): { success: boolean; message?: string } {
-    // Check if email already exists
-    const existingUser = getMockUserByEmail(data.email);
-    if (existingUser) {
-      return { success: false, message: 'Email sudah terdaftar. Silakan login.' };
-    }
-
-    // Create new user
-    const newUser: User = {
-      id: `user_${Date.now()}`,
-      name: data.name,
-      email: data.email.toLowerCase(),
-      phone: data.phone,
-      role: data.role,
-      badge: data.badge,
-      faculty: data.faculty,
-      studentId: data.studentId,
-      employeeId: data.employeeId,
-      avatar: `https://i.pravatar.cc/150?u=${data.email}`
-    };
-
-    // Add to mock users
-    addMockUser(newUser);
-
-    // Auto login after register
-    this.currentUserSignal.set(newUser);
-    this.saveUserToStorage(newUser);
-
-    return { success: true };
   }
 }

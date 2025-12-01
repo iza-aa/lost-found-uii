@@ -80,16 +80,30 @@ export interface Claimant {
 }
 
 // Finder interface - untuk orang yang mengaku menemukan barang (Lost items)
+// Flow: Finder creates verification questions → Owner answers → Finder validates
 export interface Finder {
   id: string;                         // Unique ID for this finder claim
   finderId: string;                   // User ID of the person who found
   finderName: string;                 // Name of the finder
   finderBadge: UserBadge;            // Badge of the finder
   finderPhone?: string;               // Phone number (revealed after approval)
-  answers: VerificationAnswer[];      // Answers to verification questions
+  exposePhone: boolean;               // Whether finder agrees to expose phone after verification
+  
+  // Verification questions created by finder (owner must answer these)
+  verificationQuestions: Array<{ question: string; answer: string }>;
+  
+  // Owner's answers to verification questions (filled after owner responds)
+  ownerAnswers?: VerificationAnswer[];
+  
   photoUrl?: string;                  // Photo evidence (optional)
   additionalContact?: AlternativeContact;  // Alternative contact info
-  status: ClaimantStatus;             // pending | approved | rejected
+  
+  // Status flow: pending → answered → approved/rejected
+  // pending: Finder submitted, waiting for owner to answer
+  // answered: Owner answered, waiting for finder to validate
+  // approved: Finder validated and approved
+  // rejected: Finder rejected owner's answers
+  status: ClaimantStatus | 'answered';
   rejectionReason?: string;           // Reason for rejection (if rejected)
   createdAt: Date;
   updatedAt?: Date;

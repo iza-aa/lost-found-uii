@@ -9,6 +9,7 @@ module.exports = {
       colors: {
         'uii-blue': '#003479', // Biru UII
         'uii-gold': '#FDBF0F', // Kuning/Emas UII
+        'uii-orange': '#F97316', // Orange untuk aksi finder
       }
     },
   },

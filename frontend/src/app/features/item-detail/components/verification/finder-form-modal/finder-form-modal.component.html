@@ -4,11 +4,11 @@
     <div class="relative bg-white dark:bg-gray-800 rounded-t-3xl lg:rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
       @if (!isSuccess()) {
         <!-- Header -->
-        <div class="sticky top-0 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="sticky top-0 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700 z-10">
           <div class="flex items-center justify-between">
             <div>
               <h2 class="text-lg font-bold text-gray-900 dark:text-white">Saya Menemukan Barang Ini</h2>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Jawab pertanyaan untuk verifikasi</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Buat pertanyaan verifikasi untuk pemilik</p>
             </div>
             <button 
               (click)="onClose()"
@@ -20,39 +20,82 @@
 
         <!-- Form -->
         <div class="p-6 space-y-5">
-          <div class="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl">
-            <p class="text-sm text-orange-700 dark:text-orange-400">
-              <i class="ph ph-info"></i> Jawab pertanyaan dari pemilik dengan jujur. Kontak pemilik akan ditampilkan setelah diverifikasi.
+          <!-- Info Box -->
+          <div class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+            <p class="text-sm text-amber-700 dark:text-amber-400">
+              <i class="ph ph-info"></i> Buat pertanyaan verifikasi yang hanya pemilik asli yang tahu jawabannya. 
+              Pemilik harus menjawab dengan benar untuk membuktikan kepemilikan.
             </p>
           </div>
 
-          <!-- Verification Questions -->
+          <!-- REQUIRED: Verification Questions from Finder -->
           <div class="space-y-4">
-            @for (answer of answers; track answer.questionId; let i = $index) {
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {{ answer.question }}
-                  @if (isQuestionRequired(i)) {
-                    <span class="text-red-500">*</span>
-                  }
-                </label>
-                <textarea
-                  [(ngModel)]="answer.answer"
-                  rows="2"
-                  [placeholder]="'Jawab pertanyaan ini...'"
-                  class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-orange focus:border-transparent resize-none"></textarea>
-              </div>
+            <div class="flex items-center gap-2">
+              <i class="ph ph-shield-check text-green-500 text-lg"></i>
+              <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Pertanyaan Verifikasi <span class="text-red-500">*</span>
+              </p>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Buat minimal 1 pertanyaan yang hanya pemilik asli yang bisa menjawab dengan benar.
+            </p>
+
+            <!-- Questions List -->
+            <div class="space-y-4">
+              @for (q of verificationQuestions; track $index) {
+                <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl space-y-3">
+                  <!-- Question Header -->
+                  <div class="flex items-center justify-between">
+                    <span class="flex items-center gap-2">
+                      <span class="w-6 h-6 rounded-full bg-uii-blue text-white text-xs font-bold flex items-center justify-center">
+                        {{ $index + 1 }}
+                      </span>
+                      <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Pertanyaan {{ $index + 1 }}</span>
+                    </span>
+                    @if (verificationQuestions.length > 1) {
+                      <button type="button" (click)="removeQuestion($index)"
+                        class="text-red-500 hover:text-red-600 text-sm flex items-center gap-1">
+                        <i class="ph ph-trash"></i>
+                      </button>
+                    }
+                  </div>
+
+                  <!-- Question Input -->
+                  <div>
+                    <input type="text" [(ngModel)]="verificationQuestions[$index].question"
+                      placeholder="Contoh: Apa warna bagian dalam dompet?"
+                      class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent transition">
+                  </div>
+
+                  <!-- Answer Input -->
+                  <div class="flex items-center gap-2">
+                    <i class="ph ph-key text-green-500"></i>
+                    <input type="text" [(ngModel)]="verificationQuestions[$index].answer"
+                      placeholder="Jawaban yang benar (rahasia)"
+                      class="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-green-50 dark:bg-green-900/20 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent transition text-sm">
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Add Question Button -->
+            @if (verificationQuestions.length < 3) {
+              <button type="button" (click)="addQuestion()"
+                class="w-full py-3 px-4 border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 font-medium rounded-xl hover:border-uii-blue hover:text-uii-blue dark:hover:border-uii-blue dark:hover:text-uii-blue transition flex items-center justify-center gap-2">
+                <i class="ph ph-plus-circle text-xl"></i>
+                Tambah Pertanyaan
+              </button>
             }
           </div>
 
           <!-- Photo Evidence (Optional) -->
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Foto Bukti <span class="text-gray-400 font-normal">(Opsional)</span>
+              <i class="ph ph-camera"></i> Foto Barang <span class="text-gray-400 font-normal">(Opsional)</span>
             </label>
             @if (!photoPreview) {
               <label class="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
-                <i class="ph ph-camera text-3xl text-gray-400 mb-2"></i>
+                <i class="ph ph-image text-3xl text-gray-400 mb-2"></i>
                 <span class="text-sm text-gray-500">Upload foto barang yang ditemukan</span>
                 <input type="file" accept="image/*" class="hidden" (change)="onPhotoSelect($event)">
               </label>
@@ -69,29 +112,59 @@
             }
           </div>
 
-          <!-- Additional Contact (Optional) -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Kontak Tambahan <span class="text-gray-400 font-normal">(Opsional)</span>
+          <!-- Contact Preference -->
+          <div class="space-y-3">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <i class="ph ph-address-book"></i> Preferensi Kontak
             </label>
-            <input 
-              type="text"
-              [(ngModel)]="additionalContact"
-              placeholder="Instagram, Line, Email, dll (agar pemilik mudah menghubungi Anda)"
-              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-orange focus:border-transparent">
+            
+            <!-- Expose WhatsApp Toggle -->
+            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <i class="ph-fill ph-whatsapp-logo text-green-600"></i>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-900 dark:text-white">Tampilkan No. WhatsApp</p>
+                  <p class="text-xs text-gray-500">Setelah pemilik terverifikasi</p>
+                </div>
+              </div>
+              <button type="button" (click)="toggleExposePhone()" 
+                [class]="exposePhone 
+                  ? 'w-11 h-6 bg-green-500 rounded-full relative transition-colors' 
+                  : 'w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full relative transition-colors'">
+                <span [class]="exposePhone 
+                  ? 'absolute top-0.5 right-0.5 w-5 h-5 bg-white rounded-full shadow transition-all' 
+                  : 'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-all'"></span>
+              </button>
+            </div>
+
+            <!-- Alternative Contact -->
+            @if (!exposePhone) {
+              <div>
+                <label class="block text-xs text-gray-500 dark:text-gray-400 mb-2">
+                  Kontak Alternatif <span class="text-red-500">*</span>
+                </label>
+                <input 
+                  type="text"
+                  [(ngModel)]="additionalContact"
+                  placeholder="Instagram, Line, Email, dll"
+                  class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+              </div>
+            }
           </div>
 
           <!-- Submit Button -->
           <button 
             (click)="onSubmit()"
             [disabled]="!canSubmit() || isSubmitting()"
-            class="w-full py-4 px-6 bg-uii-orange text-white font-semibold rounded-xl hover:bg-uii-orange/90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+            class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
             @if (isSubmitting()) {
               <i class="ph ph-spinner animate-spin"></i>
               Mengirim...
             } @else {
               <i class="ph ph-paper-plane-tilt"></i>
-              Kirim Verifikasi
+              Kirim Laporan Penemuan
             }
           </button>
 
@@ -108,14 +181,14 @@
             <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
               <i class="ph-fill ph-check-circle text-5xl text-green-500"></i>
             </div>
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Verifikasi Terkirim!</h3>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Laporan Terkirim!</h3>
             <p class="text-gray-500 dark:text-gray-400 mb-6">
-              Pemilik akan memeriksa jawaban Anda. 
-              Anda akan mendapatkan notifikasi setelah pemilik memverifikasi.
+              Pemilik barang akan menjawab pertanyaan verifikasi Anda. 
+              Anda akan mendapatkan notifikasi setelah pemilik menjawab.
             </p>
             <button 
               (click)="onClose()"
-              class="w-full py-4 px-6 bg-uii-orange text-white font-semibold rounded-xl hover:bg-uii-orange/90 transition">
+              class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 transition">
               Tutup
             </button>
           </div>

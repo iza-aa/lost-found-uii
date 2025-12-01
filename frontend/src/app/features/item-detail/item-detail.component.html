@@ -311,11 +311,11 @@
         @if (!isOwnItem()) {
           <!-- For Found Items: Show Verification Button or Claim Status -->
           @if (item.status === 'found' && item.reportStatus === 'active') {
-            <!-- Check if user already submitted a claim -->
-            @if (userClaimStatus(); as myClaim) {
+            <!-- Check if user already submitted a claim (from API) -->
+            @if (userClaimStatusFromApi()) {
               <!-- User has already submitted a claim - show status -->
               <div class="space-y-3">
-                @if (myClaim.status === 'pending') {
+                @if (userClaimStatusFromApi() === 'PENDING') {
                   <!-- Pending Status -->
                   <div class="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
                     <div class="flex items-center gap-3 mb-2">
@@ -331,7 +331,7 @@
                       <i class="ph ph-info"></i> Penemu akan meninjau bukti kepemilikan Anda. Harap tunggu konfirmasi.
                     </p>
                   </div>
-                } @else if (myClaim.status === 'approved') {
+                } @else if (userClaimStatusFromApi() === 'APPROVED') {
                   <!-- Approved Status - Show Finder's Contact -->
                   <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
                     <div class="flex items-center gap-3 mb-3">
@@ -353,31 +353,24 @@
                         </div>
                         <div class="flex-1">
                           <p class="font-semibold text-gray-900 dark:text-white">{{ item.reporterName }}</p>
+                          @if (item.reporterPhone) {
+                            <p class="text-sm text-gray-500">{{ item.reporterPhone }}</p>
+                          }
                         </div>
                       </div>
 
-                      <!-- Contact Display -->
-                      <app-contact-buttons
-                        [alternativeContact]="item.alternativeContact"
-                        [phone]="item.reporterPhone"
-                        [exposePhone]="item.exposePhone"
-                        mode="list"
-                        size="sm">
-                      </app-contact-buttons>
-                    </div>
-                    
-                    <!-- Action Buttons -->
-                    <div class="mt-3">
-                      <app-contact-buttons
-                        [alternativeContact]="item.alternativeContact"
-                        [phone]="item.reporterPhone"
-                        [exposePhone]="item.exposePhone"
-                        mode="grid"
-                        size="md">
-                      </app-contact-buttons>
+                      <!-- WhatsApp Button if phone available -->
+                      @if (item.reporterPhone) {
+                        <a [href]="getWhatsAppLink(item.reporterPhone)" 
+                           target="_blank"
+                           class="flex items-center justify-center gap-2 w-full py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">
+                          <i class="ph-fill ph-whatsapp-logo text-xl"></i>
+                          Hubungi via WhatsApp
+                        </a>
+                      }
                     </div>
                   </div>
-                } @else if (myClaim.status === 'rejected') {
+                } @else if (userClaimStatusFromApi() === 'REJECTED') {
                   <!-- Rejected Status -->
                   <div class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
                     <div class="flex items-center gap-3 mb-2">
@@ -389,11 +382,6 @@
                         <p class="text-xs text-gray-500 dark:text-gray-400">Penemu menolak klaim Anda</p>
                       </div>
                     </div>
-                    @if (myClaim.rejectionReason) {
-                      <p class="text-sm text-gray-600 dark:text-gray-400 mt-2 bg-white dark:bg-gray-800 rounded-lg p-3">
-                        <span class="font-medium">Alasan:</span> {{ myClaim.rejectionReason }}
-                      </p>
-                    }
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
                       <i class="ph ph-info"></i> Jika Anda yakin ini barang Anda, silakan hubungi admin.
                     </p>
@@ -403,35 +391,13 @@
             } @else {
               <!-- User hasn't submitted a claim yet - show verification buttons -->
               <div class="space-y-3">
-                <!-- QR-Scanned Items: Different verification flow -->
-                @if (item.isScannedByQr) {
-                  <button 
-                    (click)="verifyQrOwnership()"
-                    [disabled]="isCheckingQrOwnership()"
-                    class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                    @if (isCheckingQrOwnership()) {
-                      <i class="ph ph-spinner animate-spin text-xl"></i>
-                      Memverifikasi QR...
-                    } @else {
-                      <i class="ph ph-qr-code text-xl"></i>
-                      Verifikasi Kepemilikan via QR
-                    }
-                  </button>
-                  <div class="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                    <i class="ph ph-info text-blue-500"></i>
-                    <p class="text-xs text-blue-700 dark:text-blue-400">
-                      Barang ini dilaporkan via QR Scan. Sistem akan memverifikasi apakah QR Anda cocok dengan pemilik.
-                    </p>
-                  </div>
-                } @else {
-                  <!-- Normal verification for non-QR items -->
-                  <button 
-                    (click)="openVerificationModal()"
-                    class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                    <i class="ph ph-identification-badge text-xl"></i>
-                    Klaim Barang Ini
-                  </button>
-                }
+                <!-- Normal verification for non-QR items -->
+                <button 
+                  (click)="openVerificationModal()"
+                  class="w-full py-4 px-6 bg-uii-blue text-white font-semibold rounded-xl hover:bg-uii-blue/90 hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                  <i class="ph ph-identification-badge text-xl"></i>
+                  Klaim Barang Ini
+                </button>
                 <p class="text-center text-xs text-gray-400">
                   <i class="ph ph-shield-check"></i>
                   No. WhatsApp penemu baru akan ditampilkan setelah Anda terverifikasi
@@ -445,7 +411,7 @@
           }
           
           <!-- For Lost Items: Show Finder Verification Button or Finder Status -->
-          @if (item.status === 'lost' && item.reportStatus === 'active') {
+          @if (item.status === 'lost') {
             <!-- Check if user already submitted a finder claim -->
             @if (userFinderStatus(); as myFinderClaim) {
               <!-- User has already submitted a finder claim - show status -->
@@ -458,22 +424,22 @@
                         <i class="ph ph-hourglass-medium text-xl text-yellow-600 animate-pulse"></i>
                       </div>
                       <div>
-                        <p class="font-semibold text-yellow-700 dark:text-yellow-400">Verifikasi Terkirim</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Menunggu konfirmasi dari pemilik barang</p>
+                        <p class="font-semibold text-yellow-700 dark:text-yellow-400">Pertanyaan Verifikasi Terkirim</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Menunggu pemilik menjawab pertanyaan Anda</p>
                       </div>
                     </div>
                     <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                      Pemilik akan meninjau jawaban Anda dan menghubungi jika sesuai.
+                      Pemilik akan menjawab pertanyaan verifikasi Anda untuk membuktikan kepemilikan.
                     </p>
                     
-                    <!-- Show submitted answers -->
+                    <!-- Show submitted verification questions -->
                     <div class="mt-4 pt-3 border-t border-yellow-200 dark:border-yellow-800">
-                      <p class="text-xs font-semibold text-yellow-700 dark:text-yellow-400 mb-2">Jawaban Anda:</p>
+                      <p class="text-xs font-semibold text-yellow-700 dark:text-yellow-400 mb-2">Pertanyaan yang Anda Buat:</p>
                       <div class="space-y-2">
-                        @for (answer of myFinderClaim.answers; track answer.questionId) {
+                        @for (qa of myFinderClaim.verificationQuestions; track $index) {
                           <div class="bg-white dark:bg-gray-800 rounded-lg p-2">
-                            <p class="text-xs text-gray-500">{{ answer.question }}</p>
-                            <p class="text-sm text-gray-700 dark:text-gray-300 font-medium">{{ answer.answer }}</p>
+                            <p class="text-xs text-gray-500">Pertanyaan {{ $index + 1 }}</p>
+                            <p class="text-sm text-gray-700 dark:text-gray-300 font-medium">{{ qa.question }}</p>
                           </div>
                         }
                       </div>
@@ -485,16 +451,75 @@
                       }
                     </div>
                   </div>
+                } @else if (myFinderClaim.status === 'answered') {
+                  <!-- Answered Status - Owner has answered, Finder needs to validate -->
+                  <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                    <div class="flex items-center gap-3 mb-2">
+                      <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                        <i class="ph ph-clipboard-text text-xl text-blue-600"></i>
+                      </div>
+                      <div>
+                        <p class="font-semibold text-blue-700 dark:text-blue-400">Pemilik Sudah Menjawab!</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Validasi jawaban untuk memverifikasi kepemilikan</p>
+                      </div>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                      Silakan periksa jawaban pemilik untuk memastikan barang ini benar miliknya.
+                    </p>
+                    
+                    <!-- Show Q&A with owner's answers -->
+                    <div class="mt-4 pt-3 border-t border-blue-200 dark:border-blue-800">
+                      <p class="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-2">Pertanyaan & Jawaban Pemilik:</p>
+                      <div class="space-y-3">
+                        @for (qa of myFinderClaim.verificationQuestions; track qa.question; let i = $index) {
+                          <div class="bg-white dark:bg-gray-800 rounded-lg p-3">
+                            <p class="text-xs text-gray-500 mb-1">Pertanyaan {{ i + 1 }}</p>
+                            <p class="text-sm text-gray-700 dark:text-gray-300 font-medium mb-2">{{ qa.question }}</p>
+                            @if (myFinderClaim.ownerAnswers && myFinderClaim.ownerAnswers[i]) {
+                              <div class="mt-2 pl-3 border-l-2 border-blue-300 dark:border-blue-600">
+                                <p class="text-xs text-blue-600 dark:text-blue-400 mb-1">Jawaban Pemilik:</p>
+                                <p class="text-sm text-gray-800 dark:text-gray-200">{{ myFinderClaim.ownerAnswers[i].answer }}</p>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Photo Evidence if available -->
+                    @if (myFinderClaim.photoUrl) {
+                      <div class="mt-3">
+                        <p class="text-xs text-gray-500 mb-2">Foto Bukti:</p>
+                        <img [src]="myFinderClaim.photoUrl" class="w-full h-40 object-cover rounded-lg" alt="Foto bukti penemuan">
+                      </div>
+                    }
+                    
+                    <!-- Validation Buttons -->
+                    <div class="mt-4 flex gap-2">
+                      <button 
+                        (click)="validateFinderClaim(myFinderClaim, true)"
+                        class="flex-1 py-2.5 px-4 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition flex items-center justify-center gap-2">
+                        <i class="ph ph-check-circle"></i>
+                        Jawaban Benar
+                      </button>
+                      <button 
+                        (click)="validateFinderClaim(myFinderClaim, false)"
+                        class="flex-1 py-2.5 px-4 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition flex items-center justify-center gap-2">
+                        <i class="ph ph-x-circle"></i>
+                        Jawaban Salah
+                      </button>
+                    </div>
+                  </div>
                 } @else if (myFinderClaim.status === 'approved') {
-                  <!-- Approved Status - Show Owner's Contact -->
+                  <!-- Approved Status - Finder has approved Owner's answers, show Owner's Contact -->
                   <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
                     <div class="flex items-center gap-3 mb-3">
                       <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
                         <i class="ph-fill ph-seal-check text-2xl text-green-600"></i>
                       </div>
                       <div>
-                        <p class="font-bold text-green-700 dark:text-green-400">Anda Telah Terverifikasi! ✓</p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Silakan hubungi pemilik untuk menyerahkan barang</p>
+                        <p class="font-bold text-green-700 dark:text-green-400">Verifikasi Berhasil! ✓</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Anda telah memverifikasi jawaban pemilik. Silakan hubungi pemilik untuk pengembalian.</p>
                       </div>
                     </div>
                     
@@ -506,7 +531,10 @@
                           <i class="ph-fill ph-user text-uii-blue"></i>
                         </div>
                         <div class="flex-1">
-                          <p class="font-semibold text-gray-900 dark:text-white">{{ item.reporterName }}</p>
+                          <div class="flex items-center gap-2">
+                            <p class="font-semibold text-gray-900 dark:text-white">{{ item.reporterName }}</p>
+                            <app-user-badge [badge]="item.reporterBadge" size="sm"></app-user-badge>
+                          </div>
                         </div>
                       </div>
 
@@ -554,49 +582,24 @@
                   </div>
                 }
               </div>
-            } @else {
-              <!-- User hasn't submitted a finder claim yet - show verification button -->
+            } @else if (item.reportStatus === 'active') {
+              <!-- User hasn't submitted a finder claim yet AND item is still active - show finder button -->
               <div class="space-y-3">
-                @if (item.verificationQuestions && item.verificationQuestions.length > 0) {
-                  <button 
-                    (click)="openFinderVerificationModal()"
-                    class="w-full py-4 px-6 bg-uii-orange text-white font-semibold rounded-xl hover:bg-uii-orange/90 hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                    <i class="ph ph-magnifying-glass text-xl"></i>
-                    Saya Menemukan Barang Ini
-                  </button>
-                  <p class="text-center text-xs text-gray-400">
-                    <i class="ph ph-shield-check"></i>
+                <!-- Always show "Saya Menemukan" button for Lost items -->
+                <button 
+                  (click)="openFinderVerificationModal()"
+                  class="w-full py-4 px-6 bg-uii-orange text-white font-semibold rounded-xl hover:bg-uii-orange/90 hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                  <i class="ph ph-magnifying-glass text-xl"></i>
+                  Saya Menemukan Barang Ini
+                </button>
+                <p class="text-center text-xs text-gray-400">
+                  <i class="ph ph-shield-check"></i>
+                  @if (item.verificationQuestions && item.verificationQuestions.length > 0) {
                     Jawab pertanyaan verifikasi untuk mengkonfirmasi penemuan
-                  </p>
-                } @else {
-                  <!-- No verification questions - direct contact -->
-                  @if (item.exposePhone) {
-                    <button 
-                      (click)="whatsappReporter()"
-                      class="w-full py-4 px-6 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                      <i class="ph-fill ph-whatsapp-logo text-xl"></i>
-                      Hubungi via WhatsApp
-                    </button>
-                  } @else if (hasAlternativeContact()) {
-                    <!-- Show Alternative Contacts -->
-                    <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-                      <p class="text-sm font-medium text-blue-700 dark:text-blue-400 mb-3">
-                        <i class="ph ph-address-book"></i> Kontak Alternatif
-                      </p>
-                      <app-contact-buttons
-                        [alternativeContact]="item.alternativeContact"
-                        [phone]="item.reporterPhone"
-                        [exposePhone]="item.exposePhone"
-                        mode="inline"
-                        size="sm">
-                      </app-contact-buttons>
-                    </div>
                   } @else {
-                    <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-xl text-center">
-                      <p class="text-gray-500 dark:text-gray-400">Pemilik tidak menyediakan kontak publik</p>
-                    </div>
+                    Laporkan penemuan Anda agar pemilik dapat menghubungi
                   }
-                }
+                </p>
                 
                 <!-- COD info if available -->
                 @if (item.willingToCod) {
@@ -607,17 +610,147 @@
                   </div>
                 }
               </div>
+            } @else {
+              <!-- Item is resolved but user didn't submit a finder claim - show resolved message -->
+              <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+                    <i class="ph-fill ph-handshake text-2xl text-green-600"></i>
+                  </div>
+                  <div>
+                    <p class="font-bold text-green-700 dark:text-green-400">Barang Telah Ditemukan! ✓</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Barang ini sudah dikembalikan ke pemilik</p>
+                  </div>
+                </div>
+              </div>
             }
-          } @else if (item.status === 'lost' && item.reportStatus !== 'active') {
-            <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-xl text-center">
-              <p class="text-gray-500 dark:text-gray-400">Barang ini sudah ditemukan</p>
-            </div>
           }
         } @else {
           <!-- Owner Actions -->
           <div class="space-y-4">
-            <!-- Finders Section (Only for Lost Items) -->
-            @if (item.status === 'lost' && item.finders && item.finders.length > 0) {
+            <!-- APPROVED FINDER - Show Success + Finder Contact (for Lost Items Owner) -->
+            @if (item.status === 'lost' && approvedFinder(); as finder) {
+              <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+                    <i class="ph-fill ph-seal-check text-2xl text-green-600"></i>
+                  </div>
+                  <div>
+                    <p class="font-bold text-green-700 dark:text-green-400">Jawaban Anda Terverifikasi! ✓</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Silakan hubungi penemu untuk mengambil barang Anda</p>
+                  </div>
+                </div>
+                
+                <!-- Finder Contact -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-green-200 dark:border-green-700">
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Kontak Penemu:</p>
+                  <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 bg-uii-orange/10 rounded-full flex items-center justify-center">
+                      <i class="ph-fill ph-user text-uii-orange"></i>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2">
+                        <p class="font-semibold text-gray-900 dark:text-white">{{ finder.finderName }}</p>
+                        <app-user-badge [badge]="finder.finderBadge" size="sm"></app-user-badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Contact Display - WhatsApp OR Alternative Contact (mutually exclusive) -->
+                  @if (finder.exposePhone && finder.finderPhone) {
+                    <!-- Toggle WA ON: Show WhatsApp only -->
+                    <app-contact-buttons
+                      [phone]="finder.finderPhone"
+                      [exposePhone]="true"
+                      mode="list"
+                      size="sm">
+                    </app-contact-buttons>
+                  } @else {
+                    <!-- Toggle WA OFF: Show Alternative Contact only -->
+                    @if (finder.additionalContact && finder.additionalContact.contacts && finder.additionalContact.contacts.length > 0) {
+                      <!-- New format (contacts array) -->
+                      <div class="space-y-2">
+                        @for (contact of finder.additionalContact!.contacts!; track contact.type) {
+                          <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            @switch (contact.type) {
+                              @case ('instagram') {
+                                <i class="ph-fill ph-instagram-logo text-pink-500"></i>
+                                <span>IG: &#64;{{ contact.value }}</span>
+                              }
+                              @case ('telegram') {
+                                <i class="ph-fill ph-telegram-logo text-blue-500"></i>
+                                <span>Telegram: &#64;{{ contact.value }}</span>
+                              }
+                              @case ('email') {
+                                <i class="ph ph-envelope text-gray-500"></i>
+                                <span>Email: {{ contact.value }}</span>
+                              }
+                              @case ('line') {
+                                <i class="ph ph-chat-circle-text text-green-500"></i>
+                                <span>Line: {{ contact.value }}</span>
+                              }
+                              @default {
+                                <i class="ph ph-chat-circle text-gray-500"></i>
+                                <span>{{ contact.value }}</span>
+                              }
+                            }
+                          </div>
+                        }
+                      </div>
+                    } @else if (finder.additionalContact) {
+                      <!-- Legacy format -->
+                      <div class="space-y-2">
+                        @if (finder.additionalContact.instagram) {
+                          <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            <i class="ph-fill ph-instagram-logo text-pink-500"></i>
+                            <span>IG: &#64;{{ finder.additionalContact.instagram }}</span>
+                          </div>
+                        }
+                        @if (finder.additionalContact.telegram) {
+                          <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            <i class="ph-fill ph-telegram-logo text-blue-500"></i>
+                            <span>Telegram: &#64;{{ finder.additionalContact.telegram }}</span>
+                          </div>
+                        }
+                        @if (finder.additionalContact.line) {
+                          <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            <i class="ph ph-chat-circle-text text-green-500"></i>
+                            <span>Line: {{ finder.additionalContact.line }}</span>
+                          </div>
+                        }
+                        @if (finder.additionalContact.other) {
+                          <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            <i class="ph ph-chat-circle text-gray-500"></i>
+                            <span>{{ finder.additionalContact.other }}</span>
+                          </div>
+                        }
+                      </div>
+                    }
+                  }
+                </div>
+                
+                <!-- Action Buttons - WhatsApp button only if exposePhone is true -->
+                <div class="mt-3">
+                  @if (finder.exposePhone && finder.finderPhone) {
+                    <app-contact-buttons
+                      [phone]="finder.finderPhone"
+                      [exposePhone]="true"
+                      mode="grid"
+                      size="md">
+                    </app-contact-buttons>
+                  }
+                </div>
+
+                <!-- Photo from finder if available -->
+                @if (finder.photoUrl) {
+                  <div class="mt-3 pt-3 border-t border-green-200 dark:border-green-700">
+                    <p class="text-xs text-gray-500 mb-2">Foto dari Penemu:</p>
+                    <img [src]="finder.photoUrl" alt="Foto barang" class="w-full h-32 object-cover rounded-lg">
+                  </div>
+                }
+              </div>
+            } @else if (item.status === 'lost' && item.finders && item.finders.length > 0) {
+              <!-- Finders Section (Only for Lost Items - Pending review) -->
               <div class="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl">
                 <div class="flex items-center justify-between mb-3">
                   <div class="flex items-center gap-2">
@@ -641,27 +774,43 @@
                 <!-- Quick Preview - Show first 2 finders -->
                 <div class="space-y-2">
                   @for (finder of item.finders.slice(0, 2); track finder.id) {
-                    <div 
-                      (click)="viewFinderDetail(finder)"
-                      class="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                      <div class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                        <i class="ph-fill ph-user text-gray-500"></i>
-                      </div>
-                      <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2">
-                          <span class="font-medium text-gray-900 dark:text-white truncate">{{ finder.finderName }}</span>
-                          <app-user-badge [badge]="finder.finderBadge" size="sm"></app-user-badge>
+                    <div class="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg">
+                      <div 
+                        (click)="viewFinderDetail(finder)"
+                        class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition">
+                        <div class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                          <i class="ph-fill ph-user text-gray-500"></i>
                         </div>
-                        <p class="text-xs text-gray-500 truncate">
-                          {{ finder.answers.length > 0 ? finder.answers[0].answer : 'Tidak ada jawaban' }}
-                        </p>
+                        <div class="flex-1 min-w-0">
+                          <div class="flex items-center gap-2">
+                            <span class="font-medium text-gray-900 dark:text-white truncate">{{ finder.finderName }}</span>
+                            <app-user-badge [badge]="finder.finderBadge" size="sm"></app-user-badge>
+                          </div>
+                          <p class="text-xs text-gray-500 truncate">
+                            <i class="ph ph-question text-uii-blue"></i>
+                            {{ finder.verificationQuestions.length }} pertanyaan verifikasi
+                          </p>
+                        </div>
                       </div>
-                      <span [class]="'px-2 py-1 text-xs font-medium rounded-full ' + 
-                        (finder.status === 'pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400' :
-                         finder.status === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' :
-                         'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400')">">
-                        {{ getFinderStatusLabel(finder.status) }}
-                      </span>
+                      <!-- Status Badge or Action Button -->
+                      @if (finder.status === 'pending') {
+                        <button 
+                          (click)="openAnswerQuestionsModal(finder)"
+                          class="px-3 py-1.5 bg-uii-blue text-white text-xs font-medium rounded-lg hover:bg-uii-blue/90 transition flex items-center gap-1">
+                          <i class="ph ph-pencil"></i>
+                          Jawab
+                        </button>
+                      } @else if (finder.status === 'answered') {
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400">
+                          Menunggu Validasi
+                        </span>
+                      } @else {
+                        <span [class]="'px-2 py-1 text-xs font-medium rounded-full ' + 
+                          (finder.status === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' :
+                           'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400')">
+                          {{ getFinderStatusLabel(finder.status) }}
+                        </span>
+                      }
                     </div>
                   }
                 </div>
@@ -844,7 +993,6 @@
   <!-- Finder Verification Modal (for someone who found a lost item) - Using Component -->
   <app-finder-form-modal
     [isOpen]="showFinderVerificationModal()"
-    [questions]="item()?.verificationQuestions || []"
     (close)="closeFinderVerificationModal()"
     (submit)="onFinderFormSubmit($event)">
   </app-finder-form-modal>
@@ -876,4 +1024,12 @@
     (close)="closeFinderRejectReasonModal()"
     (confirm)="onRejectFinderWithReason($event)">
   </app-reject-reason-modal>
+
+  <!-- Answer Questions Modal (for Owner to answer Finder's questions) -->
+  <app-answer-questions-modal
+    [isOpen]="showAnswerQuestionsModal()"
+    [finder]="selectedFinderToAnswer()"
+    (close)="closeAnswerQuestionsModal()"
+    (submit)="onOwnerAnswerSubmit($event)">
+  </app-answer-questions-modal>
 </div>

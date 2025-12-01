@@ -6,7 +6,8 @@ import { User } from '../../../../../core/models';
 export interface ClaimFormData {
   description: string;
   photoUrl?: string;
-  additionalContact?: string;
+  showWhatsApp: boolean;
+  alternativeContact?: string;
   isQrVerified?: boolean;
 }
 
@@ -30,7 +31,8 @@ export class ClaimFormModalComponent {
     description: '',
     photoUrl: '',
     photoPreview: '',
-    additionalContact: ''
+    showWhatsApp: true,
+    alternativeContact: ''
   };
 
   isSubmitting = signal(false);
@@ -51,7 +53,8 @@ export class ClaimFormModalComponent {
       description: '',
       photoUrl: '',
       photoPreview: '',
-      additionalContact: ''
+      showWhatsApp: true,
+      alternativeContact: ''
     };
     this.isSuccess.set(false);
     this.isSubmitting.set(false);
@@ -80,6 +83,10 @@ export class ClaimFormModalComponent {
     if (this.isQrScanned && this.isQrVerified) {
       return true;
     }
+    // If WhatsApp is off, alternative contact is required
+    if (!this.form.showWhatsApp && !this.form.alternativeContact.trim()) {
+      return false;
+    }
     return this.form.description.trim().length >= 10;
   }
 
@@ -93,7 +100,8 @@ export class ClaimFormModalComponent {
       this.submit.emit({
         description: this.isQrVerified ? '(QR Verified Owner)' : this.form.description,
         photoUrl: this.form.photoUrl || undefined,
-        additionalContact: this.form.additionalContact || undefined,
+        showWhatsApp: this.form.showWhatsApp,
+        alternativeContact: this.form.alternativeContact || undefined,
         isQrVerified: this.isQrVerified
       });
       this.isSubmitting.set(false);

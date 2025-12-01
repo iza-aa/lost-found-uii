@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import type * as LeafletTypes from 'leaflet';
 import { Item, ItemCategory, ItemStatus, UrgencyLevel, StorageLocation, AlternativeContact, AlternativeContactType, ContactEntry, ReportStatus, User } from '../../core/models';
-import { MOCK_CATEGORIES, MOCK_LOCATIONS, MOCK_ITEMS, UII_CENTER, CampusLocation, MOCK_USERS } from '../../core/mocks';
+import { MOCK_CATEGORIES, MOCK_LOCATIONS, MOCK_ITEMS, UII_CENTER, CampusLocation } from '../../core/mocks';
 import { AuthService } from '../../core/services/auth.service';
+import { ApiService, CreateFoundItemRequest, CreateLostItemRequest, Category, Location as ApiLocation } from '../../core/services/api.service';
 
 // Leaflet types only - actual import is dynamic
 type LeafletModule = typeof LeafletTypes;
@@ -86,9 +87,14 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     ] as Array<{ question: string; answer: string }>
   };
 
-  // Data
+  // Data - fallback to mock if API fails
   categories = MOCK_CATEGORIES.filter(c => c.id !== 'all') as Array<{ id: ItemCategory; label: string; icon: string }>;
   locations = MOCK_LOCATIONS;
+  
+  // API Data
+  apiCategories: Category[] = [];
+  apiLocations: ApiLocation[] = [];
+  isLoadingEnums = signal(false);
 
   // Urgency options
   urgencyOptions: { value: UrgencyLevel; label: string; icon: string; color: string }[] = [
@@ -117,7 +123,8 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     @Inject(PLATFORM_ID) platformId: Object,
     private router: Router,
     private route: ActivatedRoute,
-    private authService: AuthService
+    private authService: AuthService,
+    private apiService: ApiService
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
@@ -126,6 +133,9 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     this.formData.date = this.getTodayDate();
     this.formData.time = this.getCurrentTime();
 
+    // Load categories and locations from API
+    this.loadEnumerations();
+
     // Check if this is a QR scan mode
     const isQr = this.route.snapshot.queryParamMap.get('qr');
     const qrData = this.route.snapshot.queryParamMap.get('qrData');
@@ -133,6 +143,39 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     if (isQr === 'true' && qrData) {
       this.initQrScanMode(qrData);
     }
+  }
+
+  // Load categories and locations from API
+  private loadEnumerations(): void {
+    this.isLoadingEnums.set(true);
+    
+    // Load categories
+    this.apiService.getCategories().subscribe({
+      next: (cats) => {
+        this.apiCategories = cats;
+        // Update local categories for UI display
+        this.categories = cats.map(cat => ({
+          id: this.mapCategoryNameToId(cat.name) as ItemCategory,
+          label: cat.name,
+          icon: this.getCategoryIconByName(cat.name)
+        }));
+        console.log('Categories loaded:', cats);
+      },
+      error: (err) => console.warn('Failed to load categories, using mock:', err)
+    });
+
+    // Load locations
+    this.apiService.getLocations().subscribe({
+      next: (locs) => {
+        this.apiLocations = locs;
+        console.log('Locations loaded:', locs);
+        this.isLoadingEnums.set(false);
+      },
+      error: (err) => {
+        console.warn('Failed to load locations, using mock:', err);
+        this.isLoadingEnums.set(false);
+      }
+    });
   }
 
   // Initialize QR Scan mode
@@ -313,10 +356,16 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
         return this.formData.location !== null;
       case 6:
         // FOUND: Must accept warning first, then if 'entrusted', require entrustedTo
+        // Also if not exposing phone, require alternative contact
         if (this.formData.status === 'found') {
           if (!this.warningAccepted()) return false;
           if (this.formData.storageLocation === 'entrusted') {
-            return this.formData.entrustedTo.trim().length >= 3;
+            if (this.formData.entrustedTo.trim().length < 3) return false;
+          }
+          // If not exposing phone, require alternative contact
+          if (!this.formData.exposePhone) {
+            const alt = this.formData.alternativeContact;
+            if (!(alt.instagram || alt.telegram || alt.line || alt.other)) return false;
           }
           return true;
         }
@@ -387,6 +436,36 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   getCategoryLabel(categoryId: string): string {
     const category = this.categories.find(c => c.id === categoryId);
     return category?.label || categoryId;
+  }
+
+  // Helper: Map category name to frontend ID
+  private mapCategoryNameToId(name: string): string {
+    const map: Record<string, string> = {
+      'Tas': 'bags',
+      'Dompet': 'wallet',
+      'HP': 'phone',
+      'Elektronik': 'electronics',
+      'Dokumen': 'documents',
+      'Kunci': 'keys',
+      'Pakaian': 'clothing',
+      'Lainnya': 'others'
+    };
+    return map[name] || 'others';
+  }
+
+  // Helper: Get icon by category name
+  private getCategoryIconByName(name: string): string {
+    const iconMap: Record<string, string> = {
+      'Tas': 'ph-bag',
+      'Dompet': 'ph-wallet',
+      'HP': 'ph-device-mobile',
+      'Elektronik': 'ph-laptop',
+      'Dokumen': 'ph-file-text',
+      'Kunci': 'ph-key',
+      'Pakaian': 'ph-t-shirt',
+      'Lainnya': 'ph-dots-three'
+    };
+    return iconMap[name] || 'ph-dots-three';
   }
 
   // Step 5: Map
@@ -564,77 +643,137 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // Submit
-  async submitForm(): Promise<void> {
+  submitForm(): void {
     if (!this.canProceed()) return;
 
     this.isSubmitting.set(true);
 
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    if (this.formData.status === 'found') {
+      this.submitFoundItem();
+    } else if (this.formData.status === 'lost') {
+      this.submitLostItem();
+    }
+  }
 
-    const user = this.authService.getCurrentUser();
+  private submitFoundItem(): void {
+    // Get location ID - use API location if available, otherwise use mock
+    let locationId = '';
+    if (this.formData.location) {
+      // Check if it's from API locations
+      const apiLoc = this.apiLocations.find(l => l.name === this.formData.location?.name);
+      if (apiLoc) {
+        locationId = apiLoc.id;
+      } else {
+        // Fallback: use first available API location or empty
+        locationId = this.apiLocations.length > 0 ? this.apiLocations[0].id : '';
+      }
+    }
 
-    const newItem: Partial<Item> = {
-      id: `item_${Date.now()}`,
+    // Get category ID
+    let categoryId = '';
+    const apiCat = this.apiCategories.find(c => 
+      c.name.toLowerCase() === this.getCategoryLabel(this.formData.category as string).toLowerCase()
+    );
+    if (apiCat) {
+      categoryId = apiCat.id;
+    } else if (this.apiCategories.length > 0) {
+      categoryId = this.apiCategories[0].id;
+    }
+
+    // Build contacts for found item
+    const foundContacts: Array<{ platform: 'WHATSAPP' | 'INSTAGRAM' | 'TELEGRAM' | 'LINE' | 'EMAIL' | 'OTHER'; value: string }> = [];
+    const foundAlt = this.formData.alternativeContact;
+    if (foundAlt.instagram) foundContacts.push({ platform: 'INSTAGRAM', value: foundAlt.instagram });
+    if (foundAlt.telegram) foundContacts.push({ platform: 'TELEGRAM', value: foundAlt.telegram });
+    if (foundAlt.line) foundContacts.push({ platform: 'LINE', value: foundAlt.line });
+    if (foundAlt.other) foundContacts.push({ platform: 'OTHER', value: foundAlt.other });
+
+    const request: CreateFoundItemRequest = {
       title: this.formData.title,
-      description: this.formData.description,
-      category: this.formData.category as ItemCategory,
-      status: this.formData.status as ItemStatus,
-      reportStatus: 'active' as ReportStatus,  // NEW: all new reports start as active
-      imageUrl: this.formData.imageUrl,
-      date: this.formatDate(this.formData.date),
-      time: this.formData.time,
-      location: this.formData.location ? {
-        name: this.formData.location.name,
-        lat: this.formData.location.lat,
-        lng: this.formData.location.lng
-      } : undefined,
-      reporterId: user?.id,
-      reporterName: user?.name,
-      reporterBadge: user?.badge,
-      reporterPhone: user?.phone,
-      createdAt: new Date()
+      description: this.formData.description || undefined,
+      category_id: categoryId,
+      location_id: locationId,
+      image_url: this.formData.imageUrl || 'https://placehold.co/400x300?text=No+Image',
+      verifications: this.formData.verificationQuestions
+        .filter(q => q.question.trim().length > 0 && q.answer.trim().length > 0)
+        .map(q => ({ question: q.question, answer: q.answer })),
+      date_found: this.formData.date,
+      return_method: this.formData.storageLocation === 'entrusted' ? 'HANDED_TO_SECURITY' : 'BRING_BY_FINDER',
+      cod: this.formData.willingToCod,
+      show_phone: this.formData.exposePhone,
+      contacts: foundContacts
     };
 
-    // Add QR scan specific fields
-    if (this.isQrScanMode() && this.qrOwner()) {
-      const owner = this.qrOwner()!;
-      newItem.isScannedByQr = true;
-      newItem.scannedQrOwnerId = owner.id;
-      newItem.scannedQrOwnerName = owner.name;
-      newItem.scannedQrOwnerPhone = owner.phone;
+    console.log('Submitting found item:', request);
+
+    this.apiService.reportFoundItem(request).subscribe({
+      next: (response) => {
+        console.log('Found item created:', response);
+        this.isSubmitting.set(false);
+        this.isSuccess.set(true);
+      },
+      error: (error) => {
+        console.error('Failed to create found item:', error);
+        this.isSubmitting.set(false);
+        alert('Gagal membuat laporan: ' + error.message);
+      }
+    });
+  }
+
+  private submitLostItem(): void {
+    // Get category ID
+    let categoryId = '';
+    const apiCat = this.apiCategories.find(c => 
+      c.name.toLowerCase() === this.getCategoryLabel(this.formData.category as string).toLowerCase()
+    );
+    if (apiCat) {
+      categoryId = apiCat.id;
+    } else if (this.apiCategories.length > 0) {
+      categoryId = this.apiCategories[0].id;
     }
 
-    // Add status-specific fields
-    if (this.formData.status === 'lost') {
-      newItem.reward = this.formData.reward;
-      newItem.urgency = this.formData.urgency;
-      newItem.exposePhone = this.formData.exposePhone;
-      newItem.willingToCod = this.formData.willingToCod;
-      // Add alternative contact if phone is not exposed
-      if (!this.formData.exposePhone) {
-        newItem.alternativeContact = this.formData.alternativeContact;
-      }
-    } else if (this.formData.status === 'found') {
-      newItem.storageLocation = this.formData.storageLocation;
-      if (this.formData.storageLocation === 'entrusted') {
-        newItem.entrustedTo = this.formData.entrustedTo;
-      }
-      newItem.willingToCod = this.formData.willingToCod;
-      // Add verification questions
-      newItem.verificationQuestions = this.formData.verificationQuestions
-        .filter(q => q.question.trim().length > 0 && q.answer.trim().length > 0)
-        .map((q, index) => ({
-          id: `vq_${Date.now()}_${index}`,
-          question: q.question,
-          answer: q.answer,
-          isRequired: true
-        }));
-    }
+    // Map urgency
+    const urgencyMap: Record<string, 'NORMAL' | 'HIGH' | 'CRITICAL'> = {
+      'normal': 'NORMAL',
+      'important': 'HIGH',
+      'very-important': 'CRITICAL'
+    };
 
-    console.log('New item created:', newItem);
+    // Build contacts
+    const contacts: Array<{ platform: 'WHATSAPP' | 'INSTAGRAM' | 'TELEGRAM' | 'LINE' | 'EMAIL' | 'OTHER'; value: string }> = [];
+    const alt = this.formData.alternativeContact;
+    if (alt.instagram) contacts.push({ platform: 'INSTAGRAM', value: alt.instagram });
+    if (alt.telegram) contacts.push({ platform: 'TELEGRAM', value: alt.telegram });
+    if (alt.line) contacts.push({ platform: 'LINE', value: alt.line });
+    if (alt.other) contacts.push({ platform: 'OTHER', value: alt.other });
 
-    this.isSubmitting.set(false);
-    this.isSuccess.set(true);
+    const request: CreateLostItemRequest = {
+      title: this.formData.title,
+      category_id: categoryId,
+      description: this.formData.description,
+      location_last_seen: this.formData.location?.name || 'Unknown',
+      date_lost: this.formData.date,
+      image_url: this.formData.imageUrl || 'https://placehold.co/400x300?text=No+Image',
+      urgency: urgencyMap[this.formData.urgency] || 'NORMAL',
+      offer_reward: this.formData.reward,
+      show_phone: this.formData.exposePhone,
+      contacts: contacts.length > 0 ? contacts : undefined
+    };
+
+    console.log('Submitting lost item:', request);
+
+    this.apiService.reportLostItem(request).subscribe({
+      next: (response) => {
+        console.log('Lost item created:', response);
+        this.isSubmitting.set(false);
+        this.isSuccess.set(true);
+      },
+      error: (error) => {
+        console.error('Failed to create lost item:', error);
+        this.isSubmitting.set(false);
+        alert('Gagal membuat laporan: ' + error.message);
+      }
+    });
   }
 
   // Helpers

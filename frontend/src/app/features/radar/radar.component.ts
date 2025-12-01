@@ -2,8 +2,9 @@ import { Component, OnInit, OnDestroy, PLATFORM_ID, Inject, signal } from '@angu
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import type * as LeafletTypes from 'leaflet';
-import { Item } from '../../core/models';
-import { MOCK_ITEMS } from '../../core/mocks';
+import { Item, ItemCategory } from '../../core/models';
+import { ApiService, ItemResponse } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { CubeLoaderComponent } from '../../shared/components/cube-loader/cube-loader.component';
 
 type LeafletModule = typeof LeafletTypes;
@@ -28,12 +29,14 @@ export class RadarComponent implements OnInit, OnDestroy {
   lostCount = signal(0);
   foundCount = signal(0);
 
-  // UII Campus center coordinates
-  private readonly UII_CENTER: [number, number] = [-7.6872, 110.4098];
+  // UII Campus center coordinates (Kampus Terpadu Jl. Kaliurang)
+  private readonly UII_CENTER: [number, number] = [-7.68402735479403, 110.41371304295868];
 
   constructor(
     @Inject(PLATFORM_ID) platformId: Object,
-    private router: Router
+    private router: Router,
+    private apiService: ApiService,
+    private authService: AuthService
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
@@ -50,17 +53,97 @@ export class RadarComponent implements OnInit, OnDestroy {
   }
 
   private loadItems(): void {
-    // Get items with coordinates only
-    const itemsWithLocation = MOCK_ITEMS.filter(item => 
-      typeof item.location === 'object' && 'lat' in item.location
-    );
-    
-    this.items.set(itemsWithLocation);
-    this.lostCount.set(itemsWithLocation.filter(i => i.status === 'lost').length);
-    this.foundCount.set(itemsWithLocation.filter(i => i.status === 'found').length);
+    // Check auth first
+    if (!this.authService.isAuthenticated()) {
+      this.items.set([]);
+      this.lostCount.set(0);
+      this.foundCount.set(0);
+      if (this.isBrowser) {
+        setTimeout(() => this.initMap(), 100);
+      }
+      return;
+    }
 
-    if (this.isBrowser) {
-      setTimeout(() => this.initMap(), 100);
+    // Load from API
+    this.apiService.getAllItems().subscribe({
+      next: (apiItems) => {
+        // Map and filter items with coordinates
+        const mappedItems = this.mapApiItemsToFrontend(apiItems);
+        const itemsWithLocation = mappedItems.filter(item => 
+          typeof item.location === 'object' && 
+          'lat' in item.location && 
+          item.location.lat !== 0 && 
+          item.location.lng !== 0
+        );
+        
+        this.items.set(itemsWithLocation);
+        this.lostCount.set(itemsWithLocation.filter(i => i.status === 'lost').length);
+        this.foundCount.set(itemsWithLocation.filter(i => i.status === 'found').length);
+
+        if (this.isBrowser) {
+          setTimeout(() => this.initMap(), 100);
+        }
+      },
+      error: (error) => {
+        console.error('Failed to load items:', error);
+        this.items.set([]);
+        this.lostCount.set(0);
+        this.foundCount.set(0);
+        if (this.isBrowser) {
+          setTimeout(() => this.initMap(), 100);
+        }
+      }
+    });
+  }
+
+  private mapApiItemsToFrontend(apiItems: ItemResponse[]): Item[] {
+    return apiItems.map(apiItem => {
+      const reporter = apiItem.finder || apiItem.owner;
+      return {
+        id: apiItem.id,
+        title: apiItem.title,
+        description: '',
+        category: this.mapCategoryName(apiItem.category_name) as ItemCategory,
+        status: apiItem.type === 'FOUND' ? 'found' : 'lost',
+        reportStatus: apiItem.status === 'OPEN' ? 'active' : (apiItem.status === 'CLAIMED' ? 'claimed' : 'resolved') as any,
+        imageUrl: apiItem.image_url || 'https://placehold.co/400x300?text=No+Image',
+        date: new Date(apiItem.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
+        time: new Date(apiItem.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        location: {
+          name: apiItem.location_name || 'Unknown Location',
+          lat: apiItem.location_latitude || 0,
+          lng: apiItem.location_longitude || 0
+        },
+        reporterId: reporter?.id || '',
+        reporterName: reporter?.name || 'Unknown',
+        reporterBadge: this.mapRoleToBadge(reporter?.role),
+        createdAt: new Date(apiItem.created_at),
+        verificationQuestions: []
+      } as Item;
+    });
+  }
+
+  private mapCategoryName(categoryName?: string): string {
+    if (!categoryName) return 'others';
+    const categoryMap: Record<string, string> = {
+      'Tas': 'bags',
+      'Dompet': 'wallet',
+      'HP': 'phone',
+      'Elektronik': 'electronics',
+      'Dokumen': 'documents',
+      'Kunci': 'keys',
+      'Pakaian': 'clothing',
+      'Lainnya': 'others'
+    };
+    return categoryMap[categoryName] || 'others';
+  }
+
+  private mapRoleToBadge(role?: string): 'gold' | 'blue' | 'gray' {
+    if (!role) return 'gray';
+    switch (role) {
+      case 'STAFF_DOSEN': return 'gold';
+      case 'MAHASISWA': return 'blue';
+      default: return 'gray';
     }
   }
 

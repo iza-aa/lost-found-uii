@@ -164,7 +164,7 @@
           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent transition">
       </div>
 
-      <!-- LOST: Deskripsi Biasa -->
+      <!-- LOST: Deskripsi Detail -->
       @if (formData.status === 'lost') {
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -174,6 +174,24 @@
           placeholder="Jelaskan ciri-ciri barang kamu secara detail. Contoh: warna, merk, ukuran, tanda khusus, dll"
           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent resize-none transition"></textarea>
         <p class="text-xs text-gray-400 mt-1">Minimal 10 karakter</p>
+      </div>
+      }
+
+      <!-- FOUND: Deskripsi Singkat + Warning -->
+      @if (formData.status === 'found' || isQrScanMode()) {
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Deskripsi Singkat <span class="text-gray-400 font-normal">(Opsional)</span>
+        </label>
+        <textarea [(ngModel)]="formData.description" rows="2"
+          placeholder="Contoh: Dompet warna gelap, ada beberapa kartu di dalamnya"
+          class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent resize-none transition"></textarea>
+        <div class="mt-2 p-2.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+          <p class="text-xs text-yellow-700 dark:text-yellow-400 flex items-start gap-2">
+            <i class="ph ph-warning text-sm mt-0.5 flex-shrink-0"></i>
+            <span><strong>Jangan terlalu detail!</strong> Simpan ciri-ciri spesifik untuk pertanyaan verifikasi di bawah agar hanya pemilik asli yang bisa menjawab.</span>
+          </p>
+        </div>
       </div>
       }
 
@@ -403,12 +421,12 @@
     <!-- Expose Phone Toggle -->
     <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-          <i class="ph ph-whatsapp-logo text-xl text-green-600"></i>
+        <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+          <i class="ph-fill ph-whatsapp-logo text-xl text-green-600"></i>
         </div>
         <div>
-          <p class="font-medium text-gray-900 dark:text-white">Tampilkan No. WhatsApp?</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Penemu bisa langsung menghubungi Anda</p>
+          <p class="font-medium text-gray-900 dark:text-white">Tampilkan No. WhatsApp</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Setelah pemilik terverifikasi</p>
         </div>
       </div>
       <button type="button" (click)="toggleExposePhone()" [class]="formData.exposePhone 
@@ -420,41 +438,17 @@
       </button>
     </div>
 
-    <!-- Alternative Contact (shown when phone not exposed) -->
+    <!-- Alternative Contact (shown when phone not exposed) - Simple single input -->
     @if (!formData.exposePhone) {
-    <div
-      class="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl space-y-3">
-      <p class="text-sm text-orange-700 dark:text-orange-400 font-medium">
-        <i class="ph ph-info"></i> Tambahkan kontak alternatif agar penemu bisa menghubungi Anda
-      </p>
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Instagram</label>
-          <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">&#64;</span>
-            <input type="text" [(ngModel)]="formData.alternativeContact.instagram" placeholder="username"
-              class="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-          </div>
-        </div>
-        <div>
-          <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Telegram</label>
-          <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">&#64;</span>
-            <input type="text" [(ngModel)]="formData.alternativeContact.telegram" placeholder="username"
-              class="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-          </div>
-        </div>
-        <div>
-          <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">LINE</label>
-          <input type="text" [(ngModel)]="formData.alternativeContact.line" placeholder="Line ID"
-            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-        </div>
-        <div>
-          <label class="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Lainnya</label>
-          <input type="text" [(ngModel)]="formData.alternativeContact.other" placeholder="Email, dll"
-            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-        </div>
-      </div>
+    <div>
+      <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">
+        Kontak Alternatif <span class="text-red-500">*</span>
+      </label>
+      <input 
+        type="text"
+        [(ngModel)]="formData.alternativeContact.other"
+        placeholder="Instagram, Line, Email, dll"
+        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
     </div>
     }
 
@@ -595,6 +589,40 @@
         No. WhatsApp Anda tidak akan ditampilkan ke publik.
       </p>
     </div>
+
+    <!-- Expose Phone Toggle (for Found items) -->
+    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+          <i class="ph-fill ph-whatsapp-logo text-xl text-green-600"></i>
+        </div>
+        <div>
+          <p class="font-medium text-gray-900 dark:text-white">Tampilkan No. WhatsApp</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Setelah pemilik terverifikasi</p>
+        </div>
+      </div>
+      <button type="button" (click)="toggleExposePhone()" [class]="formData.exposePhone 
+                    ? 'w-12 h-7 bg-green-500 rounded-full relative transition-colors' 
+                    : 'w-12 h-7 bg-gray-300 dark:bg-gray-600 rounded-full relative transition-colors'">
+        <span [class]="formData.exposePhone 
+                    ? 'absolute top-0.5 right-0.5 w-6 h-6 bg-white rounded-full shadow transition-all' 
+                    : 'absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-all'"></span>
+      </button>
+    </div>
+
+    <!-- Alternative Contact (shown when phone not exposed) - Simple single input -->
+    @if (!formData.exposePhone) {
+    <div>
+      <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">
+        Kontak Alternatif <span class="text-red-500">*</span>
+      </label>
+      <input 
+        type="text"
+        [(ngModel)]="formData.alternativeContact.other"
+        placeholder="Instagram, Line, Email, dll"
+        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+    </div>
+    }
     }
     }
   </div>

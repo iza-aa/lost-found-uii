@@ -1,8 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { ApiService, RegisterRequest } from '../../../core/services/api.service';
 import { UserBadge } from '../../../core/models';
 
 type UserRole = 'student' | 'staff' | 'public';
@@ -85,6 +86,7 @@ export class RegisterComponent {
 
   constructor(
     private authService: AuthService,
+    private apiService: ApiService,
     private router: Router
   ) {}
 
@@ -296,35 +298,57 @@ export class RegisterComponent {
   }
 
   // Submit registration
-  async onSubmit(): Promise<void> {
+  onSubmit(): void {
     if (!this.canProceed()) return;
 
     this.isLoading.set(true);
     this.errorMessage = '';
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // ========== STEP 3: Prepare request data ==========
+    // Map frontend role to backend role enum
+    const roleMap: Record<string, 'PUBLIK' | 'MAHASISWA' | 'STAFF_DOSEN'> = {
+      'student': 'MAHASISWA',
+      'staff': 'STAFF_DOSEN',
+      'public': 'PUBLIK'
+    };
 
-    // For demo, register the user
-    const result = this.authService.register({
+    // Get identity number (NIM for student, NIP for staff, phone for public)
+    const identityNumber = this.formData.studentId || this.formData.employeeId || this.formData.phone;
+
+    const registerData: RegisterRequest = {
       name: this.formData.name,
       email: this.formData.email || `${this.formData.phone}@whatsapp.user`,
-      phone: this.formData.phone,
       password: this.formData.password,
-      role: this.selectedRole as UserRole,
-      badge: this.getSelectedBadge(),
-      faculty: this.formData.faculty,
-      studentId: this.formData.studentId,
-      employeeId: this.formData.employeeId
+      phone: this.formData.phone,
+      identity_number: identityNumber,
+      role: roleMap[this.selectedRole] || 'PUBLIK',
+      faculty: this.formData.faculty || undefined
+    };
+
+    // ========== STEP 4: Call API using subscribe ==========
+    // ApiService.register() returns Observable<AuthResponse>
+    // Gunakan .subscribe() untuk handle response
+    this.apiService.register(registerData).subscribe({
+      // SUCCESS: API returns AuthResponse with token & user
+      next: (response) => {
+        console.log('Register success:', response);
+        this.isLoading.set(false);
+        
+        // Token sudah di-handle otomatis oleh ApiService (disimpan ke localStorage)
+        // Sync user ke AuthService agar frontend tahu user sudah login
+        this.authService.setUserFromApi(response.user);
+        
+        // Langsung redirect ke home page
+        this.router.navigate(['/']);
+      },
+      
+      // ERROR: Handle error dari server
+      error: (error: Error) => {
+        console.error('Register error:', error);
+        this.isLoading.set(false);
+        this.errorMessage = error.message || 'Registrasi gagal, silakan coba lagi.';
+      }
     });
-
-    this.isLoading.set(false);
-
-    if (result.success) {
-      this.isSuccess.set(true);
-    } else {
-      this.errorMessage = result.message || 'Registrasi gagal';
-    }
   }
 
   // Go to login

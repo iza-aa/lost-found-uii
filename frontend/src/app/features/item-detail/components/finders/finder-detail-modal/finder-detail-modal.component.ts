@@ -37,4 +37,11 @@ export class FinderDetailModalComponent {
       this.reject.emit(this.finder);
     }
   }
+
+  // Helper method to format phone for WhatsApp URL
+  getWhatsAppUrl(phone: string | undefined): string {
+    if (!phone) return '';
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    return `https://wa.me/${cleanPhone}`;
+  }
 }

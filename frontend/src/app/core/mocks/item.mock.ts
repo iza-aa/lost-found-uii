@@ -79,10 +79,11 @@ const RAW_ITEMS: BaseItem[] = [
         finderName: 'Budi Santoso',
         finderBadge: 'blue',
         finderPhone: '081234567890',
-        answers: [
-          { questionId: 'q1', question: 'Apa merk laptop yang ada di dalam tas?', answer: 'Laptop Lenovo ThinkPad warna hitam' },
-          { questionId: 'q2', question: 'Apa warna buku catatan di dalam tas?', answer: 'Buku catatan warna merah dengan stiker kucing' },
-          { questionId: 'q3', question: 'Apakah ada gantungan kunci di tas? Jika ya, bentuknya apa?', answer: 'Ada, gantungan kunci berbentuk miniatur Eiffel' }
+        exposePhone: true,
+        verificationQuestions: [
+          { question: 'Apa merk laptop yang ada di dalam tas?', answer: 'Lenovo ThinkPad' },
+          { question: 'Apa warna buku catatan di dalam tas?', answer: 'Merah dengan stiker kucing' },
+          { question: 'Apakah ada gantungan kunci? Bentuknya apa?', answer: 'Miniatur Eiffel' }
         ],
         photoUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400',
         status: 'pending',
@@ -94,9 +95,11 @@ const RAW_ITEMS: BaseItem[] = [
         finderName: 'Reza Fahlevi',
         finderBadge: 'gray',
         finderPhone: '089876543210',
-        answers: [
-          { questionId: 'q1', question: 'Apa merk laptop yang ada di dalam tas?', answer: 'Laptop HP' },
-          { questionId: 'q2', question: 'Apa warna buku catatan di dalam tas?', answer: 'Warna biru' }
+        exposePhone: false,
+        additionalContact: { other: '@rezafahlevi (Instagram)' },
+        verificationQuestions: [
+          { question: 'Apa merk laptop di dalam tas?', answer: 'HP' },
+          { question: 'Apa warna buku catatan?', answer: 'Biru' }
         ],
         status: 'rejected',
         rejectionReason: 'Jawaban tidak sesuai dengan ciri-ciri barang',
@@ -320,9 +323,10 @@ const RAW_ITEMS: BaseItem[] = [
         finderName: 'Budi Santoso',
         finderBadge: 'blue',
         finderPhone: '081234567890',
-        answers: [
-          { questionId: 'q1', question: 'Apa wallpaper lockscreen HP ini?', answer: 'Foto kucing oren lucu' },
-          { questionId: 'q2', question: 'Apa password/PIN HP (4 digit)?', answer: '1234' }
+        exposePhone: true,
+        verificationQuestions: [
+          { question: 'Apa wallpaper lockscreen HP ini?', answer: 'Foto kucing oren lucu' },
+          { question: 'Apa password/PIN HP (4 digit)?', answer: '1234' }
         ],
         photoUrl: 'https://images.unsplash.com/photo-1632661674596-df8be59a8056?w=200',
         status: 'approved',
@@ -428,6 +432,114 @@ const RAW_ITEMS: BaseItem[] = [
         updatedAt: new Date('2024-11-27T14:30:00')
       }
     ]
+  },
+
+  // ============ CASE 11: LOST - Status 'answered' untuk Finder Validation ============
+  // Flow: Finder buat Q&A → Owner jawab → Finder validasi (SEKARANG)
+  // Login sebagai: umum (owner) → lihat finder yang statusnya 'answered' (menunggu validasi)
+  // Login sebagai: mahasiswa (finder) → Lihat jawaban Owner, bisa approve/reject
+  {
+    id: 'item-11',
+    title: 'Headphone Sony WH-1000XM5',
+    description: 'Kehilangan headphone wireless Sony WH-1000XM5 warna hitam di ruang baca Perpustakaan Pusat. Headphone ada case-nya.',
+    category: 'electronics',
+    status: 'lost',
+    reportStatus: 'active',
+    imageUrl: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=400',
+    date: '28 Nov',
+    time: '09:00 AM',
+    locationId: 'perpus',
+    reporterId: 'user-umum', // Reza Fahlevi (pemilik barang hilang)
+    createdAt: new Date('2024-11-28'),
+    reward: true,
+    urgency: 'important',
+    exposePhone: true,
+    willingToCod: true,
+    // Finders with 'answered' status - Owner sudah jawab, menunggu validasi Finder
+    finders: [
+      {
+        id: 'finder-11-1',
+        finderId: 'user-mahasiswa', // Ahmad Fauzi (finder)
+        finderName: 'Ahmad Fauzi',
+        finderBadge: 'blue',
+        finderPhone: '081234567890',
+        exposePhone: true,
+        // Pertanyaan yang dibuat Finder untuk memverifikasi Owner (answer kosong karena ini pertanyaan)
+        verificationQuestions: [
+          { question: 'Apa nomor seri (serial number) headphone ini?', answer: '' },
+          { question: 'Apa warna case headphone ini?', answer: '' },
+          { question: 'Apakah ada aksesoris tambahan di dalam case? Sebutkan.', answer: '' }
+        ],
+        // Jawaban dari Owner
+        ownerAnswers: [
+          { questionId: 'q1', question: 'Apa nomor seri (serial number) headphone ini?', answer: 'SN: YWT2024-112233' },
+          { questionId: 'q2', question: 'Apa warna case headphone ini?', answer: 'Case warna abu-abu dengan logo Sony' },
+          { questionId: 'q3', question: 'Apakah ada aksesoris tambahan di dalam case? Sebutkan.', answer: 'Ada kabel aux 3.5mm dan kabel USB-C charging' }
+        ],
+        photoUrl: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=200',
+        status: 'answered', // Owner sudah jawab, menunggu Finder validasi
+        createdAt: new Date('2024-11-28T10:00:00'),
+        updatedAt: new Date('2024-11-28T14:00:00')
+      }
+    ]
+  },
+
+  // ============ CASE 12: LOST - Status 'approved' - Sudah Selesai ============
+  // Flow sudah selesai: Finder validate jawaban Owner → APPROVED
+  // Login sebagai: staff (owner) → Lihat "Barang Telah Ditemukan" + kontak Finder
+  // Login sebagai: mahasiswa (finder) → Lihat "Jawaban Terverifikasi" + kontak Owner
+  {
+    id: 'item-12',
+    title: 'Smartwatch Garmin Fenix 7',
+    description: 'Kehilangan smartwatch Garmin Fenix 7 warna hitam di Gedung FTI setelah presentasi proyek. Ada tali cadangan warna orange.',
+    category: 'electronics',
+    status: 'lost',
+    reportStatus: 'resolved', // Sudah resolved karena sudah ditemukan
+    imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
+    date: '27 Nov',
+    time: '03:00 PM',
+    locationId: 'fti',
+    reporterId: 'user-staff', // Budi Santoso (pemilik barang hilang)
+    createdAt: new Date('2024-11-27'),
+    reward: true,
+    urgency: 'very-important',
+    exposePhone: true,
+    willingToCod: true,
+    alternativeContact: {
+      contacts: [
+        { type: 'instagram', value: 'budisantoso_dosen' },
+        { type: 'telegram', value: 'budisantoso' }
+      ]
+    },
+    // Finder yang sudah APPROVED
+    finders: [
+      {
+        id: 'finder-12-1',
+        finderId: 'user-mahasiswa', // Ahmad Fauzi (finder)
+        finderName: 'Ahmad Fauzi',
+        finderBadge: 'blue',
+        finderPhone: '081234567890',
+        exposePhone: true,
+        additionalContact: {
+          contacts: [
+            { type: 'instagram', value: 'ahmadfahmi_' },
+            { type: 'telegram', value: 'ahmadfahmi' }
+          ]
+        },
+        verificationQuestions: [
+          { question: 'Apa warna tali cadangan smartwatch ini?', answer: '' },
+          { question: 'Apa model exact smartwatch ini?', answer: '' }
+        ],
+        ownerAnswers: [
+          { questionId: 'q1', question: 'Apa warna tali cadangan smartwatch ini?', answer: 'Orange' },
+          { questionId: 'q2', question: 'Apa model exact smartwatch ini?', answer: 'Garmin Fenix 7 Sapphire Solar' }
+        ],
+        photoUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200',
+        status: 'approved', // SUDAH APPROVED!
+        createdAt: new Date('2024-11-27T16:00:00'),
+        updatedAt: new Date('2024-11-27T18:00:00')
+      }
+    ]
   }
 ];
 
@@ -486,7 +598,7 @@ function populateItemData(baseItem: BaseItem): Item {
 // Export MOCK_ITEMS dengan data lengkap dari user.mock dan location.mock
 export const MOCK_ITEMS: Item[] = RAW_ITEMS.map(populateItemData);
 
-// Categories untuk filter
+// Categories untuk filter (sesuai database)
 export const MOCK_CATEGORIES: Category[] = [
   { id: 'all', label: 'Semua', icon: 'ph-squares-four' },
   { id: 'bags', label: 'Tas', icon: 'ph-bag' },
