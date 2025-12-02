@@ -1,7 +1,7 @@
 {
   "version": 2,
   "buildCommand": "npm run build",
-  "outputDirectory": "dist/lost-found-uii/browser",
+  "outputDirectory": "dist/frontend/browser",
   "framework": null,
   "routes": [
     {
@@ -9,7 +9,7 @@
       "dest": "/assets/$1"
     },
     {
-      "src": "/(.*\\.(js|css|ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot))",
+      "src": "/(.*\\.(js|css|ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|map))",
       "dest": "/$1"
     },
     {
