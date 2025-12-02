@@ -50,6 +50,8 @@ func main() {
 		&models.ItemVerification{},
 		&models.ItemContact{},
 		&models.Claim{},
+		&models.ClaimQuestion{},
+		&models.ClaimContact{},
 		&models.Notification{},
 	)
 	if err != nil {
@@ -73,7 +75,7 @@ func main() {
 	uploadService := services.NewUploadService()
 	assetService := services.NewAssetService(assetRepo, uploadService, notifService)
 	matchingEngine := matching.NewMatchingEngine(notifService)
-	itemService := services.NewItemService(itemRepo, assetRepo, claimRepo, enumRepo, matchingEngine, notifService)
+	itemService := services.NewItemService(itemRepo, assetRepo, claimRepo, userRepo, matchingEngine, notifService)
 
 	// 5. Init Controllers
 	authController := controllers.NewAuthController(authService)
@@ -114,7 +116,7 @@ func main() {
 				c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 				c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 				c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-				c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
+				c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
 			}
 		}
 

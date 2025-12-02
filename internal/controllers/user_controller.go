@@ -86,3 +86,31 @@ func (ctrl *UserController) UpdateUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
+// ChangePassword godoc
+// @Summary Change user password
+// @Description Change authenticated user's password
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.ChangePasswordRequest true "Change Password Request"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /users/change-password [put]
+func (ctrl *UserController) ChangePassword(c *gin.Context) {
+	var req dto.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID := middleware.GetUserID(c)
+	err := ctrl.Service.ChangePassword(userID.String(), req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password berhasil diubah"})
+}

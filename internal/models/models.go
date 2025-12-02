@@ -35,6 +35,7 @@ type User struct {
 	IdentityNumber string   `gorm:"uniqueIndex:idx_users_identity" json:"identity_number"`
 	Role           UserRole `gorm:"default:'PUBLIK'" json:"role"`
 	Faculty        *string  `json:"faculty,omitempty"` // Nullable, null for Staff/Dosen
+	Avatar         string   `json:"avatar,omitempty"`  // Profile avatar URL
 }
 
 type ItemCategory struct {
@@ -135,12 +136,15 @@ const (
 type Item struct {
 	Base
 	Title               string             `json:"title"`
+	Description         string             `json:"description"` // Description for lost items
 	Type                ItemType           `gorm:"default:'FOUND'" json:"type"`
 	CategoryID          uuid.UUID          `json:"category_id"`
 	Category            ItemCategory       `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
 	LocationID          *uuid.UUID         `json:"location_id"` // Nullable for Lost items
 	Location            *CampusLocation    `gorm:"foreignKey:LocationID" json:"location,omitempty"`
 	LocationDescription string             `json:"location_description"` // For Lost items (free text)
+	LocationLatitude    float64            `json:"location_latitude"`    // Custom location lat
+	LocationLongitude   float64            `json:"location_longitude"`   // Custom location lng
 	ImageURL            string             `json:"image_url"`
 	Verifications       []ItemVerification `gorm:"foreignKey:ItemID" json:"verifications,omitempty"`
 	FinderID            *uuid.UUID         `json:"finder_id"` // Nullable for Lost items
@@ -156,27 +160,50 @@ type Item struct {
 	Contacts            []ItemContact      `gorm:"foreignKey:ItemID" json:"contacts,omitempty"`
 	Urgency             ItemUrgency        `gorm:"default:'NORMAL'" json:"urgency"`
 	OfferReward         bool               `gorm:"default:false" json:"offer_reward"`
+	AttachedQR          string             `json:"attached_qr"` // QR code scanned from found item (user_id of owner)
 }
 
 type ClaimStatus string
 
 const (
-	ClaimStatusPending  ClaimStatus = "PENDING"
-	ClaimStatusApproved ClaimStatus = "APPROVED"
-	ClaimStatusRejected ClaimStatus = "REJECTED"
+	ClaimStatusPending         ClaimStatus = "PENDING"          // User 2 submitted, waiting for User 1 to answer
+	ClaimStatusPendingApproval ClaimStatus = "PENDING_APPROVAL" // User 1 answered, waiting for User 2 to approve/reject
+	ClaimStatusApproved        ClaimStatus = "APPROVED"         // User 2 approved, contacts are visible
+	ClaimStatusRejected        ClaimStatus = "REJECTED"         // User 2 rejected
 )
 
+// ClaimContact stores finder's contact info
+type ClaimContact struct {
+	ID        uuid.UUID    `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ClaimID   uuid.UUID    `json:"claim_id"`
+	Platform  PlatformType `gorm:"type:varchar(50)" json:"platform"`
+	Value     string       `json:"value"`
+	CreatedAt time.Time    `json:"created_at"`
+}
+
+// ClaimQuestion stores verification questions from finder (User 2)
+type ClaimQuestion struct {
+	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ClaimID   uuid.UUID `json:"claim_id"`
+	Question  string    `json:"question"`
+	Answer    string    `json:"answer"` // Answer from owner (User 1)
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// Claim represents a finder claiming to have found a lost item
 type Claim struct {
-	ID          uuid.UUID   `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	ItemID      uuid.UUID   `json:"item_id"`
-	Item        Item        `gorm:"foreignKey:ItemID" json:"item,omitempty"`
-	OwnerID     uuid.UUID   `json:"owner_id"`
-	Owner       User        `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
-	AnswerInput string      `json:"answer_input"`
-	ImageURL    string      `json:"image_url"` // Proof image for claim
-	Status      ClaimStatus `gorm:"default:'PENDING'" json:"status"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
+	ID        uuid.UUID       `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ItemID    uuid.UUID       `json:"item_id"`
+	Item      Item            `gorm:"foreignKey:ItemID" json:"item,omitempty"`
+	FinderID  uuid.UUID       `json:"finder_id"` // User 2 - the one who found the item
+	Finder    User            `gorm:"foreignKey:FinderID" json:"finder,omitempty"`
+	Questions []ClaimQuestion `gorm:"foreignKey:ClaimID" json:"questions,omitempty"`
+	Contacts  []ClaimContact  `gorm:"foreignKey:ClaimID" json:"contacts,omitempty"`
+	ShowPhone bool            `gorm:"default:false" json:"show_phone"` // Whether to show WhatsApp
+	Note      string          `json:"note"`                            // Optional note from finder
+	Status    ClaimStatus     `gorm:"default:'PENDING'" json:"status"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
 }
 
 type Notification struct {

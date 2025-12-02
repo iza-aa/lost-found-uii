@@ -46,10 +46,12 @@ func (s *UploadService) UploadFile(file multipart.File, header *multipart.FileHe
 		"image/jpeg": true,
 		"image/png":  true,
 		"image/jpg":  true, // Sometimes detected as this
+		"image/webp": true, // WebP format
+		"image/gif":  true, // GIF format
 	}
 
 	if !allowedTypes[contentType] {
-		return "", fmt.Errorf("file type not allowed: %s. Only JPG and PNG are allowed", contentType)
+		return "", fmt.Errorf("file type not allowed: %s. Only JPG, PNG, WebP, and GIF are allowed", contentType)
 	}
 
 	uploadDir := config.AppConfig.UploadPath

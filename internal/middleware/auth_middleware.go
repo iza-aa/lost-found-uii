@@ -47,6 +47,13 @@ func RoleGuard(roles ...string) gin.HandlerFunc {
 }
 
 func GetUserID(c *gin.Context) uuid.UUID {
-	id, _ := c.Get("userID")
-	return id.(uuid.UUID)
+	id, exists := c.Get("userID")
+	if !exists || id == nil {
+		return uuid.Nil
+	}
+	userID, ok := id.(uuid.UUID)
+	if !ok {
+		return uuid.Nil
+	}
+	return userID
 }

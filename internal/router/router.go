@@ -44,6 +44,11 @@ func (r *AppRouter) Setup(engine *gin.Engine) {
 	// Swagger
 	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	// Health Check
+	engine.GET("/api/v1/ping", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok", "message": "pong"})
+	})
+
 	// Static Files
 	engine.Static("/uploads", config.AppConfig.UploadPath)
 
@@ -76,6 +81,13 @@ func (r *AppRouter) Setup(engine *gin.Engine) {
 			enum.POST("/item-categories", r.EnumerationController.CreateCategory)
 			enum.GET("/campus-locations", r.EnumerationController.GetLocations)
 			enum.POST("/campus-locations", r.EnumerationController.CreateLocation)
+		}
+
+		// Public item routes (viewing)
+		publicItems := api.Group("/items")
+		{
+			publicItems.GET("", r.ItemController.GetAllItems)
+			publicItems.GET("/:id", r.ItemController.GetItemByID)
 		}
 
 		// Public Scan
@@ -125,21 +137,24 @@ func (r *AppRouter) Setup(engine *gin.Engine) {
 			// But `GET /scan/:id` is public.
 		}
 
-		// Items (Finder First)
+		// Items (Finder First) - Protected routes
 		items := protected.Group("/items")
 		{
-			items.POST("/lost", r.ItemController.ReportLostItem) // Ad-Hoc Lost Item
+			items.GET("/my", r.ItemController.GetMyItems)                // Get user's own items
+			items.POST("/lost", r.ItemController.ReportLostItem)         // Ad-Hoc Lost Item
 			items.POST("/found", r.ItemController.ReportFoundItem)
-			items.GET("", r.ItemController.GetAllItems)
-			items.GET("/:id", r.ItemController.GetItem)
+			items.PUT("/:id", r.ItemController.UpdateItem)
 			items.DELETE("/:id", r.ItemController.DeleteItem)
 			items.POST("/:id/claim", r.ItemController.SubmitClaim)
 			items.GET("/:id/claims", r.ItemController.GetClaims)
+			items.GET("/:id/my-claim", r.ItemController.GetUserClaim)
+			items.POST("/:id/verify-qr", r.ItemController.VerifyQR)
 		}
 
 		// Claims
 		claims := protected.Group("/claims")
 		{
+			claims.PUT("/:id/answer", r.ItemController.AnswerClaim)
 			claims.PUT("/:id/decide", r.ItemController.DecideClaim)
 		}
 
@@ -159,6 +174,8 @@ func (r *AppRouter) Setup(engine *gin.Engine) {
 			users.GET("", r.UserController.GetAllUsers)
 			users.GET("/:id", r.UserController.GetUser)
 			users.PUT("/me", r.UserController.UpdateUser)
+			users.PUT("/profile", r.UserController.UpdateUser)           // Alias for /me
+			users.PUT("/change-password", r.UserController.ChangePassword)
 		}
 	}
 

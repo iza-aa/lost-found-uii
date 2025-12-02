@@ -111,9 +111,11 @@ func (s *AuthService) Register(req dto.RegisterRequest) (*dto.AuthResponse, erro
 			ID:             user.ID,
 			Name:           user.Name,
 			Email:          user.Email,
+			Phone:          user.Phone,
 			IdentityNumber: user.IdentityNumber,
 			Role:           string(user.Role),
 			Faculty:        facultyStr,
+			Avatar:         user.Avatar,
 		},
 	}, nil
 }
@@ -157,9 +159,11 @@ func (s *AuthService) Login(req dto.LoginRequest) (*dto.AuthResponse, error) {
 			ID:             user.ID,
 			Name:           user.Name,
 			Email:          user.Email,
+			Phone:          user.Phone,
 			IdentityNumber: user.IdentityNumber,
 			Role:           string(user.Role),
 			Faculty:        facultyStr,
+			Avatar:         user.Avatar,
 		},
 	}, nil
 }
@@ -202,9 +206,11 @@ func (s *AuthService) RefreshToken(req dto.RefreshTokenRequest) (*dto.AuthRespon
 			ID:             user.ID,
 			Name:           user.Name,
 			Email:          user.Email,
+			Phone:          user.Phone,
 			IdentityNumber: user.IdentityNumber,
 			Role:           string(user.Role),
 			Faculty:        facultyStr,
+			Avatar:         user.Avatar,
 		},
 	}, nil
 }
