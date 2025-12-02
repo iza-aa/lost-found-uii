@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.afsar.my.id/api/v1'
+  // Update this with your Railway backend URL
+  apiUrl: 'https://your-backend.up.railway.app/api/v1'
 };
