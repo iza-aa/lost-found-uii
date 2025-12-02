@@ -96,9 +96,11 @@ export class AuthService {
     id: string; 
     name: string; 
     email: string; 
+    phone: string;
     identity_number: string;
     role: string; 
     faculty?: string;
+    avatar?: string;
   }): void {
     // Map backend role to frontend role
     const roleMap: Record<string, UserRole> = {
@@ -122,12 +124,13 @@ export class AuthService {
       id: apiUser.id,
       name: apiUser.name,
       email: apiUser.email,
+      phone: apiUser.phone,
       role: roleMap[apiUser.role] || 'public',
       badge: badgeMap[apiUser.role] || 'gray',
       faculty: apiUser.faculty,
       studentId: apiUser.role === 'MAHASISWA' ? apiUser.identity_number : undefined,
       employeeId: apiUser.role === 'STAFF_DOSEN' ? apiUser.identity_number : undefined,
-      avatar: `https://i.pravatar.cc/150?u=${apiUser.email}`
+      avatar: apiUser.avatar || `https://i.pravatar.cc/150?u=${apiUser.email}`
     };
 
     this.currentUserSignal.set(user);

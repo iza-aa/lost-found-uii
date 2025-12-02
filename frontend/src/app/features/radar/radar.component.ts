@@ -30,7 +30,7 @@ export class RadarComponent implements OnInit, OnDestroy {
   foundCount = signal(0);
 
   // UII Campus center coordinates (Kampus Terpadu Jl. Kaliurang)
-  private readonly UII_CENTER: [number, number] = [-7.68402735479403, 110.41371304295868];
+  private readonly UII_CENTER: [number, number] = [-7.687340, 110.412067];
 
   constructor(
     @Inject(PLATFORM_ID) platformId: Object,
@@ -106,7 +106,7 @@ export class RadarComponent implements OnInit, OnDestroy {
         category: this.mapCategoryName(apiItem.category_name) as ItemCategory,
         status: apiItem.type === 'FOUND' ? 'found' : 'lost',
         reportStatus: apiItem.status === 'OPEN' ? 'active' : (apiItem.status === 'CLAIMED' ? 'claimed' : 'resolved') as any,
-        imageUrl: apiItem.image_url || 'https://placehold.co/400x300?text=No+Image',
+        imageUrl: this.apiService.getStaticFileUrl(apiItem.image_url || '') || 'https://placehold.co/400x300?text=No+Image',
         date: new Date(apiItem.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
         time: new Date(apiItem.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
         location: {
@@ -118,7 +118,8 @@ export class RadarComponent implements OnInit, OnDestroy {
         reporterName: reporter?.name || 'Unknown',
         reporterBadge: this.mapRoleToBadge(reporter?.role),
         createdAt: new Date(apiItem.created_at),
-        verificationQuestions: []
+        verificationQuestions: [],
+        isScannedByQr: !!apiItem.attached_qr
       } as Item;
     });
   }
@@ -227,7 +228,8 @@ export class RadarComponent implements OnInit, OnDestroy {
         const popupEl = document.querySelector('.radar-popup');
         if (popupEl) {
           popupEl.addEventListener('click', () => {
-            this.router.navigate(['/item', item.id], { 
+            const route = item.status === 'found' ? '/found' : '/item';
+            this.router.navigate([route, item.id], { 
               queryParams: { from: 'radar' } 
             });
           });

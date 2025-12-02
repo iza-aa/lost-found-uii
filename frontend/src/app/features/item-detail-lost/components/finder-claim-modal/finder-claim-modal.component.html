@@ -1,0 +1,132 @@
+@if (isOpen) {
+  <div class="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 w-full sm:max-w-md sm:rounded-xl rounded-t-xl p-4 max-h-[80vh] overflow-y-auto">
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Ajukan Pertanyaan</h3>
+        <button (click)="onClose()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+          <i class="ph ph-x text-xl"></i>
+        </button>
+      </div>
+
+      <p class="text-sm text-gray-500 mb-4">
+        Buat pertanyaan yang hanya bisa dijawab oleh pemilik asli barang ini.
+      </p>
+
+      <!-- Questions -->
+      <div class="space-y-3 mb-4">
+        @for (q of questions(); let i = $index; track i) {
+          <div class="flex gap-2">
+            <input 
+              type="text" 
+              [value]="q"
+              (input)="updateQuestion(i, $any($event.target).value)"
+              placeholder="Contoh: Warna casing HP?"
+              class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+            @if (questions().length > 1) {
+              <button (click)="removeQuestion(i)" class="px-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
+                <i class="ph ph-trash"></i>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <button 
+        (click)="addQuestion()"
+        class="w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-500 rounded-lg hover:border-uii-blue hover:text-uii-blue transition flex items-center justify-center gap-1 mb-4">
+        <i class="ph ph-plus-circle"></i> Tambah Pertanyaan
+      </button>
+
+      <!-- Show Phone Toggle - Styled like post-item -->
+      <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+            <i class="ph-fill ph-whatsapp-logo text-lg text-green-600"></i>
+          </div>
+          <div>
+            <p class="font-medium text-gray-900 dark:text-white text-sm">Tampilkan No. WhatsApp</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Ke pemilik barang</p>
+          </div>
+        </div>
+        <button 
+          type="button" 
+          (click)="showPhone.set(!showPhone())" 
+          [class]="showPhone() 
+            ? 'w-11 h-6 bg-green-500 rounded-full relative transition-colors' 
+            : 'w-11 h-6 bg-gray-300 dark:bg-gray-600 rounded-full relative transition-colors'">
+          <span [class]="showPhone() 
+            ? 'absolute top-0.5 right-0.5 w-5 h-5 bg-white rounded-full shadow transition-all' 
+            : 'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-all'"></span>
+        </button>
+      </div>
+
+      <!-- Alternative Contacts (shown when phone not exposed) -->
+      @if (!showPhone()) {
+        <div class="space-y-3 mb-4">
+          <label class="block text-sm text-gray-500 dark:text-gray-400">
+            Kontak Alternatif <span class="text-red-500">*</span>
+          </label>
+          
+          @for (contact of contacts(); let i = $index; track i) {
+            <div class="flex items-center gap-2">
+              <!-- Platform dropdown -->
+              <div class="relative w-28 flex-shrink-0">
+                <select 
+                  [value]="contact.type"
+                  (change)="updateContactType(i, $any($event.target).value)"
+                  class="w-full px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white appearance-none cursor-pointer focus:ring-2 focus:ring-uii-blue focus:border-transparent text-sm">
+                  @for (option of contactOptions; track option.value) {
+                    <option [value]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+                <i class="ph ph-caret-down absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-sm"></i>
+              </div>
+              
+              <!-- Input -->
+              <div class="flex-1 relative">
+                <div class="absolute left-2.5 top-1/2 -translate-y-1/2">
+                  <i [class]="getContactIcon(contact.type) + ' text-lg ' + getContactIconColor(contact.type)"></i>
+                </div>
+                <input 
+                  type="text"
+                  [value]="contact.value"
+                  (input)="updateContactValue(i, $any($event.target).value)"
+                  [placeholder]="getContactPlaceholder(contact.type)"
+                  class="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent text-sm">
+              </div>
+              
+              <!-- Remove button -->
+              @if (contacts().length > 1) {
+                <button 
+                  type="button"
+                  (click)="removeContact(i)"
+                  class="w-8 h-8 flex-shrink-0 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition">
+                  <i class="ph ph-trash text-sm"></i>
+                </button>
+              }
+            </div>
+          }
+          
+          <!-- Add more contact button -->
+          <button 
+            type="button"
+            (click)="addContact()"
+            class="w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:border-uii-blue hover:text-uii-blue transition flex items-center justify-center gap-1 text-sm">
+            <i class="ph ph-plus-circle"></i>
+            <span>Tambahkan kontak</span>
+          </button>
+        </div>
+      }
+
+      <button 
+        (click)="onSubmit()"
+        [disabled]="!canSubmit()"
+        [class]="canSubmit() 
+          ? 'w-full py-3 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition'
+          : 'w-full py-3 bg-gray-300 dark:bg-gray-600 text-gray-500 font-medium rounded-xl cursor-not-allowed'">
+        Kirim Pertanyaan
+      </button>
+    </div>
+  </div>
+}

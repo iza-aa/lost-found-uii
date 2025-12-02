@@ -1,7 +1,7 @@
 import { Injectable, Inject, PLATFORM_ID, signal } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
-import { Observable, throwError, BehaviorSubject } from 'rxjs';
+import { Observable, throwError, BehaviorSubject, of } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
@@ -32,6 +32,7 @@ export interface UserResponse {
   id: string;
   name: string;
   email: string;
+  phone: string;
   identity_number: string;
   role: string;
   faculty?: string;
@@ -61,6 +62,7 @@ export interface CreateFoundItemRequest {
   cod?: boolean;
   show_phone?: boolean;
   contacts?: ContactRequest[];
+  attached_qr?: string; // QR code scanned from item
 }
 
 export interface CreateLostItemRequest {
@@ -68,10 +70,13 @@ export interface CreateLostItemRequest {
   category_id: string;
   description?: string;
   location_last_seen: string;
+  location_latitude?: number;
+  location_longitude?: number;
   date_lost: string; // YYYY-MM-DD
   image_url?: string;
   urgency?: 'NORMAL' | 'HIGH' | 'CRITICAL';
   offer_reward?: boolean;
+  cod?: boolean;
   show_phone?: boolean;
   contacts?: ContactRequest[];
 }
@@ -109,9 +114,12 @@ export interface ItemResponse {
   return_method?: string;
   contacts?: ContactResponse[];
   finder?: ItemUserResponse;
+  finder_id?: string;  // Direct ID when finder object not populated
   owner?: ItemUserResponse;
+  owner_id?: string;   // Direct ID when owner object not populated
   approved_claim?: ClaimResponse; // Claim yang sudah approved
   user_claim_status?: string; // Status claim user: PENDING, APPROVED, REJECTED
+  attached_qr?: string; // QR code attached to item (from finder scan)
 }
 
 export interface ItemUserResponse {
@@ -121,20 +129,46 @@ export interface ItemUserResponse {
   role: string;
 }
 
+// ========== CLAIM (for LOST items) ==========
+// User 2 (finder) submits a claim with questions for User 1 (owner)
+
+export interface ClaimQuestionRequest {
+  question: string;
+}
+
 export interface ClaimRequest {
-  answer_input: string;
-  image_url?: string;
+  questions: ClaimQuestionRequest[];
+  show_phone: boolean;
+  contacts: ContactRequest[];
+  note?: string;
+}
+
+export interface ClaimAnswerRequest {
+  question_id: string;
+  answer: string;
+}
+
+export interface AnswerClaimRequest {
+  answers: ClaimAnswerRequest[];
+}
+
+export interface ClaimQuestionResponse {
+  id: string;
+  question: string;
+  answer?: string;
 }
 
 export interface ClaimResponse {
   id: string;
   item_id: string;
-  owner_id: string;
-  answer_input: string;
-  image_url?: string;
-  status: string;
+  finder_id: string;
+  finder?: ItemUserResponse;
+  questions?: ClaimQuestionResponse[];
+  contacts?: ContactResponse[];
+  show_phone: boolean;
+  note?: string;
+  status: string; // PENDING, PENDING_APPROVAL, APPROVED, REJECTED
   created_at: string;
-  claimer?: ItemUserResponse;
 }
 
 export interface DecideClaimRequest {
@@ -149,11 +183,18 @@ export interface Category {
 export interface Location {
   id: string;
   name: string;
+  description?: string;
+  latitude: number;
+  longitude: number;
 }
 
 export interface Notification {
   id: string;
-  message: string;
+  user_id: string;
+  title: string;
+  body: string;
+  ref_type: string;  // CLAIM_NEW, CLAIM_ANSWERED, CLAIM_APPROVED, etc.
+  ref_id: string;
   is_read: boolean;
   created_at: string;
 }
@@ -170,6 +211,9 @@ export interface ApiError {
 })
 export class ApiService {
   private readonly baseUrl = environment.apiUrl;
+  
+  // Base URL without /api/v1 for static files
+  private readonly staticBaseUrl = environment.apiUrl.replace('/api/v1', '');
   private readonly TOKEN_KEY = 'lf_token';
   private readonly REFRESH_TOKEN_KEY = 'lf_refresh_token';
   private readonly USER_KEY = 'lf_api_user';
@@ -179,6 +223,16 @@ export class ApiService {
   // Auth state
   private currentUserSubject = new BehaviorSubject<UserResponse | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
+
+  /**
+   * Get full URL for static files (images, uploads, etc.)
+   * Converts relative paths like /uploads/xxx.png to full URLs
+   */
+  getStaticFileUrl(path: string): string {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return `${this.staticBaseUrl}${path}`;
+  }
 
   constructor(
     private http: HttpClient,
@@ -289,7 +343,7 @@ export class ApiService {
   }
 
   /**
-   * Submit claim for an item
+   * Submit claim for an item (LOST items - User 2/finder submits questions)
    */
   submitClaim(itemId: string, request: ClaimRequest): Observable<ClaimResponse> {
     return this.http.post<ClaimResponse>(`${this.baseUrl}/items/${itemId}/claim`, request, {
@@ -298,7 +352,7 @@ export class ApiService {
   }
 
   /**
-   * Get claims for an item
+   * Get claims for an item (Owner only)
    */
   getClaims(itemId: string): Observable<ClaimResponse[]> {
     return this.http.get<ClaimResponse[]>(`${this.baseUrl}/items/${itemId}/claims`, {
@@ -307,10 +361,81 @@ export class ApiService {
   }
 
   /**
-   * Decide claim (approve/reject)
+   * Get my claim for an item (Finder checks their own claim)
    */
-  decideClaim(claimId: string, request: DecideClaimRequest): Observable<ClaimResponse> {
-    return this.http.put<ClaimResponse>(`${this.baseUrl}/claims/${claimId}/decide`, request, {
+  getMyClaim(itemId: string): Observable<ClaimResponse | null> {
+    return this.http.get<ClaimResponse>(`${this.baseUrl}/items/${itemId}/my-claim`, {
+      headers: this.getAuthHeaders()
+    }).pipe(
+      catchError(() => of(null))
+    );
+  }
+
+  /**
+   * Answer claim questions (Owner answers finder's questions)
+   */
+  answerClaim(claimId: string, request: AnswerClaimRequest): Observable<any> {
+    return this.http.put(`${this.baseUrl}/claims/${claimId}/answer`, request, {
+      headers: this.getAuthHeaders()
+    }).pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Decide claim (Finder approves/rejects owner's answers)
+   */
+  decideClaim(claimId: string, request: DecideClaimRequest): Observable<any> {
+    return this.http.put(`${this.baseUrl}/claims/${claimId}/decide`, request, {
+      headers: this.getAuthHeaders()
+    }).pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Verify QR code on a FOUND item - checks if the attached QR matches current user
+   * Returns { match: boolean, message: string }
+   */
+  verifyQR(itemId: string): Observable<{ match: boolean; message: string }> {
+    return this.http.post<{ match: boolean; message: string }>(
+      `${this.baseUrl}/items/${itemId}/verify-qr`,
+      {},
+      { headers: this.getAuthHeaders() }
+    ).pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Delete an item (Owner/Finder only)
+   */
+  deleteItem(itemId: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/items/${itemId}`, {
+      headers: this.getAuthHeaders()
+    }).pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Update an item (Owner/Finder only)
+   */
+  updateItem(itemId: string, data: Partial<{
+    title: string;
+    description: string;
+    image_url: string;
+    category_id: string;
+    location_id: string;
+    location_latitude: number;
+    location_longitude: number;
+    date_lost: string;
+    urgency: string;
+    offer_reward: boolean;
+    cod: boolean;
+  }>): Observable<any> {
+    return this.http.put(`${this.baseUrl}/items/${itemId}`, data, {
+      headers: this.getAuthHeaders()
+    }).pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Get user by ID
+   */
+  getUserById(userId: string): Observable<UserResponse> {
+    return this.http.get<UserResponse>(`${this.baseUrl}/users/${userId}`, {
       headers: this.getAuthHeaders()
     }).pipe(catchError(this.handleError));
   }
@@ -356,7 +481,7 @@ export class ApiService {
   // ==================== UPLOAD METHODS ====================
 
   /**
-   * Upload file
+   * Upload file - returns full URL with backend base
    */
   uploadFile(file: File): Observable<{ url: string }> {
     const formData = new FormData();
@@ -364,7 +489,16 @@ export class ApiService {
 
     return this.http.post<{ url: string }>(`${this.baseUrl}/upload`, formData, {
       headers: this.getAuthHeaders(true) // Don't set Content-Type for FormData
-    }).pipe(catchError(this.handleError));
+    }).pipe(
+      map(res => {
+        // Prepend static base URL if the returned URL is relative
+        if (res.url && res.url.startsWith('/')) {
+          return { url: `${this.staticBaseUrl}${res.url}` };
+        }
+        return res;
+      }),
+      catchError(this.handleError)
+    );
   }
 
   // ==================== ASSET METHODS (QR Code Flow) ====================
@@ -375,6 +509,50 @@ export class ApiService {
   scanAsset(assetId: string): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/scan/${assetId}`)
       .pipe(catchError(this.handleError));
+  }
+
+  // ==================== USER PROFILE METHODS ====================
+
+  /**
+   * Get items reported by current user
+   */
+  getMyItems(): Observable<ItemResponse[]> {
+    return this.http.get<ItemResponse[]>(`${this.baseUrl}/items/my`, {
+      headers: this.getAuthHeaders()
+    }).pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Update user profile
+   */
+  updateProfile(data: { name?: string; phone?: string; avatar?: string }): Observable<any> {
+    return this.http.put(`${this.baseUrl}/users/profile`, data, {
+      headers: this.getAuthHeaders()
+    }).pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Change password
+   */
+  changePassword(currentPassword: string, newPassword: string): Observable<any> {
+    return this.http.put(`${this.baseUrl}/users/change-password`, {
+      current_password: currentPassword,
+      new_password: newPassword
+    }, {
+      headers: this.getAuthHeaders()
+    }).pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Upload image - returns relative URL
+   */
+  uploadImage(file: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<{ url: string }>(`${this.baseUrl}/upload`, formData, {
+      headers: this.getAuthHeaders(true)
+    }).pipe(catchError(this.handleError));
   }
 
   // ==================== HELPER METHODS ====================

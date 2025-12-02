@@ -27,6 +27,7 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   // QR Scan mode - when user scans a QR code and reports found item
   isQrScanMode = signal(false);
   qrOwner = signal<User | null>(null);
+  attachedQrId = signal<string>(''); // User ID from scanned QR
 
   // Steps: Both Lost and Found now have 7 steps (includes suggestions), QR=5 steps
   currentStep = signal(1);
@@ -154,12 +155,21 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       next: (cats) => {
         this.apiCategories = cats;
         // Update local categories for UI display
-        this.categories = cats.map(cat => ({
+        // Filter out "Buku" (sudah ada Dokumen) dan sort agar "Lainnya" di akhir
+        const filteredCats = cats
+          .filter(cat => cat.name !== 'Buku')
+          .sort((a, b) => {
+            if (a.name === 'Lainnya') return 1;
+            if (b.name === 'Lainnya') return -1;
+            return 0;
+          });
+        
+        this.categories = filteredCats.map(cat => ({
           id: this.mapCategoryNameToId(cat.name) as ItemCategory,
           label: cat.name,
           icon: this.getCategoryIconByName(cat.name)
         }));
-        console.log('Categories loaded:', cats);
+        console.log('Categories loaded:', filteredCats);
       },
       error: (err) => console.warn('Failed to load categories, using mock:', err)
     });
@@ -202,6 +212,11 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
         this.isQrScanMode.set(true);
         this.formData.status = 'found'; // QR scan is always "found" item
         this.warningAccepted.set(true); // Auto-accept warning for QR mode
+        
+        // Store QR owner's user ID for backend verification
+        if (userData.id) {
+          this.attachedQrId.set(userData.id);
+        }
       }
     } catch {
       // Invalid QR data, redirect to normal post-item
@@ -362,17 +377,21 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
           if (this.formData.storageLocation === 'entrusted') {
             if (this.formData.entrustedTo.trim().length < 3) return false;
           }
-          // If not exposing phone, require alternative contact
+          // If not exposing phone, require at least one valid alternative contact
           if (!this.formData.exposePhone) {
-            const alt = this.formData.alternativeContact;
-            if (!(alt.instagram || alt.telegram || alt.line || alt.other)) return false;
+            const hasValidContact = this.formData.alternativeContacts.some(
+              c => c.type && c.value.trim().length > 0
+            );
+            if (!hasValidContact) return false;
           }
           return true;
         }
-        // LOST: If not exposing phone, require at least one alternative contact
+        // LOST: If not exposing phone, require at least one valid alternative contact
         if (this.formData.status === 'lost' && !this.formData.exposePhone) {
-          const alt = this.formData.alternativeContact;
-          return !!(alt.instagram || alt.telegram || alt.line || alt.other);
+          const hasValidContact = this.formData.alternativeContacts.some(
+            c => c.type && c.value.trim().length > 0
+          );
+          return hasValidContact;
         }
         return true;
       case 7:
@@ -463,9 +482,10 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       'Dokumen': 'ph-file-text',
       'Kunci': 'ph-key',
       'Pakaian': 'ph-t-shirt',
-      'Lainnya': 'ph-dots-three'
+      'Buku': 'ph-book',
+      'Lainnya': 'ph-dots-three-outline'
     };
-    return iconMap[name] || 'ph-dots-three';
+    return iconMap[name] || 'ph-question';
   }
 
   // Step 5: Map
@@ -633,7 +653,8 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     // Navigate to the item detail (would be implemented later)
     const item = this.selectedSuggestion();
     if (item) {
-      this.router.navigate(['/item', item.id]);
+      const route = item.status === 'found' ? '/found' : '/item';
+      this.router.navigate([route, item.id]);
     }
   }
 
@@ -682,11 +703,14 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Build contacts for found item
     const foundContacts: Array<{ platform: 'WHATSAPP' | 'INSTAGRAM' | 'TELEGRAM' | 'LINE' | 'EMAIL' | 'OTHER'; value: string }> = [];
-    const foundAlt = this.formData.alternativeContact;
-    if (foundAlt.instagram) foundContacts.push({ platform: 'INSTAGRAM', value: foundAlt.instagram });
-    if (foundAlt.telegram) foundContacts.push({ platform: 'TELEGRAM', value: foundAlt.telegram });
-    if (foundAlt.line) foundContacts.push({ platform: 'LINE', value: foundAlt.line });
-    if (foundAlt.other) foundContacts.push({ platform: 'OTHER', value: foundAlt.other });
+    for (const contact of this.formData.alternativeContacts) {
+      if (contact.value?.trim()) {
+        foundContacts.push({ 
+          platform: contact.type.toUpperCase() as 'WHATSAPP' | 'INSTAGRAM' | 'TELEGRAM' | 'LINE' | 'EMAIL' | 'OTHER', 
+          value: contact.value.trim() 
+        });
+      }
+    }
 
     const request: CreateFoundItemRequest = {
       title: this.formData.title,
@@ -701,7 +725,9 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       return_method: this.formData.storageLocation === 'entrusted' ? 'HANDED_TO_SECURITY' : 'BRING_BY_FINDER',
       cod: this.formData.willingToCod,
       show_phone: this.formData.exposePhone,
-      contacts: foundContacts
+      contacts: foundContacts,
+      // Include QR code if scanned
+      attached_qr: this.attachedQrId() || undefined
     };
 
     console.log('Submitting found item:', request);
@@ -739,23 +765,29 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
       'very-important': 'CRITICAL'
     };
 
-    // Build contacts
+    // Build contacts from alternativeContacts array
     const contacts: Array<{ platform: 'WHATSAPP' | 'INSTAGRAM' | 'TELEGRAM' | 'LINE' | 'EMAIL' | 'OTHER'; value: string }> = [];
-    const alt = this.formData.alternativeContact;
-    if (alt.instagram) contacts.push({ platform: 'INSTAGRAM', value: alt.instagram });
-    if (alt.telegram) contacts.push({ platform: 'TELEGRAM', value: alt.telegram });
-    if (alt.line) contacts.push({ platform: 'LINE', value: alt.line });
-    if (alt.other) contacts.push({ platform: 'OTHER', value: alt.other });
+    for (const contact of this.formData.alternativeContacts) {
+      if (contact.value && contact.value.trim()) {
+        contacts.push({ 
+          platform: contact.type.toUpperCase() as 'INSTAGRAM' | 'TELEGRAM' | 'LINE' | 'OTHER', 
+          value: contact.value.trim() 
+        });
+      }
+    }
 
     const request: CreateLostItemRequest = {
       title: this.formData.title,
       category_id: categoryId,
       description: this.formData.description,
       location_last_seen: this.formData.location?.name || 'Unknown',
+      location_latitude: this.formData.location?.lat,
+      location_longitude: this.formData.location?.lng,
       date_lost: this.formData.date,
       image_url: this.formData.imageUrl || 'https://placehold.co/400x300?text=No+Image',
       urgency: urgencyMap[this.formData.urgency] || 'NORMAL',
       offer_reward: this.formData.reward,
+      cod: this.formData.willingToCod,
       show_phone: this.formData.exposePhone,
       contacts: contacts.length > 0 ? contacts : undefined
     };
@@ -926,8 +958,13 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   // Toggle expose phone
   toggleExposePhone(): void {
     this.formData.exposePhone = !this.formData.exposePhone;
-    // Reset alternative contacts when toggling
-    if (this.formData.exposePhone) {
+    // Add one empty contact when toggling off, reset when toggling on
+    if (!this.formData.exposePhone && this.formData.alternativeContacts.length === 0) {
+      this.formData.alternativeContacts.push({
+        type: 'instagram',
+        value: ''
+      });
+    } else if (this.formData.exposePhone) {
       this.formData.alternativeContacts = [];
     }
   }
@@ -987,6 +1024,32 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
   // Check if contact type needs @ prefix
   needsAtPrefix(type: AlternativeContactType): boolean {
     return type === 'instagram' || type === 'telegram';
+  }
+
+  // Get icon class for contact type
+  getContactIcon(type: AlternativeContactType): string {
+    switch (type) {
+      case 'instagram': return 'ph-fill ph-instagram-logo';
+      case 'telegram': return 'ph-fill ph-telegram-logo';
+      case 'line': return 'ph ph-chat-circle-text';
+      case 'whatsapp_other': return 'ph-fill ph-whatsapp-logo';
+      case 'email': return 'ph ph-envelope';
+      case 'other': return 'ph ph-link';
+      default: return 'ph ph-chat-circle';
+    }
+  }
+
+  // Get icon color for contact type
+  getContactIconColor(type: AlternativeContactType): string {
+    switch (type) {
+      case 'instagram': return 'text-pink-500';
+      case 'telegram': return 'text-blue-500';
+      case 'line': return 'text-green-500';
+      case 'whatsapp_other': return 'text-green-600';
+      case 'email': return 'text-gray-600';
+      case 'other': return 'text-gray-500';
+      default: return 'text-gray-500';
+    }
   }
 
   // Get label for alternative contact input (legacy)

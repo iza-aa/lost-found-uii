@@ -438,17 +438,62 @@
       </button>
     </div>
 
-    <!-- Alternative Contact (shown when phone not exposed) - Simple single input -->
+    <!-- Alternative Contacts (shown when phone not exposed) - Multiple contacts with dropdown -->
     @if (!formData.exposePhone) {
-    <div>
-      <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">
+    <div class="space-y-3">
+      <label class="block text-sm text-gray-500 dark:text-gray-400">
         Kontak Alternatif <span class="text-red-500">*</span>
       </label>
-      <input 
-        type="text"
-        [(ngModel)]="formData.alternativeContact.other"
-        placeholder="Instagram, Line, Email, dll"
-        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+      
+      <!-- List of added contacts -->
+      @for (contact of formData.alternativeContacts; track $index) {
+      <div class="flex items-center gap-2">
+        <!-- Platform dropdown -->
+        <div class="relative w-36 flex-shrink-0">
+          <select 
+            [(ngModel)]="contact.type"
+            class="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white appearance-none cursor-pointer focus:ring-2 focus:ring-uii-blue focus:border-transparent text-sm">
+            @for (option of alternativeContactOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+          <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+        </div>
+        
+        <!-- Icon + Input -->
+        <div class="flex-1 relative">
+          <div class="absolute left-3 top-1/2 -translate-y-1/2">
+            <i [class]="getContactIcon(contact.type) + ' text-xl ' + getContactIconColor(contact.type)"></i>
+          </div>
+          <input 
+            type="text"
+            [(ngModel)]="contact.value"
+            [placeholder]="getContactPlaceholder(contact.type)"
+            class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+        </div>
+        
+        <!-- Remove button -->
+        <button 
+          type="button"
+          (click)="removeAlternativeContact($index)"
+          class="w-10 h-10 flex-shrink-0 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition">
+          <i class="ph ph-trash text-lg"></i>
+        </button>
+      </div>
+      }
+      
+      <!-- Add more contact button -->
+      <button 
+        type="button"
+        (click)="addAlternativeContact()"
+        class="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 dark:text-gray-400 hover:border-uii-blue hover:text-uii-blue transition flex items-center justify-center gap-2">
+        <i class="ph ph-plus-circle text-lg"></i>
+        <span>Tambahkan kontak lagi</span>
+      </button>
+      
+      @if (formData.alternativeContacts.length === 0) {
+      <p class="text-xs text-red-500">Minimal 1 kontak alternatif diperlukan</p>
+      }
     </div>
     }
 
@@ -610,17 +655,62 @@
       </button>
     </div>
 
-    <!-- Alternative Contact (shown when phone not exposed) - Simple single input -->
+    <!-- Alternative Contacts (shown when phone not exposed) - Multiple contacts with dropdown -->
     @if (!formData.exposePhone) {
-    <div>
-      <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">
+    <div class="space-y-3">
+      <label class="block text-sm text-gray-500 dark:text-gray-400">
         Kontak Alternatif <span class="text-red-500">*</span>
       </label>
-      <input 
-        type="text"
-        [(ngModel)]="formData.alternativeContact.other"
-        placeholder="Instagram, Line, Email, dll"
-        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+      
+      <!-- List of added contacts -->
+      @for (contact of formData.alternativeContacts; track $index) {
+      <div class="flex items-center gap-2">
+        <!-- Platform dropdown -->
+        <div class="relative w-36 flex-shrink-0">
+          <select 
+            [(ngModel)]="contact.type"
+            class="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white appearance-none cursor-pointer focus:ring-2 focus:ring-uii-blue focus:border-transparent text-sm">
+            @for (option of alternativeContactOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+          <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+        </div>
+        
+        <!-- Icon + Input -->
+        <div class="flex-1 relative">
+          <div class="absolute left-3 top-1/2 -translate-y-1/2">
+            <i [class]="getContactIcon(contact.type) + ' text-xl ' + getContactIconColor(contact.type)"></i>
+          </div>
+          <input 
+            type="text"
+            [(ngModel)]="contact.value"
+            [placeholder]="getContactPlaceholder(contact.type)"
+            class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+        </div>
+        
+        <!-- Remove button -->
+        <button 
+          type="button"
+          (click)="removeAlternativeContact($index)"
+          class="w-10 h-10 flex-shrink-0 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition">
+          <i class="ph ph-trash text-lg"></i>
+        </button>
+      </div>
+      }
+      
+      <!-- Add more contact button -->
+      <button 
+        type="button"
+        (click)="addAlternativeContact()"
+        class="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 dark:text-gray-400 hover:border-uii-blue hover:text-uii-blue transition flex items-center justify-center gap-2">
+        <i class="ph ph-plus-circle text-lg"></i>
+        <span>Tambahkan kontak lagi</span>
+      </button>
+      
+      @if (formData.alternativeContacts.length === 0) {
+      <p class="text-xs text-red-500">Minimal 1 kontak alternatif diperlukan</p>
+      }
     </div>
     }
     }

@@ -1,5 +1,5 @@
-import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, signal, PLATFORM_ID, Inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { Item, Category, ItemCategory } from '../../core/models';
@@ -32,23 +32,39 @@ export class HomeComponent implements OnInit {
   
   // Store API categories for mapping
   private apiCategories: ApiCategory[] = [];
+  private isBrowser: boolean;
 
   constructor(
     private apiService: ApiService,
-    private authService: AuthService
-  ) {}
+    private authService: AuthService,
+    @Inject(PLATFORM_ID) platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
 
   ngOnInit(): void {
-    this.loadCategories();
-    this.loadItems();
+    // Only load data on browser, skip SSR to avoid flash of error
+    if (this.isBrowser) {
+      this.loadCategories();
+      this.loadItems();
+    }
   }
 
   loadCategories(): void {
     this.apiService.getCategories().subscribe({
       next: (apiCats) => {
         this.apiCategories = apiCats;
+        // Filter out "Buku" (sudah ada Dokumen) dan sort agar "Lainnya" di akhir
+        const filteredCats = apiCats
+          .filter(cat => cat.name !== 'Buku')
+          .sort((a, b) => {
+            if (a.name === 'Lainnya') return 1;
+            if (b.name === 'Lainnya') return -1;
+            return 0;
+          });
+        
         // Map API categories to frontend format
-        const mappedCategories: Category[] = apiCats.map(cat => ({
+        const mappedCategories: Category[] = filteredCats.map(cat => ({
           id: this.mapCategoryNameToId(cat.name) as ItemCategory,
           label: cat.name,
           icon: this.getCategoryIcon(cat.name)
@@ -75,6 +91,7 @@ export class HomeComponent implements OnInit {
       'Dokumen': 'documents',
       'Kunci': 'keys',
       'Pakaian': 'clothing',
+      'Buku': 'books',
       'Lainnya': 'others'
     };
     return map[name] || 'others';
@@ -89,36 +106,42 @@ export class HomeComponent implements OnInit {
       'Dokumen': 'ph-file-text',
       'Kunci': 'ph-key',
       'Pakaian': 'ph-t-shirt',
-      'Lainnya': 'ph-dots-three'
+      'Buku': 'ph-book',
+      'Lainnya': 'ph-dots-three-outline'
     };
-    return iconMap[name] || 'ph-dots-three';
+    return iconMap[name] || 'ph-question';
   }
 
   loadItems(): void {
-    // If user not authenticated, show empty state with message
-    if (!this.authService.isAuthenticated()) {
-      console.log('User not authenticated');
-      this.items = [];
-      this.isLoading.set(false);
-      this.errorMessage.set('Silakan login untuk melihat barang yang dilaporkan.');
-      return;
-    }
-
     this.isLoading.set(true);
     this.errorMessage.set('');
 
     this.apiService.getAllItems().subscribe({
       next: (apiItems) => {
+        // Debug: Log raw API response
+        console.log('Raw API response:', JSON.stringify(apiItems, null, 2));
+        
+        // Handle null/empty response
+        if (!apiItems || apiItems.length === 0) {
+          this.items = [];
+          this.isLoading.set(false);
+          return;
+        }
+        
         // Map API response to frontend Item model
         this.items = this.mapApiItemsToFrontend(apiItems);
         this.isLoading.set(false);
-        console.log('Items loaded from API:', this.items);
+        this.errorMessage.set(''); // Clear any previous error
+        console.log('Mapped items:', this.items);
       },
       error: (error) => {
         console.error('Failed to load items from API:', error);
-        this.items = [];
-        this.isLoading.set(false);
-        this.errorMessage.set('Gagal memuat data. Silakan coba lagi.');
+        // Only show error on browser, not during SSR
+        if (this.isBrowser) {
+          this.items = [];
+          this.isLoading.set(false);
+          this.errorMessage.set('Gagal memuat data. Silakan coba lagi.');
+        }
       }
     });
   }
@@ -126,24 +149,44 @@ export class HomeComponent implements OnInit {
   private mapApiItemsToFrontend(apiItems: ItemResponse[]): Item[] {
     return apiItems.map(apiItem => {
       // Determine reporter info based on item type
+      // Backend mungkin tidak selalu kirim finder/owner (bug di backend Afsar)
       const reporter = apiItem.finder || apiItem.owner;
-      const reporterName = reporter?.name || 'Unknown';
+      const reporterName = reporter?.name || 'Pengguna';
       const reporterBadge = this.mapRoleToBadge(reporter?.role);
+
+      // Get description - jangan fallback ke title
+      const description = apiItem.description || 'Tidak ada deskripsi';
+
+      // Get category name - bisa dari category_name atau lookup dari category_id
+      const categoryName = apiItem.category_name || this.getCategoryNameById(apiItem.category_id);
+
+      // Determine type - coba detect dari field lain jika tidak ada
+      // LOST item biasanya punya date_lost, FOUND item punya date_found
+      let itemType = apiItem.type;
+      if (!itemType) {
+        if (apiItem.date_lost || apiItem.urgency || apiItem.offer_reward) {
+          itemType = 'LOST';
+        } else if (apiItem.date_found || apiItem.return_method || apiItem.cod !== undefined) {
+          itemType = 'FOUND';
+        } else {
+          itemType = 'FOUND'; // Default fallback
+        }
+      }
 
       return {
         id: apiItem.id,
         title: apiItem.title,
-        description: apiItem.description || '',
-        category: this.mapCategoryName(apiItem.category_name) as ItemCategory,
-        status: apiItem.type === 'FOUND' ? 'found' : 'lost',
+        description: description,
+        category: this.mapCategoryName(categoryName) as ItemCategory,
+        status: itemType === 'FOUND' ? 'found' : 'lost',
         reportStatus: apiItem.status === 'OPEN' ? 'active' : (apiItem.status === 'CLAIMED' ? 'claimed' : 'resolved') as any,
-        imageUrl: apiItem.image_url || 'https://placehold.co/400x300?text=No+Image',
+        imageUrl: this.apiService.getStaticFileUrl(apiItem.image_url || '') || 'https://placehold.co/400x300?text=No+Image',
         date: new Date(apiItem.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
         time: new Date(apiItem.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
         location: {
-          name: apiItem.location_name || 'Unknown Location',
-          lat: 0,
-          lng: 0
+          name: apiItem.location_name || 'Lokasi tidak diketahui',
+          lat: apiItem.location_latitude || 0,
+          lng: apiItem.location_longitude || 0
         },
         reporterId: reporter?.id || '',
         reporterName: reporterName,
@@ -154,9 +197,17 @@ export class HomeComponent implements OnInit {
           question: v.question,
           answer: '', // Hidden
           isRequired: true
-        })) || []
+        })) || [],
+        // QR related
+        isScannedByQr: !!apiItem.attached_qr
       } as Item;
     });
+  }
+
+  private getCategoryNameById(categoryId: string): string {
+    // Lookup category name dari categories yang sudah di-load
+    const category = this.apiCategories.find(c => c.id === categoryId);
+    return category?.name || 'Lainnya';
   }
 
   private mapRoleToBadge(role?: string): 'gold' | 'blue' | 'gray' {

@@ -136,7 +136,9 @@
             </div>
             
             <!-- Change Password -->
-            <button class="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+            <button 
+              (click)="openChangePasswordModal()"
+              class="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition">
               <div class="flex items-center gap-3">
                 <i class="ph ph-lock text-gray-400 text-lg"></i>
                 <span class="text-sm text-gray-600 dark:text-gray-400">Ubah Password</span>
@@ -145,7 +147,9 @@
             </button>
             
             <!-- Help -->
-            <button class="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+            <button 
+              (click)="openHelpModal()"
+              class="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition">
               <div class="flex items-center gap-3">
                 <i class="ph ph-question text-gray-400 text-lg"></i>
                 <span class="text-sm text-gray-600 dark:text-gray-400">Bantuan</span>
@@ -201,58 +205,65 @@
 
           <!-- Items List -->
           <div class="divide-y divide-gray-100 dark:divide-gray-700 md:h-[calc(655px-120px)] md:overflow-y-auto scrollbar-hide">
-            @for (item of filteredItems(); track item.id) {
-              <button 
-                (click)="navigateToItem(item)"
-                class="w-full px-4 py-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition text-left">
-                <!-- Image -->
-                <div class="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
-                  @if (item.imageUrl) {
-                    <img [src]="item.imageUrl" [alt]="item.title" class="w-full h-full object-cover">
-                  } @else {
-                    <div class="w-full h-full flex items-center justify-center">
-                      <i [class]="'ph ' + getCategoryIcon(item.category) + ' text-2xl text-gray-400'"></i>
-                    </div>
-                  }
-                </div>
-                
-                <!-- Content -->
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 mb-1">
-                    <h3 class="font-medium text-gray-900 dark:text-white truncate">{{ item.title }}</h3>
-                  </div>
-                  <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                    <span class="flex items-center gap-1">
-                      <i class="ph ph-map-pin"></i>
-                      {{ getLocationName(item) }}
-                    </span>
-                    <span class="flex items-center gap-1">
-                      <i class="ph ph-calendar"></i>
-                      {{ item.date }}
-                    </span>
-                  </div>
-                </div>
-                
-                <!-- Status & Arrow -->
-                <div class="flex items-center gap-3 flex-shrink-0">
-                  <app-status-badge [status]="item.status" size="sm"></app-status-badge>
-                  <i class="ph ph-caret-right text-gray-400 hidden sm:block"></i>
-                </div>
-              </button>
-            } @empty {
-              <div class="px-6 py-12 text-center md:h-[calc(655px-120px)] md:flex md:flex-col md:items-center md:justify-center">
-                <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <i class="ph ph-file-dashed text-3xl text-gray-400"></i>
-                </div>
-                <p class="text-gray-500 dark:text-gray-400 mb-2">Belum ada laporan</p>
-                <p class="text-sm text-gray-400 dark:text-gray-500">Laporan yang kamu buat akan muncul di sini</p>
-                <a 
-                  routerLink="/post-item"
-                  class="inline-flex items-center gap-2 mt-4 px-6 py-3 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition">
-                  <i class="ph ph-plus"></i>
-                  Buat Laporan
-                </a>
+            @if (isLoadingItems()) {
+              <div class="px-6 py-12 text-center">
+                <div class="w-10 h-10 border-4 border-uii-blue/30 border-t-uii-blue rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-gray-500 dark:text-gray-400">Memuat laporan...</p>
               </div>
+            } @else {
+              @for (item of filteredItems(); track item.id) {
+                <button 
+                  (click)="navigateToItem(item)"
+                  class="w-full px-4 py-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition text-left group">
+                  <!-- Image -->
+                  <div class="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+                    @if (item.imageUrl) {
+                      <img [src]="item.imageUrl" [alt]="item.title" class="w-full h-full object-cover">
+                    } @else {
+                      <div class="w-full h-full flex items-center justify-center">
+                        <i [class]="'ph ' + getCategoryIcon(item.category) + ' text-2xl text-gray-400'"></i>
+                      </div>
+                    }
+                  </div>
+                  
+                  <!-- Content -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <h3 class="font-medium text-gray-900 dark:text-white truncate">{{ item.title }}</h3>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                      <span class="flex items-center gap-1">
+                        <i class="ph ph-map-pin"></i>
+                        {{ getLocationName(item) }}
+                      </span>
+                      <span class="flex items-center gap-1">
+                        <i class="ph ph-calendar"></i>
+                        {{ item.date }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <!-- Status & Arrow -->
+                  <div class="flex items-center gap-3 flex-shrink-0">
+                    <app-status-badge [status]="item.status" size="sm"></app-status-badge>
+                    <i class="ph ph-caret-right text-gray-400 group-hover:text-uii-blue transition"></i>
+                  </div>
+                </button>
+              } @empty {
+                <div class="px-6 py-12 text-center md:h-[calc(655px-120px)] md:flex md:flex-col md:items-center md:justify-center">
+                  <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="ph ph-file-dashed text-3xl text-gray-400"></i>
+                  </div>
+                  <p class="text-gray-500 dark:text-gray-400 mb-2">Belum ada laporan</p>
+                  <p class="text-sm text-gray-400 dark:text-gray-500">Laporan yang kamu buat akan muncul di sini</p>
+                  <a 
+                    routerLink="/post-item"
+                    class="inline-flex items-center gap-2 mt-4 px-6 py-3 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition">
+                    <i class="ph ph-plus"></i>
+                    Buat Laporan
+                  </a>
+                </div>
+              }
             }
           </div>
         </div>
@@ -282,7 +293,7 @@
     (cancel)="closeLogoutModal()"
   ></app-confirm-modal>
 
-  <!-- Edit Profile Modal (Placeholder) -->
+  <!-- Edit Profile Modal -->
   @if (showEditProfileModal()) {
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
       <!-- Backdrop -->
@@ -305,13 +316,21 @@
         <div class="flex justify-center mb-6">
           <div class="relative">
             <img 
-              [src]="currentUser()?.avatar || 'https://i.pravatar.cc/150'" 
+              [src]="editAvatarPreview || currentUser()?.avatar || 'https://i.pravatar.cc/150'" 
               alt="Avatar"
               class="w-24 h-24 rounded-full object-cover border-4 border-gray-200 dark:border-gray-600"
             >
-            <button class="absolute bottom-0 right-0 w-8 h-8 bg-uii-blue text-white rounded-full flex items-center justify-center shadow-lg">
+            <button 
+              (click)="triggerAvatarUpload()"
+              class="absolute bottom-0 right-0 w-8 h-8 bg-uii-blue text-white rounded-full flex items-center justify-center shadow-lg hover:bg-uii-blue/90 transition">
               <i class="ph ph-camera text-sm"></i>
             </button>
+            <input 
+              #avatarInput
+              type="file" 
+              accept="image/*" 
+              class="hidden" 
+              (change)="onAvatarSelected($event)">
           </div>
         </div>
         
@@ -321,22 +340,32 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nama Lengkap</label>
             <input 
               type="text" 
-              [value]="currentUser()?.name"
+              [(ngModel)]="editName"
               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent outline-none"
+              placeholder="Masukkan nama lengkap"
             >
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No. HP</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No. WhatsApp</label>
             <input 
               type="tel" 
-              [value]="currentUser()?.phone"
+              [(ngModel)]="editPhone"
               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent outline-none"
+              placeholder="08xxxxxxxxxx"
             >
           </div>
         </div>
         
-        <button class="w-full mt-6 py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition">
-          Simpan Perubahan
+        <button 
+          (click)="saveProfile()"
+          [disabled]="isSavingProfile()"
+          class="w-full mt-6 py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition disabled:opacity-50 flex items-center justify-center gap-2">
+          @if (isSavingProfile()) {
+            <i class="ph ph-spinner animate-spin"></i>
+            <span>Menyimpan...</span>
+          } @else {
+            <span>Simpan Perubahan</span>
+          }
         </button>
       </div>
     </div>
@@ -375,6 +404,113 @@
             [showShare]="true">
           </app-qr-display>
         }
+      </div>
+    </div>
+  }
+
+  <!-- Change Password Modal -->
+  @if (showChangePasswordModal()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <!-- Backdrop -->
+      <div 
+        class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        (click)="closeChangePasswordModal()">
+      </div>
+      
+      <!-- Modal -->
+      <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md animate-scale-up">
+        <button 
+          (click)="closeChangePasswordModal()"
+          class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+          <i class="ph ph-x text-xl"></i>
+        </button>
+        
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-6">Ubah Password</h3>
+        
+        <!-- Error Message -->
+        @if (passwordError()) {
+          <div class="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+            <p class="text-sm text-red-600 dark:text-red-400">{{ passwordError() }}</p>
+          </div>
+        }
+        
+        <!-- Form Fields -->
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password Saat Ini</label>
+            <input 
+              type="password" 
+              [(ngModel)]="currentPassword"
+              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent outline-none"
+              placeholder="Masukkan password saat ini"
+            >
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password Baru</label>
+            <input 
+              type="password" 
+              [(ngModel)]="newPassword"
+              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent outline-none"
+              placeholder="Minimal 6 karakter"
+            >
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Konfirmasi Password Baru</label>
+            <input 
+              type="password" 
+              [(ngModel)]="confirmPassword"
+              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent outline-none"
+              placeholder="Ulangi password baru"
+            >
+          </div>
+        </div>
+        
+        <button 
+          (click)="changePassword()"
+          [disabled]="isChangingPassword()"
+          class="w-full mt-6 py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition disabled:opacity-50 flex items-center justify-center gap-2">
+          @if (isChangingPassword()) {
+            <i class="ph ph-spinner animate-spin"></i>
+            <span>Mengubah...</span>
+          } @else {
+            <span>Ubah Password</span>
+          }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Help Modal -->
+  @if (showHelpModal()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <!-- Backdrop -->
+      <div 
+        class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        (click)="closeHelpModal()">
+      </div>
+      
+      <!-- Modal -->
+      <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md animate-scale-up text-center">
+        <button 
+          (click)="closeHelpModal()"
+          class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+          <i class="ph ph-x text-xl"></i>
+        </button>
+        
+        <div class="w-20 h-20 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="ph ph-warning text-4xl text-yellow-600 dark:text-yellow-400"></i>
+        </div>
+        
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Bantuan Belum Tersedia</h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-6">
+          Mohon maaf, fitur bantuan masih dalam pengembangan. Silakan hubungi admin untuk pertanyaan lebih lanjut.
+        </p>
+        
+        <button 
+          (click)="closeHelpModal()"
+          class="w-full py-3 px-4 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90 transition">
+          Mengerti
+        </button>
       </div>
     </div>
   }

@@ -26,12 +26,6 @@
            class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
           Radar
         </a>
-        @if (isAuthenticated()) {
-          <a routerLink="/profile" routerLinkActive="text-uii-gold border-uii-gold" 
-             class="hover:text-uii-gold transition border-b-2 border-transparent hover:border-uii-gold py-1">
-            Akun
-          </a>
-        }
       </div>
 
       <!-- Right: Action Buttons -->
@@ -99,12 +93,6 @@
                    class="flex items-center gap-3 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                   <i class="ph ph-user-circle text-lg"></i>
                   <span>Profil Saya</span>
-                </a>
-                <a routerLink="/post-item" 
-                   (click)="closeUserMenu()"
-                   class="flex items-center gap-3 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <i class="ph ph-file-text text-lg"></i>
-                  <span>Laporan Saya</span>
                 </a>
                 <hr class="my-2 border-gray-100 dark:border-gray-700">
                 <button 

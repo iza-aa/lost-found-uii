@@ -1,0 +1,541 @@
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  
+  <!-- ========== LOADING ========== -->
+  @if (isLoading()) {
+    <div class="flex items-center justify-center min-h-screen">
+      <app-cube-loader></app-cube-loader>
+    </div>
+  }
+
+  <!-- ========== NOT FOUND ========== -->
+  @if (notFound()) {
+    <div class="flex flex-col items-center justify-center min-h-screen p-4">
+      <i class="ph ph-warning text-6xl text-gray-400 mb-4"></i>
+      <h2 class="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">Item Tidak Ditemukan</h2>
+      <button (click)="goBack()" class="px-4 py-2 bg-uii-blue text-white rounded-lg">Kembali</button>
+    </div>
+  }
+
+  <!-- ========== MAIN CONTENT ========== -->
+  @if (item(); as itemData) {
+    <div class="max-w-2xl mx-auto p-4 space-y-4">
+      
+      <!-- Header -->
+      <div class="flex items-center gap-3">
+        <button (click)="goBack()" class="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full">
+          <i class="ph ph-arrow-left text-xl"></i>
+        </button>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-bold text-gray-900 dark:text-white">{{ itemData.title }}</h1>
+            @if (isOwner()) {
+              <button (click)="openEditTitleModal()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                <i class="ph ph-pencil-simple text-gray-400 hover:text-uii-blue text-sm"></i>
+              </button>
+            }
+          </div>
+          <p class="text-sm text-gray-500">{{ itemData.category_name }}</p>
+        </div>
+        <span class="ml-auto px-3 py-1 bg-red-100 text-red-700 text-sm font-medium rounded-full">HILANG</span>
+      </div>
+
+      <!-- Image -->
+      <div class="relative rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700">
+        @if (itemData.image_url) {
+          <img [src]="getImageUrl(itemData.image_url)" [alt]="itemData.title" class="w-full h-64 object-cover">
+        } @else {
+          <div class="w-full h-64 flex items-center justify-center">
+            <span class="text-4xl text-gray-400">No Image</span>
+          </div>
+        }
+        
+        <!-- Edit image button (owner only) -->
+        @if (isOwner()) {
+          <button 
+            (click)="triggerImageUpload()"
+            [disabled]="isUploadingImage()"
+            class="absolute bottom-3 right-3 p-2 bg-black/60 hover:bg-black/80 rounded-full text-white transition">
+            @if (isUploadingImage()) {
+              <i class="ph ph-spinner animate-spin text-lg"></i>
+            } @else {
+              <i class="ph-fill ph-camera text-lg"></i>
+            }
+          </button>
+          <input 
+            #imageInput
+            type="file" 
+            accept="image/*" 
+            class="hidden" 
+            (change)="onImageSelected($event)">
+        }
+      </div>
+
+      <!-- Location & Date Info (above map) -->
+      <div class="flex items-center gap-4 text-sm text-gray-500">
+        <div class="flex items-center gap-1.5">
+          <i class="ph ph-map-pin"></i>
+          <span>{{ itemData.location_name || 'Lokasi tidak diketahui' }}</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <i class="ph ph-calendar"></i>
+          <span>{{ itemData.date_lost || itemData.created_at | date:'dd MMM yyyy' }}</span>
+        </div>
+      </div>
+
+      <!-- Map (jika ada koordinat) -->
+      @if (itemData.location_latitude && itemData.location_longitude) {
+        <div class="rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 relative z-0">
+          <div id="detail-map" class="w-full h-48"></div>
+        </div>
+      }
+
+      <!-- Urgency, Reward, COD Badges -->
+      <div class="flex flex-wrap gap-2">
+        <!-- Urgency Badge -->
+        @if (itemData.urgency) {
+          <span [class]="getUrgencyClass(itemData.urgency)">
+            <i [class]="getUrgencyIcon(itemData.urgency)"></i>
+            {{ getUrgencyLabel(itemData.urgency) }}
+          </span>
+        }
+        
+        <!-- Reward Badge -->
+        @if (itemData.offer_reward) {
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-sm font-medium rounded-full">
+            <i class="ph-fill ph-gift"></i>
+            Ada Imbalan
+          </span>
+        }
+        
+        <!-- COD Badge -->
+        @if (itemData.cod) {
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-sm font-medium rounded-full">
+            <i class="ph-fill ph-handshake"></i>
+            Bersedia COD
+          </span>
+        }
+      </div>
+
+      <!-- Description -->
+      @if (itemData.description || isOwner()) {
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+          <h3 class="font-semibold text-gray-900 dark:text-white mb-2 flex items-center justify-between">
+            <span class="flex items-center gap-2">
+              <i class="ph ph-text-align-left text-uii-blue"></i>
+              Deskripsi
+            </span>
+            @if (isOwner() && !isEditingDescription()) {
+              <button (click)="startEditDescription()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                <i class="ph ph-pencil-simple text-gray-400 hover:text-uii-blue"></i>
+              </button>
+            }
+          </h3>
+          
+          @if (isEditingDescription()) {
+            <div class="space-y-2">
+              <textarea 
+                [(ngModel)]="editDescriptionText"
+                rows="4"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent resize-none"
+                placeholder="Tulis deskripsi..."></textarea>
+              <div class="flex justify-end gap-2">
+                <button 
+                  (click)="cancelEditDescription()" 
+                  class="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                  Batal
+                </button>
+                <button 
+                  (click)="saveDescription()"
+                  [disabled]="isSavingDescription()"
+                  class="px-3 py-1.5 text-sm bg-uii-blue text-white rounded hover:bg-uii-blue/90 disabled:opacity-50">
+                  @if (isSavingDescription()) {
+                    <i class="ph ph-spinner animate-spin"></i>
+                  } @else {
+                    Simpan
+                  }
+                </button>
+              </div>
+            </div>
+          } @else {
+            <p class="text-gray-600 dark:text-gray-400 text-sm whitespace-pre-line">{{ itemData.description || 'Tidak ada deskripsi' }}</p>
+          }
+        </div>
+      }
+
+      <!-- Owner Info Card -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+        <!-- Owner Info -->
+        @if (itemData.owner) {
+          <div>
+            <p class="text-xs text-gray-500 mb-2">Dilaporkan oleh:</p>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-uii-blue/10 rounded-full flex items-center justify-center">
+                <i class="ph-fill ph-user text-uii-blue"></i>
+              </div>
+              <div class="flex flex-col gap-1">
+                <p class="font-medium text-gray-900 dark:text-white">{{ itemData.owner.name }}</p>
+                <span [class]="getRoleBadgeClass(itemData.owner.role)">
+                  {{ formatRole(itemData.owner.role) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- ========================================== -->
+      <!-- CASE 1: USER IS OWNER -->
+      <!-- ========================================== -->
+      @if (isOwner()) {
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+          <h3 class="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <i class="ph ph-users text-uii-blue"></i>
+            Orang yang Mengaku Menemukan
+          </h3>
+
+          <!-- No claims -->
+          @if (claims().length === 0) {
+            <div class="text-center py-6 text-gray-500">
+              <i class="ph ph-hourglass text-3xl mb-2"></i>
+              <p>Belum ada yang menemukan barangmu</p>
+            </div>
+          }
+
+          <!-- List claims -->
+          @for (claim of claims(); track claim.id) {
+            <div class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg mb-3">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                    <i class="ph-fill ph-user text-gray-500"></i>
+                  </div>
+                  <span class="font-medium text-gray-900 dark:text-white">
+                    {{ claim.finder?.name || 'Penemu' }}
+                  </span>
+                </div>
+                <span [class]="'px-2 py-1 text-xs font-medium rounded-full ' + getStatusColor(claim.status)">
+                  {{ getStatusLabel(claim.status) }}
+                </span>
+              </div>
+
+              <!-- Questions from finder -->
+              <div class="space-y-2 mt-3">
+                @for (q of claim.questions; track q.id) {
+                  <div class="text-sm">
+                    <p class="text-gray-600 dark:text-gray-400">
+                      <i class="ph ph-question text-uii-blue mr-1"></i>{{ q.question }}
+                    </p>
+                    @if (q.answer) {
+                      <p class="ml-5 mt-1 text-gray-900 dark:text-white">
+                        <i class="ph ph-arrow-bend-down-right text-green-500 mr-1"></i>{{ q.answer }}
+                      </p>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Actions based on status -->
+              @if (claim.status === 'PENDING') {
+                <button 
+                  (click)="openAnswerModal(claim)"
+                  class="mt-3 w-full py-2 bg-uii-blue text-white font-medium rounded-lg hover:bg-uii-blue/90">
+                  <i class="ph ph-pencil mr-1"></i> Jawab Pertanyaan
+                </button>
+              }
+
+              @if (claim.status === 'APPROVED') {
+                <div class="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <p class="text-sm font-medium text-green-700 dark:text-green-400 mb-2">
+                    <i class="ph ph-check-circle mr-1"></i> Klaim disetujui! Hubungi penemu:
+                  </p>
+                  
+                  <div class="space-y-2">
+                    <!-- WhatsApp jika show_phone true -->
+                    @if (claim.show_phone && claim.finder?.phone) {
+                      <a 
+                        [href]="getWhatsAppUrl(claim.finder?.phone)"
+                        target="_blank"
+                        class="flex items-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm">
+                        <i class="ph-fill ph-whatsapp-logo text-lg"></i>
+                        <span>WhatsApp</span>
+                      </a>
+                    }
+                    
+                    <!-- Kontak lain dari claim.contacts -->
+                    @for (contact of claim.contacts; let i = $index; track i) {
+                      <a 
+                        [href]="getContactUrl(contact)"
+                        target="_blank"
+                        [class]="'flex items-center gap-2 px-3 py-2 rounded-lg text-sm ' + getContactStyle(contact.platform)">
+                        <i [class]="getContactIcon(contact.platform)"></i>
+                        <span>{{ contact.platform }}</span>
+                      </a>
+                    }
+                    
+                    <!-- Fallback jika tidak ada kontak -->
+                    @if (!claim.show_phone && (!claim.contacts || claim.contacts.length === 0)) {
+                      <p class="text-sm text-gray-500">Penemu tidak mencantumkan kontak.</p>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Owner actions -->
+          <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button 
+              (click)="openDeleteModal()"
+              class="w-full py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
+              <i class="ph ph-trash mr-1"></i> Hapus Laporan
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- ========================================== -->
+      <!-- CASE 2: USER IS NOT OWNER (FINDER) -->
+      <!-- ========================================== -->
+      @if (!isOwner() && currentUser()) {
+
+        <!-- CASE 2A: User belum submit claim -->
+        @if (!myClaim()) {
+          <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+            <div class="text-center py-4">
+              <i class="ph ph-hand-waving text-4xl text-uii-gold mb-2"></i>
+              <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Kamu menemukan barang ini?</h3>
+              <p class="text-sm text-gray-500 mb-4">Ajukan pertanyaan untuk memverifikasi pemilik asli</p>
+              <button 
+                (click)="openFinderModal()"
+                class="w-full py-3 bg-uii-blue text-white font-medium rounded-xl hover:bg-uii-blue/90">
+                <i class="ph ph-hand-pointing mr-2"></i>
+                Saya Menemukan Barang Ini
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- CASE 2B: User sudah submit claim -->
+        @if (myClaim(); as claim) {
+          <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <i class="ph ph-clipboard-text text-uii-blue"></i>
+              Status Klaimmu
+            </h3>
+
+            <span [class]="'inline-block px-3 py-1 text-sm font-medium rounded-full mb-3 ' + getStatusColor(claim.status)">
+              {{ getStatusLabel(claim.status) }}
+            </span>
+
+            <!-- PENDING: Waiting for owner -->
+            @if (claim.status === 'PENDING') {
+              <div class="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                <p class="text-sm text-yellow-700 dark:text-yellow-400">
+                  <i class="ph ph-clock mr-1"></i>
+                  Menunggu pemilik menjawab pertanyaanmu...
+                </p>
+                <div class="mt-2 space-y-1">
+                  @for (q of claim.questions; track q.id) {
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                      <i class="ph ph-question mr-1"></i> {{ q.question }}
+                    </p>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- PENDING_APPROVAL: Owner answered, verify now -->
+            @if (claim.status === 'PENDING_APPROVAL') {
+              <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg mb-3">
+                <p class="text-sm font-medium text-blue-700 dark:text-blue-400 mb-2">
+                  <i class="ph ph-check mr-1"></i>
+                  Pemilik sudah menjawab! Apakah jawabannya sesuai?
+                </p>
+                <div class="space-y-2">
+                  @for (q of claim.questions; track q.id) {
+                    <div class="text-sm">
+                      <p class="text-gray-600 dark:text-gray-400">
+                        <i class="ph ph-question text-uii-blue mr-1"></i> {{ q.question }}
+                      </p>
+                      <p class="ml-5 mt-1 text-gray-900 dark:text-white font-medium">
+                        <i class="ph ph-arrow-bend-down-right text-green-500 mr-1"></i> {{ q.answer }}
+                      </p>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <button 
+                  (click)="rejectOwnerAnswers()"
+                  class="py-2 border border-red-300 text-red-600 font-medium rounded-lg hover:bg-red-50">
+                  <i class="ph ph-x mr-1"></i> Tolak
+                </button>
+                <button 
+                  (click)="approveOwnerAnswers()"
+                  class="py-2 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600">
+                  <i class="ph ph-check mr-1"></i> Setuju
+                </button>
+              </div>
+            }
+
+            <!-- APPROVED: Show owner contact -->
+            @if (claim.status === 'APPROVED') {
+              <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <p class="text-sm font-medium text-green-700 dark:text-green-400 mb-2">
+                  <i class="ph ph-check-circle mr-1"></i>
+                  Klaim disetujui! Silakan hubungi pemilik:
+                </p>
+                
+                <div class="space-y-2">
+                  <!-- WhatsApp jika show_phone true -->
+                  @if (item()?.show_phone && item()?.owner?.phone) {
+                    <a 
+                      [href]="getWhatsAppUrl(item()?.owner?.phone)"
+                      target="_blank"
+                      class="flex items-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                      <i class="ph-fill ph-whatsapp-logo text-lg"></i>
+                      <span>WhatsApp</span>
+                    </a>
+                  }
+                  
+                  <!-- Kontak lain dari item.contacts -->
+                  @for (contact of item()?.contacts; let i = $index; track i) {
+                    <a 
+                      [href]="getContactUrl(contact)"
+                      target="_blank"
+                      [class]="'flex items-center gap-2 px-3 py-2 rounded-lg ' + getContactStyle(contact.platform)">
+                      <i [class]="getContactIcon(contact.platform)"></i>
+                      <span>{{ contact.platform }}</span>
+                    </a>
+                  }
+                  
+                  <!-- Fallback jika tidak ada kontak -->
+                  @if (!item()?.show_phone && (!item()?.contacts || item()?.contacts?.length === 0)) {
+                    <p class="text-sm text-gray-500">Pemilik tidak mencantumkan kontak.</p>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- REJECTED -->
+            @if (claim.status === 'REJECTED') {
+              <div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                <p class="text-sm text-red-700 dark:text-red-400">
+                  <i class="ph ph-x-circle mr-1"></i>
+                  Klaim ditolak.
+                </p>
+              </div>
+            }
+          </div>
+        }
+      }
+
+      <!-- ========================================== -->
+      <!-- CASE 3: GUEST (NOT LOGGED IN) -->
+      <!-- ========================================== -->
+      @if (!currentUser()) {
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm text-center">
+          <p class="text-gray-500 mb-3">Kamu menemukan barang ini? Login untuk melaporkan.</p>
+          <a routerLink="/login" class="inline-block px-4 py-2 bg-uii-blue text-white rounded-lg">
+            Login
+          </a>
+        </div>
+      }
+
+    </div>
+  }
+
+  <!-- ========== MODALS ========== -->
+
+  <!-- Finder Modal -->
+  <app-finder-claim-modal
+    [isOpen]="showFinderModal()"
+    (close)="closeFinderModal()"
+    (submit)="onFinderSubmit($event)">
+  </app-finder-claim-modal>
+
+  <!-- Answer Modal -->
+  @if (selectedClaim(); as claim) {
+    <app-owner-answer-modal
+      [isOpen]="showAnswerModal()"
+      [questions]="claim.questions || []"
+      [finderName]="claim.finder?.name || 'Penemu'"
+      (close)="closeAnswerModal()"
+      (submit)="onAnswerSubmit($event)">
+    </app-owner-answer-modal>
+  }
+
+  <!-- Delete Confirmation Modal -->
+  <app-delete-confirm-modal
+    [isOpen]="showDeleteModal()"
+    [isLoading]="isDeleting()"
+    title="Hapus Laporan?"
+    message="Laporan akan dihapus permanen."
+    (close)="closeDeleteModal()"
+    (confirm)="confirmDelete()">
+  </app-delete-confirm-modal>
+
+  <!-- Edit Title & Category Modal -->
+  @if (showEditTitleModal()) {
+    <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md shadow-xl">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white">Edit Judul & Kategori</h3>
+          <button (click)="closeEditTitleModal()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
+            <i class="ph ph-x text-xl"></i>
+          </button>
+        </div>
+        
+        <!-- Content -->
+        <div class="p-4 space-y-4">
+          <!-- Title Input -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Judul Barang
+            </label>
+            <input 
+              type="text"
+              [(ngModel)]="editTitleText"
+              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent"
+              placeholder="Nama barang...">
+          </div>
+          
+          <!-- Category Select -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Kategori
+            </label>
+            <select
+              [(ngModel)]="editCategoryId"
+              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-uii-blue focus:border-transparent">
+              @for (cat of categories(); track cat.id) {
+                <option [value]="cat.id">{{ cat.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="flex gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
+          <button 
+            (click)="closeEditTitleModal()" 
+            class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700">
+            Batal
+          </button>
+          <button 
+            (click)="saveTitle()"
+            [disabled]="isSavingTitle() || !editTitleText.trim()"
+            class="flex-1 px-4 py-3 bg-uii-blue text-white rounded-xl hover:bg-uii-blue/90 disabled:opacity-50 disabled:cursor-not-allowed">
+            @if (isSavingTitle()) {
+              <i class="ph ph-spinner animate-spin mr-2"></i>
+            }
+            Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

@@ -23,13 +23,17 @@ export class ItemCardComponent {
    * Handle card click - check auth before navigating
    */
   onCardClick(): void {
+    // Determine route based on item status
+    const route = this.item.status === 'found' ? '/found' : '/item';
+    const fullPath = `${route}/${this.item.id}`;
+    
     if (this.authService.isAuthenticated()) {
       // Navigate to item detail
-      this.router.navigate(['/item', this.item.id]);
+      this.router.navigate([route, this.item.id]);
     } else {
       // Redirect to login with return URL
       this.router.navigate(['/login'], {
-        queryParams: { returnUrl: `/item/${this.item.id}` }
+        queryParams: { returnUrl: fullPath }
       });
     }
   }
@@ -38,9 +42,12 @@ export class ItemCardComponent {
    * Get location display string
    */
   getLocationDisplay(): string {
+    if (!this.item.location) {
+      return 'Lokasi tidak diketahui';
+    }
     if (typeof this.item.location === 'string') {
       return this.item.location;
     }
-    return this.item.location.name;
+    return this.item.location.name || 'Lokasi tidak diketahui';
   }
 }

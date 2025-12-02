@@ -1,0 +1,88 @@
+@if (isOpen && claim) {
+  <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-xl">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Review Klaim</h2>
+        <button (click)="onClose()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
+          <i class="ph ph-x text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Content (Scrollable) -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-5">
+        <!-- Claimer Info -->
+        @if (claim.owner) {
+          <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+            <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+              <i class="ph-fill ph-user text-green-600 text-xl"></i>
+            </div>
+            <div>
+              <p class="font-medium text-gray-900 dark:text-white">{{ claim.owner.name }}</p>
+              <span [class]="getRoleBadgeClass(claim.owner.role)">
+                {{ formatRole(claim.owner.role) }}
+              </span>
+            </div>
+          </div>
+        }
+
+        <!-- Info Banner -->
+        <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+          <p class="text-sm text-blue-700 dark:text-blue-400">
+            <i class="ph ph-info mr-1"></i>
+            Periksa jawaban dengan teliti. Hanya setujui jika jawaban sesuai dengan ciri-ciri barang yang Anda temukan.
+          </p>
+        </div>
+
+        <!-- Answers -->
+        <div class="space-y-4">
+          <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <i class="ph ph-clipboard-text text-green-500"></i>
+            Jawaban Pengklaim
+          </h3>
+          
+          @for (qa of claim.answers; track qa.question; let i = $index) {
+            <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl space-y-2">
+              <div class="flex items-start gap-2">
+                <span class="w-6 h-6 rounded-full bg-green-500 text-white text-xs flex items-center justify-center flex-shrink-0">
+                  {{ i + 1 }}
+                </span>
+                <p class="text-sm text-gray-600 dark:text-gray-400">{{ qa.question }}</p>
+              </div>
+              <div class="ml-8 p-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                <p class="text-sm text-gray-900 dark:text-white font-medium">
+                  <i class="ph ph-arrow-bend-down-right text-green-500 mr-1"></i>
+                  {{ qa.answer }}
+                </p>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Warning -->
+        <div class="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
+          <p class="text-sm text-yellow-700 dark:text-yellow-400">
+            <i class="ph ph-warning mr-1"></i>
+            <strong>Perhatian:</strong> Setelah menyetujui, kontak Anda akan dibagikan ke pengklaim.
+          </p>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex gap-3 p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <button 
+          (click)="onReject()" 
+          class="flex-1 px-4 py-3 border border-red-300 text-red-600 font-medium rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+          <i class="ph ph-x mr-2"></i>
+          Tolak
+        </button>
+        <button 
+          (click)="onApprove()"
+          class="flex-1 px-4 py-3 bg-green-500 text-white font-medium rounded-xl hover:bg-green-600 transition">
+          <i class="ph ph-check mr-2"></i>
+          Setujui
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -34,11 +34,16 @@ export const routes: Routes = [
   { path: 'radar', component: RadarComponent, canActivate: [authGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
   
-  // Item detail (protected)
+  // Item detail - LOST items with verification flow
   { 
     path: 'item/:id', 
-    loadComponent: () => import('./features/item-detail/item-detail.component').then(m => m.ItemDetailComponent),
-    canActivate: [authGuard]
+    loadComponent: () => import('./features/item-detail-lost/item-detail-lost.component').then(m => m.ItemDetailLostComponent)
+  },
+  
+  // Item detail - FOUND items with verification flow
+  { 
+    path: 'found/:id', 
+    loadComponent: () => import('./features/item-detail-found/item-detail-found.component').then(m => m.ItemDetailFoundComponent)
   },
   
   // Wildcard - redirect ke home

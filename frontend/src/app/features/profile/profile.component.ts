@@ -1,23 +1,28 @@
-import { Component, OnInit, signal, computed, PLATFORM_ID, Inject } from '@angular/core';
+import { Component, OnInit, signal, computed, PLATFORM_ID, Inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
+import { ApiService, ItemResponse } from '../../core/services/api.service';
 import { Item, User } from '../../core/models';
-import { MOCK_ITEMS, generateUserQRData } from '../../core/mocks';
+import { generateUserQRData } from '../../core/mocks';
 import { StatusBadgeComponent, UserBadgeComponent, ConfirmModalComponent, QrDisplayComponent } from '../../shared/components';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, RouterModule, StatusBadgeComponent, UserBadgeComponent, ConfirmModalComponent, QrDisplayComponent],
+  imports: [CommonModule, RouterModule, FormsModule, StatusBadgeComponent, UserBadgeComponent, ConfirmModalComponent, QrDisplayComponent],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.css']
 })
 export class ProfileComponent implements OnInit {
+  @ViewChild('avatarInput') avatarInput!: ElementRef<HTMLInputElement>;
+  
   currentUser = this.authService.currentUser;
   
-  // User's items
+  // User's items from API
   userItems = signal<Item[]>([]);
+  isLoadingItems = signal(false);
   selectedTab = signal<'all' | 'lost' | 'found' | 'completed'>('all');
   
   // Filtered items based on selected tab
@@ -37,6 +42,22 @@ export class ProfileComponent implements OnInit {
   showLogoutModal = signal(false);
   showEditProfileModal = signal(false);
   showQRModal = signal(false);
+  showChangePasswordModal = signal(false);
+  showHelpModal = signal(false);
+
+  // Edit profile form
+  editName = '';
+  editPhone = '';
+  editAvatarPreview = '';
+  editAvatarFile: File | null = null;
+  isSavingProfile = signal(false);
+
+  // Change password form
+  currentPassword = '';
+  newPassword = '';
+  confirmPassword = '';
+  isChangingPassword = signal(false);
+  passwordError = signal('');
 
   // QR Code URL
   qrCodeUrl = signal('');
@@ -44,6 +65,7 @@ export class ProfileComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
+    private apiService: ApiService,
     private router: Router,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
@@ -58,7 +80,6 @@ export class ProfileComponent implements OnInit {
   private generateQRUrl(): void {
     const user = this.currentUser();
     if (user && this.isBrowser) {
-      // Use helper function from user.mock for consistency
       const encoded = generateUserQRData(user);
       const baseUrl = window.location.origin;
       this.qrCodeUrl.set(`${baseUrl}/u/${encoded}`);
@@ -67,11 +88,39 @@ export class ProfileComponent implements OnInit {
 
   private loadUserItems(): void {
     const user = this.currentUser();
-    if (user) {
-      // Filter items reported by current user
-      const items = MOCK_ITEMS.filter(item => item.reporterId === user.id);
-      this.userItems.set(items);
-    }
+    if (!user) return;
+    
+    this.isLoadingItems.set(true);
+    
+    this.apiService.getMyItems().subscribe({
+      next: (apiItems) => {
+        const items = this.mapApiItemsToFrontend(apiItems);
+        this.userItems.set(items);
+        this.isLoadingItems.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load items:', err);
+        this.isLoadingItems.set(false);
+      }
+    });
+  }
+
+  private mapApiItemsToFrontend(apiItems: ItemResponse[]): Item[] {
+    return apiItems.map(apiItem => ({
+      id: apiItem.id,
+      title: apiItem.title,
+      description: apiItem.description || '',
+      category: 'others' as any,
+      status: apiItem.type === 'FOUND' ? 'found' : 'lost',
+      reportStatus: apiItem.status === 'OPEN' ? 'active' : (apiItem.status === 'CLAIMED' ? 'claimed' : 'resolved') as any,
+      imageUrl: this.apiService.getStaticFileUrl(apiItem.image_url || ''),
+      date: new Date(apiItem.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
+      location: { name: apiItem.location_name || 'Lokasi tidak diketahui', lat: 0, lng: 0 },
+      reporterId: '',
+      reporterName: '',
+      reporterBadge: 'gray' as any,
+      createdAt: new Date(apiItem.created_at),
+    })) as Item[];
   }
 
   setTab(tab: 'all' | 'lost' | 'found' | 'completed'): void {
@@ -86,14 +135,15 @@ export class ProfileComponent implements OnInit {
   }
 
   navigateToItem(item: Item): void {
-    this.router.navigate(['/item', item.id], { queryParams: { from: 'profile' } });
+    const route = item.status === 'found' ? '/found' : '/item';
+    this.router.navigate([route, item.id], { queryParams: { from: 'profile' } });
   }
 
   toggleNotifications(): void {
     this.notificationsEnabled.update(v => !v);
   }
 
-  // Logout
+  // =============== LOGOUT ===============
   openLogoutModal(): void {
     this.showLogoutModal.set(true);
   }
@@ -107,8 +157,13 @@ export class ProfileComponent implements OnInit {
     this.router.navigate(['/']);
   }
 
-  // Edit Profile
+  // =============== EDIT PROFILE ===============
   openEditProfile(): void {
+    const user = this.currentUser();
+    this.editName = user?.name || '';
+    this.editPhone = user?.phone || '';
+    this.editAvatarPreview = user?.avatar || '';
+    this.editAvatarFile = null;
     this.showEditProfileModal.set(true);
   }
 
@@ -116,7 +171,131 @@ export class ProfileComponent implements OnInit {
     this.showEditProfileModal.set(false);
   }
 
-  // QR Code
+  triggerAvatarUpload(): void {
+    this.avatarInput?.nativeElement?.click();
+  }
+
+  onAvatarSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      this.editAvatarFile = file;
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.editAvatarPreview = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  saveProfile(): void {
+    this.isSavingProfile.set(true);
+    
+    // If avatar changed, upload first
+    if (this.editAvatarFile) {
+      this.apiService.uploadImage(this.editAvatarFile).subscribe({
+        next: (res) => {
+          this.updateProfileData(res.url);
+        },
+        error: (err) => {
+          console.error('Failed to upload avatar:', err);
+          this.updateProfileData();
+        }
+      });
+    } else {
+      this.updateProfileData();
+    }
+  }
+
+  private updateProfileData(avatarUrl?: string): void {
+    const updates: any = {
+      name: this.editName,
+      phone: this.editPhone
+    };
+    
+    if (avatarUrl) {
+      updates.avatar = this.apiService.getStaticFileUrl(avatarUrl);
+    }
+
+    // Update via API
+    this.apiService.updateProfile(updates).subscribe({
+      next: () => {
+        // Update local user
+        this.authService.updateProfile(updates);
+        this.isSavingProfile.set(false);
+        this.closeEditProfile();
+        // Regenerate QR with new data
+        this.generateQRUrl();
+      },
+      error: (err) => {
+        console.error('Failed to update profile:', err);
+        // Still update locally even if API fails
+        this.authService.updateProfile(updates);
+        this.isSavingProfile.set(false);
+        this.closeEditProfile();
+        this.generateQRUrl();
+      }
+    });
+  }
+
+  // =============== CHANGE PASSWORD ===============
+  openChangePasswordModal(): void {
+    this.currentPassword = '';
+    this.newPassword = '';
+    this.confirmPassword = '';
+    this.passwordError.set('');
+    this.showChangePasswordModal.set(true);
+  }
+
+  closeChangePasswordModal(): void {
+    this.showChangePasswordModal.set(false);
+  }
+
+  changePassword(): void {
+    // Validation
+    if (!this.currentPassword || !this.newPassword || !this.confirmPassword) {
+      this.passwordError.set('Semua field harus diisi');
+      return;
+    }
+    
+    if (this.newPassword.length < 6) {
+      this.passwordError.set('Password baru minimal 6 karakter');
+      return;
+    }
+    
+    if (this.newPassword !== this.confirmPassword) {
+      this.passwordError.set('Konfirmasi password tidak cocok');
+      return;
+    }
+
+    this.isChangingPassword.set(true);
+    this.passwordError.set('');
+
+    this.apiService.changePassword(this.currentPassword, this.newPassword).subscribe({
+      next: () => {
+        this.isChangingPassword.set(false);
+        this.closeChangePasswordModal();
+        alert('Password berhasil diubah!');
+      },
+      error: (err) => {
+        this.isChangingPassword.set(false);
+        this.passwordError.set(err.error?.error || 'Gagal mengubah password');
+      }
+    });
+  }
+
+  // =============== HELP ===============
+  openHelpModal(): void {
+    this.showHelpModal.set(true);
+  }
+
+  closeHelpModal(): void {
+    this.showHelpModal.set(false);
+  }
+
+  // =============== QR CODE ===============
   openQRModal(): void {
     this.showQRModal.set(true);
   }
@@ -125,7 +304,7 @@ export class ProfileComponent implements OnInit {
     this.showQRModal.set(false);
   }
 
-  // Get category icon
+  // =============== HELPERS ===============
   getCategoryIcon(category: string): string {
     const icons: Record<string, string> = {
       bags: 'ph-backpack',
@@ -140,12 +319,10 @@ export class ProfileComponent implements OnInit {
     return icons[category] || 'ph-package';
   }
 
-  // Get location name
   getLocationName(item: Item): string {
     return typeof item.location === 'string' ? item.location : item.location.name;
   }
 
-  // Get badge label
   getBadgeLabel(): string {
     const badge = this.currentUser()?.badge;
     switch (badge) {
@@ -155,7 +332,6 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  // Get role label
   getRoleLabel(): string {
     const role = this.currentUser()?.role;
     switch (role) {
