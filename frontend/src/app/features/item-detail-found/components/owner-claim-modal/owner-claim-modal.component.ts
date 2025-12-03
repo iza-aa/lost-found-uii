@@ -39,8 +39,9 @@ export class OwnerClaimModalComponent {
 
   ngOnChanges(): void {
     // Initialize answers array when questions change
-    if (this.questions.length > 0 && this.answers().length !== this.questions.length) {
-      this.answers.set(this.questions.map(() => ''));
+    const questionsArray = Array.isArray(this.questions) ? this.questions : [];
+    if (questionsArray.length > 0 && this.answers().length !== questionsArray.length) {
+      this.answers.set(questionsArray.map(() => ''));
     }
   }
 
@@ -124,7 +125,8 @@ export class OwnerClaimModalComponent {
   }
 
   reset(): void {
-    this.answers.set(this.questions.map(() => ''));
+    const questionsArray = Array.isArray(this.questions) ? this.questions : [];
+    this.answers.set(questionsArray.map(() => ''));
     this.showPhone.set(true);
     this.contacts.set([{ type: 'instagram', value: '' }]);
   }

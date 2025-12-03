@@ -153,10 +153,12 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     // Load categories
     this.apiService.getCategories().subscribe({
       next: (cats) => {
-        this.apiCategories = cats;
+        // Ensure cats is an array
+        const categories = Array.isArray(cats) ? cats : [];
+        this.apiCategories = categories;
         // Update local categories for UI display
         // Filter out "Buku" (sudah ada Dokumen) dan sort agar "Lainnya" di akhir
-        const filteredCats = cats
+        const filteredCats = categories
           .filter(cat => cat.name !== 'Buku')
           .sort((a, b) => {
             if (a.name === 'Lainnya') return 1;
@@ -177,7 +179,8 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     // Load locations
     this.apiService.getLocations().subscribe({
       next: (locs) => {
-        this.apiLocations = locs;
+        // Ensure locs is an array
+        this.apiLocations = Array.isArray(locs) ? locs : [];
         console.log('Locations loaded:', locs);
         this.isLoadingEnums.set(false);
       },
@@ -495,8 +498,9 @@ export class PostItemComponent implements OnInit, AfterViewInit, OnDestroy {
     const mapElement = document.getElementById('map');
     if (!mapElement) return;
 
-    // Dynamic import of Leaflet (browser only)
-    L = await import('leaflet');
+    // Dynamic import of Leaflet (browser only) - handle ESM default export
+    const leafletModule = await import('leaflet');
+    L = (leafletModule as any).default || leafletModule;
 
     this.map = L.map('map').setView([UII_CENTER.lat, UII_CENTER.lng], 16);
 

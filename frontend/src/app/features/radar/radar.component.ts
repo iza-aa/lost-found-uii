@@ -67,8 +67,11 @@ export class RadarComponent implements OnInit, OnDestroy {
     // Load from API
     this.apiService.getAllItems().subscribe({
       next: (apiItems) => {
+        // Ensure apiItems is an array
+        const items = Array.isArray(apiItems) ? apiItems : [];
+        
         // Map and filter items with coordinates
-        const mappedItems = this.mapApiItemsToFrontend(apiItems);
+        const mappedItems = this.mapApiItemsToFrontend(items);
         const itemsWithLocation = mappedItems.filter(item => 
           typeof item.location === 'object' && 
           'lat' in item.location && 
@@ -97,6 +100,11 @@ export class RadarComponent implements OnInit, OnDestroy {
   }
 
   private mapApiItemsToFrontend(apiItems: ItemResponse[]): Item[] {
+    // Defensive check - ensure apiItems is actually an array
+    if (!Array.isArray(apiItems)) {
+      console.warn('mapApiItemsToFrontend: Expected array, got:', typeof apiItems);
+      return [];
+    }
     return apiItems.map(apiItem => {
       const reporter = apiItem.finder || apiItem.owner;
       return {
@@ -154,7 +162,9 @@ export class RadarComponent implements OnInit, OnDestroy {
     const mapElement = document.getElementById('radar-map');
     if (!mapElement) return;
 
-    L = await import('leaflet');
+    // Dynamic import Leaflet - handle both ESM default export and namespace
+    const leafletModule = await import('leaflet');
+    L = (leafletModule as any).default || leafletModule;
 
     this.map = L.map('radar-map', {
       zoomControl: false

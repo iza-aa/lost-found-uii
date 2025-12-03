@@ -94,8 +94,10 @@ export class ProfileComponent implements OnInit {
     
     this.apiService.getMyItems().subscribe({
       next: (apiItems) => {
-        const items = this.mapApiItemsToFrontend(apiItems);
-        this.userItems.set(items);
+        // Ensure apiItems is an array
+        const items = Array.isArray(apiItems) ? apiItems : [];
+        const mappedItems = this.mapApiItemsToFrontend(items);
+        this.userItems.set(mappedItems);
         this.isLoadingItems.set(false);
       },
       error: (err) => {
@@ -106,6 +108,11 @@ export class ProfileComponent implements OnInit {
   }
 
   private mapApiItemsToFrontend(apiItems: ItemResponse[]): Item[] {
+    // Defensive check - ensure apiItems is actually an array
+    if (!Array.isArray(apiItems)) {
+      console.warn('mapApiItemsToFrontend: Expected array, got:', typeof apiItems);
+      return [];
+    }
     return apiItems.map(apiItem => ({
       id: apiItem.id,
       title: apiItem.title,

@@ -53,9 +53,11 @@ export class HomeComponent implements OnInit {
   loadCategories(): void {
     this.apiService.getCategories().subscribe({
       next: (apiCats) => {
-        this.apiCategories = apiCats;
+        // Ensure apiCats is an array
+        const cats = Array.isArray(apiCats) ? apiCats : [];
+        this.apiCategories = cats;
         // Filter out "Buku" (sudah ada Dokumen) dan sort agar "Lainnya" di akhir
-        const filteredCats = apiCats
+        const filteredCats = cats
           .filter(cat => cat.name !== 'Buku')
           .sort((a, b) => {
             if (a.name === 'Lainnya') return 1;
@@ -121,15 +123,18 @@ export class HomeComponent implements OnInit {
         // Debug: Log raw API response
         console.log('Raw API response:', JSON.stringify(apiItems, null, 2));
         
+        // Ensure apiItems is an array
+        const items = Array.isArray(apiItems) ? apiItems : [];
+        
         // Handle null/empty response
-        if (!apiItems || apiItems.length === 0) {
+        if (items.length === 0) {
           this.items = [];
           this.isLoading.set(false);
           return;
         }
         
         // Map API response to frontend Item model
-        this.items = this.mapApiItemsToFrontend(apiItems);
+        this.items = this.mapApiItemsToFrontend(items);
         this.isLoading.set(false);
         this.errorMessage.set(''); // Clear any previous error
         console.log('Mapped items:', this.items);
@@ -147,6 +152,11 @@ export class HomeComponent implements OnInit {
   }
 
   private mapApiItemsToFrontend(apiItems: ItemResponse[]): Item[] {
+    // Defensive check - ensure apiItems is actually an array
+    if (!Array.isArray(apiItems)) {
+      console.warn('mapApiItemsToFrontend: Expected array, got:', typeof apiItems);
+      return [];
+    }
     return apiItems.map(apiItem => {
       // Determine reporter info based on item type
       // Backend mungkin tidak selalu kirim finder/owner (bug di backend Afsar)

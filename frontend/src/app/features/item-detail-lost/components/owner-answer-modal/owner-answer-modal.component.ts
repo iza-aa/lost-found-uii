@@ -31,7 +31,8 @@ export class OwnerAnswerModalComponent {
   }
 
   onSubmit(): void {
-    const answers: AnswerData[] = this.questions.map(q => ({
+    const questionsArray = Array.isArray(this.questions) ? this.questions : [];
+    const answers: AnswerData[] = questionsArray.map(q => ({
       questionId: q.id,
       answer: q.answer || ''
     }));

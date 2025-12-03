@@ -83,7 +83,9 @@ export class LeafletMapComponent implements OnInit, OnDestroy, OnChanges {
     const mapElement = document.getElementById(this.mapId);
     if (!mapElement) return;
 
-    L = await import('leaflet');
+    // Dynamic import Leaflet - handle both ESM default export and namespace
+    const leafletModule = await import('leaflet');
+    L = (leafletModule as any).default || leafletModule;
 
     this.map = L.map(this.mapId, {
       zoomControl: false,
@@ -131,8 +133,11 @@ export class LeafletMapComponent implements OnInit, OnDestroy, OnChanges {
     // Clear existing markers
     this.markersLayer.clearLayers();
 
+    // Ensure markers is an array
+    const markersArray = Array.isArray(this.markers) ? this.markers : [];
+
     // Add new markers
-    this.markers.forEach(marker => {
+    markersArray.forEach(marker => {
       const icon = this.createIcon(marker.icon || 'default');
       const leafletMarker = L.marker([marker.lat, marker.lng], { icon })
         .addTo(this.markersLayer!);

@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  // Update this with your Railway backend URL
-  apiUrl: 'https://your-backend.up.railway.app/api/v1'
+  // Ngrok backend URL
+  apiUrl: 'https://vacillatory-weak-harlee.ngrok-free.dev/api/v1'
 };

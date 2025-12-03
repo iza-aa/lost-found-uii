@@ -11,7 +11,7 @@ import { ContactButtonsComponent } from '../../shared/components/contact-buttons
 import { DeleteConfirmModalComponent } from '../../shared/components/delete-confirm-modal/delete-confirm-modal.component';
 import { FinderClaimModalComponent, FinderClaimData } from './components/finder-claim-modal/finder-claim-modal.component';
 import { OwnerAnswerModalComponent, AnswerData } from './components/owner-answer-modal/owner-answer-modal.component';
-import * as L from 'leaflet';
+import type * as LeafletTypes from 'leaflet';
 
 @Component({
   selector: 'app-item-detail-lost',
@@ -41,7 +41,7 @@ export class ItemDetailLostComponent implements OnInit, OnDestroy, AfterViewChec
   private authService = inject(AuthService);
 
   // Map
-  private map: L.Map | null = null;
+  private map: LeafletTypes.Map | null = null;
   private mapInitialized = false;
 
   // State
@@ -122,7 +122,11 @@ export class ItemDetailLostComponent implements OnInit, OnDestroy, AfterViewChec
 
   loadClaims(itemId: string): void {
     this.apiService.getClaims(itemId).subscribe({
-      next: (claims) => this.claims.set(claims || []),
+      next: (claims) => {
+        // Ensure claims is an array
+        const claimsArray = Array.isArray(claims) ? claims : [];
+        this.claims.set(claimsArray);
+      },
       error: () => {}
     });
   }
@@ -153,13 +157,16 @@ export class ItemDetailLostComponent implements OnInit, OnDestroy, AfterViewChec
 
     // Map contacts to API format
     type PlatformType = 'WHATSAPP' | 'INSTAGRAM' | 'TELEGRAM' | 'LINE' | 'EMAIL' | 'OTHER';
-    const contactsForApi = data.contacts.map(c => ({
+    const contactsArray = Array.isArray(data.contacts) ? data.contacts : [];
+    const questionsArray = Array.isArray(data.questions) ? data.questions : [];
+    
+    const contactsForApi = contactsArray.map(c => ({
       platform: c.type.toUpperCase() as PlatformType,
       value: c.value
     }));
 
     const request: ClaimRequest = {
-      questions: data.questions.map(q => ({ question: q })),
+      questions: questionsArray.map(q => ({ question: q })),
       show_phone: data.showPhone,
       contacts: contactsForApi,
       note: ''
@@ -410,11 +417,15 @@ export class ItemDetailLostComponent implements OnInit, OnDestroy, AfterViewChec
     }
   }
 
-  private initMap(lat: number, lng: number, locationName?: string): void {
+  private async initMap(lat: number, lng: number, locationName?: string): Promise<void> {
     const mapElement = document.getElementById('detail-map');
     if (!mapElement || this.mapInitialized) return;
 
     this.mapInitialized = true;
+
+    // Dynamic import Leaflet - handle ESM default export
+    const leafletModule = await import('leaflet');
+    const L = (leafletModule as any).default || leafletModule;
 
     this.map = L.map('detail-map', {
       center: [lat, lng],
@@ -521,7 +532,9 @@ export class ItemDetailLostComponent implements OnInit, OnDestroy, AfterViewChec
     if (this.categories().length === 0) {
       this.apiService.getCategories().subscribe({
         next: (cats) => {
-          this.categories.set(cats);
+          // Ensure cats is an array
+          const categories = Array.isArray(cats) ? cats : [];
+          this.categories.set(categories);
           // Set category ID after categories are loaded
           this.editCategoryId = itemData.category_id || '';
           console.log('Categories loaded:', cats);

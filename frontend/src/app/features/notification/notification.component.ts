@@ -45,7 +45,9 @@ export class NotificationComponent implements OnInit {
     this.isLoading.set(true);
     this.apiService.getNotifications().subscribe({
       next: (notifications) => {
-        this.notifications = notifications.map(n => this.mapToDisplay(n));
+        // Ensure notifications is an array
+        const notifs = Array.isArray(notifications) ? notifications : [];
+        this.notifications = notifs.map(n => this.mapToDisplay(n));
         this.isLoading.set(false);
       },
       error: (error) => {

@@ -248,8 +248,9 @@ export class ApiService {
    * Login user
    */
   login(request: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.baseUrl}/auth/login`, request)
-      .pipe(
+    return this.http.post<AuthResponse>(`${this.baseUrl}/auth/login`, request, {
+      headers: this.getBasicHeaders()
+    }).pipe(
         tap(response => this.handleAuthResponse(response)),
         catchError(this.handleError)
       );
@@ -259,8 +260,9 @@ export class ApiService {
    * Register new user
    */
   register(request: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.baseUrl}/auth/register`, request)
-      .pipe(
+    return this.http.post<AuthResponse>(`${this.baseUrl}/auth/register`, request, {
+      headers: this.getBasicHeaders()
+    }).pipe(
         tap(response => this.handleAuthResponse(response)),
         catchError(this.handleError)
       );
@@ -271,8 +273,9 @@ export class ApiService {
    */
   refreshToken(): Observable<AuthResponse> {
     const refreshToken = this.getRefreshToken();
-    return this.http.post<AuthResponse>(`${this.baseUrl}/auth/refresh`, { refresh_token: refreshToken })
-      .pipe(
+    return this.http.post<AuthResponse>(`${this.baseUrl}/auth/refresh`, { refresh_token: refreshToken }, {
+      headers: this.getBasicHeaders()
+    }).pipe(
         tap(response => this.handleAuthResponse(response)),
         catchError(this.handleError)
       );
@@ -310,9 +313,28 @@ export class ApiService {
    * Get all items (found items feed)
    */
   getAllItems(): Observable<ItemResponse[]> {
-    return this.http.get<ItemResponse[]>(`${this.baseUrl}/items`, {
+    return this.http.get<any>(`${this.baseUrl}/items`, {
       headers: this.getAuthHeaders()
-    }).pipe(catchError(this.handleError));
+    }).pipe(
+      map(response => {
+        // Handle various response formats
+        if (Array.isArray(response)) {
+          return response;
+        }
+        if (response && Array.isArray(response.data)) {
+          return response.data;
+        }
+        if (response && Array.isArray(response.items)) {
+          return response.items;
+        }
+        console.warn('getAllItems: Unexpected response format', response);
+        return [];
+      }),
+      catchError(err => {
+        console.error('getAllItems error:', err);
+        return of([]); // Return empty array on error instead of throwing
+      })
+    );
   }
 
   /**
@@ -355,9 +377,20 @@ export class ApiService {
    * Get claims for an item (Owner only)
    */
   getClaims(itemId: string): Observable<ClaimResponse[]> {
-    return this.http.get<ClaimResponse[]>(`${this.baseUrl}/items/${itemId}/claims`, {
+    return this.http.get<any>(`${this.baseUrl}/items/${itemId}/claims`, {
       headers: this.getAuthHeaders()
-    }).pipe(catchError(this.handleError));
+    }).pipe(
+      map(response => {
+        if (Array.isArray(response)) return response;
+        if (response?.data && Array.isArray(response.data)) return response.data;
+        console.warn('getClaims: Unexpected response format', response);
+        return [];
+      }),
+      catchError(err => {
+        console.error('getClaims error:', err);
+        return of([]);
+      })
+    );
   }
 
   /**
@@ -446,16 +479,40 @@ export class ApiService {
    * Get all categories
    */
   getCategories(): Observable<Category[]> {
-    return this.http.get<Category[]>(`${this.baseUrl}/enumerations/item-categories`)
-      .pipe(catchError(this.handleError));
+    return this.http.get<any>(`${this.baseUrl}/enumerations/item-categories`, {
+      headers: this.getBasicHeaders()
+    }).pipe(
+        map(response => {
+          if (Array.isArray(response)) return response;
+          if (response?.data && Array.isArray(response.data)) return response.data;
+          console.warn('getCategories: Unexpected response format', response);
+          return [];
+        }),
+        catchError(err => {
+          console.error('getCategories error:', err);
+          return of([]);
+        })
+      );
   }
 
   /**
    * Get all locations
    */
   getLocations(): Observable<Location[]> {
-    return this.http.get<Location[]>(`${this.baseUrl}/enumerations/campus-locations`)
-      .pipe(catchError(this.handleError));
+    return this.http.get<any>(`${this.baseUrl}/enumerations/campus-locations`, {
+      headers: this.getBasicHeaders()
+    }).pipe(
+        map(response => {
+          if (Array.isArray(response)) return response;
+          if (response?.data && Array.isArray(response.data)) return response.data;
+          console.warn('getLocations: Unexpected response format', response);
+          return [];
+        }),
+        catchError(err => {
+          console.error('getLocations error:', err);
+          return of([]);
+        })
+      );
   }
 
   // ==================== NOTIFICATION METHODS ====================
@@ -464,9 +521,20 @@ export class ApiService {
    * Get user notifications
    */
   getNotifications(): Observable<Notification[]> {
-    return this.http.get<Notification[]>(`${this.baseUrl}/notifications`, {
+    return this.http.get<any>(`${this.baseUrl}/notifications`, {
       headers: this.getAuthHeaders()
-    }).pipe(catchError(this.handleError));
+    }).pipe(
+      map(response => {
+        if (Array.isArray(response)) return response;
+        if (response?.data && Array.isArray(response.data)) return response.data;
+        console.warn('getNotifications: Unexpected response format', response);
+        return [];
+      }),
+      catchError(err => {
+        console.error('getNotifications error:', err);
+        return of([]);
+      })
+    );
   }
 
   /**
@@ -507,8 +575,9 @@ export class ApiService {
    * Scan asset (public)
    */
   scanAsset(assetId: string): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/scan/${assetId}`)
-      .pipe(catchError(this.handleError));
+    return this.http.get<any>(`${this.baseUrl}/scan/${assetId}`, {
+      headers: this.getBasicHeaders()
+    }).pipe(catchError(this.handleError));
   }
 
   // ==================== USER PROFILE METHODS ====================
@@ -517,9 +586,20 @@ export class ApiService {
    * Get items reported by current user
    */
   getMyItems(): Observable<ItemResponse[]> {
-    return this.http.get<ItemResponse[]>(`${this.baseUrl}/items/my`, {
+    return this.http.get<any>(`${this.baseUrl}/items/my`, {
       headers: this.getAuthHeaders()
-    }).pipe(catchError(this.handleError));
+    }).pipe(
+      map(response => {
+        if (Array.isArray(response)) return response;
+        if (response?.data && Array.isArray(response.data)) return response.data;
+        console.warn('getMyItems: Unexpected response format', response);
+        return [];
+      }),
+      catchError(err => {
+        console.error('getMyItems error:', err);
+        return of([]);
+      })
+    );
   }
 
   /**
@@ -574,11 +654,23 @@ export class ApiService {
   }
 
   /**
+   * Get basic headers (for public endpoints)
+   */
+  private getBasicHeaders(): HttpHeaders {
+    return new HttpHeaders()
+      .set('ngrok-skip-browser-warning', 'true')
+      .set('Content-Type', 'application/json');
+  }
+
+  /**
    * Get auth headers
    */
   private getAuthHeaders(isFormData = false): HttpHeaders {
     const token = this.getToken();
     let headers = new HttpHeaders();
+    
+    // Skip ngrok browser warning page
+    headers = headers.set('ngrok-skip-browser-warning', 'true');
     
     if (token) {
       headers = headers.set('Authorization', `Bearer ${token}`);
@@ -632,6 +724,9 @@ export class ApiService {
     } else if (error.status === 0) {
       // Network error or server not reachable
       errorMessage = 'Tidak dapat terhubung ke server.';
+    } else if (typeof error.error === 'string' && error.error.includes('<!DOCTYPE')) {
+      // Response is HTML (ngrok warning page or error page)
+      errorMessage = 'Server mengembalikan halaman error. Pastikan backend berjalan.';
     } else {
       // Server-side error
       if (error.error?.error) {

@@ -152,6 +152,8 @@ export class ItemDetailFoundComponent implements OnInit, OnDestroy, AfterViewChe
   // Backend sends: finder (claimer), questions (with answers)
   // Frontend expects: owner (claimer), answers
   private mapClaimToFoundItemClaim(claim: any): FoundItemClaim {
+    // Ensure questions is an array
+    const questions = Array.isArray(claim.questions) ? claim.questions : [];
     return {
       id: claim.id,
       item_id: claim.item_id,
@@ -163,7 +165,7 @@ export class ItemDetailFoundComponent implements OnInit, OnDestroy, AfterViewChe
         role: claim.finder.role
       } : undefined,
       // Map questions (which contain answers) to answers array
-      answers: (claim.questions || []).map((q: any) => ({
+      answers: questions.map((q: any) => ({
         question: q.question,
         answer: q.answer || ''
       })),
@@ -176,8 +178,10 @@ export class ItemDetailFoundComponent implements OnInit, OnDestroy, AfterViewChe
 
   loadClaims(itemId: string): void {
     this.apiService.getClaims(itemId).subscribe({
-      next: (claims: any[]) => {
-        const mapped = (claims || []).map(c => this.mapClaimToFoundItemClaim(c));
+      next: (claims: any) => {
+        // Ensure claims is an array
+        const claimsArray = Array.isArray(claims) ? claims : [];
+        const mapped = claimsArray.map(c => this.mapClaimToFoundItemClaim(c));
         this.claims.set(mapped);
       },
       error: () => {}
@@ -242,15 +246,19 @@ export class ItemDetailFoundComponent implements OnInit, OnDestroy, AfterViewChe
 
     // Map contacts to API format
     type PlatformType = 'WHATSAPP' | 'INSTAGRAM' | 'TELEGRAM' | 'LINE' | 'EMAIL' | 'OTHER';
-    const contactsForApi = data.contacts.map(c => ({
+    const contactsArray = Array.isArray(data.contacts) ? data.contacts : [];
+    const answersArray = Array.isArray(data.answers) ? data.answers : [];
+    const verificationsArray = Array.isArray(item.verifications) ? item.verifications : [];
+    
+    const contactsForApi = contactsArray.map(c => ({
       platform: c.type.toUpperCase() as PlatformType,
       value: c.value
     }));
 
     // For found items, the "claim" contains answers to verification questions
     const request = {
-      answers: data.answers.map((ans, i) => ({
-        question: item.verifications![i].question,
+      answers: answersArray.map((ans, i) => ({
+        question: verificationsArray[i]?.question || '',
         answer: ans
       })),
       show_phone: data.showPhone,
@@ -482,8 +490,9 @@ export class ItemDetailFoundComponent implements OnInit, OnDestroy, AfterViewChe
 
     this.mapInitialized = true;
 
-    // Dynamic import Leaflet only in browser
-    const L = await import('leaflet');
+    // Dynamic import Leaflet only in browser - handle ESM default export
+    const leafletModule = await import('leaflet');
+    const L = (leafletModule as any).default || leafletModule;
 
     this.map = L.map('detail-map', {
       center: [lat, lng],
@@ -585,7 +594,9 @@ export class ItemDetailFoundComponent implements OnInit, OnDestroy, AfterViewChe
     if (this.categories().length === 0) {
       this.apiService.getCategories().subscribe({
         next: (cats) => {
-          this.categories.set(cats);
+          // Ensure cats is an array
+          const categories = Array.isArray(cats) ? cats : [];
+          this.categories.set(categories);
           // Set category ID after categories are loaded
           this.editCategoryId = itemData.category_id || '';
           console.log('Categories loaded:', cats);
